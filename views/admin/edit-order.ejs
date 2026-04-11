@@ -1,0 +1,46 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'orders' }) %>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">UPDATE ORDER STATUS</h1>
+        </header>
+
+        <div class="table-container" style="max-width: 600px; margin: 0 auto; padding: 40px;">
+            <h2 style="font-size: 20px; margin-bottom: 5px;">Edit Order Status</h2>
+            <p style="font-size: 14px; color: #6B7280; margin-bottom: 40px;">ORDER ID - #8111</p>
+
+            <form action="/admin/edit-order" method="POST">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px;">
+                    <div class="form-group">
+                        <label>ORDER STATUS</label>
+                        <select name="status" style="width: 100%;">
+                            <option selected>PENDING</option>
+                            <option>SHIPPED</option>
+                            <option>DELIVERED</option>
+                            <option>CANCELLED</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 15px;">PURCHASED PRODUCTS</label>
+                        <ul style="list-style: none; font-size: 14px; color: #4B5563;">
+                            <li style="margin-bottom: 10px;">1. PRODUCT NAME</li>
+                            <li>2. PRODUCT NAME</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 20px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn" onclick="history.back()" style="background: #000; color: #FFF; flex: 1;">CANCEL</button>
+                    <button type="submit" class="btn" style="background: #000; color: #FFF; flex: 1;">UPDATE ORDER</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

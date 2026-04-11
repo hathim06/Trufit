@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <style>
+        /* Checkout Content */
+        .checkout-page {
+            padding: 60px 0;
+        }
+
+        .checkout-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            text-decoration: underline;
+            text-underline-offset: 8px;
+            text-decoration-thickness: 3px;
+        }
+
+        .checkout-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 50px;
+            align-items: start;
+        }
+
+        /* Left Column */
+        .checkout-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #6B7280;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .address-card {
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .address-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .address-text {
+            font-size: 14px;
+            color: #4B5563;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .address-mobile {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .address-actions {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-edit {
+            font-size: 12px;
+            color: #3B82F6;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .add-address-link {
+            display: block;
+            font-size: 14px;
+            color: #3B82F6;
+            font-weight: 600;
+            margin-bottom: 40px;
+            cursor: pointer;
+        }
+
+        .payment-methods {
+            margin-top: 40px;
+        }
+
+        .payment-header {
+            background: #F3F4F6;
+            padding: 15px 25px;
+            font-size: 14px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4B5563;
+        }
+
+        .payment-option {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #3B82F6;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            background: #F9FAFB;
+            cursor: pointer;
+            transition: var(--transition);
+            color: #4B5563;
+        }
+
+        .payment-option:hover {
+            background: #3B82F6;
+            color: #FFFFFF;
+        }
+
+        /* Right Column (Sidebar) */
+        .checkout-sidebar {
+            background: #FFFFFF;
+            border: 1px solid #F3F4F6;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .coupon-section {
+            margin-bottom: 35px;
+        }
+
+        .section-label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .coupon-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .coupon-input {
+            flex: 1;
+            background: #ff8a3d33;
+            border: 1px solid #ff8a3d;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: #000;
+            text-align: center;
+        }
+
+        .btn-apply {
+            background: var(--green);
+            color: #FFF;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .order-details-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #4B5563;
+            border-bottom: 1px solid #EEE;
+            padding-bottom: 10px;
+        }
+
+        .order-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .order-item-img {
+            width: 60px;
+            height: 60px;
+            background: #F9FAFB;
+            border-radius: 8px;
+            padding: 5px;
+            flex-shrink: 0;
+        }
+
+        .order-item-info {
+            flex: 1;
+        }
+
+        .order-item-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .order-item-meta {
+            font-size: 12px;
+            color: #6B7280;
+        }
+
+        .order-item-price {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .summary-divider {
+            height: 1px;
+            background: #EEE;
+            margin: 20px 0;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .summary-row.total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #000;
+            margin-top: 20px;
+        }
+
+        .discount-text {
+            color: var(--green);
+        }
+
+        .free-text {
+            color: var(--green);
+        }
+
+        .btn-payment {
+            display: block;
+            width: 100%;
+            background: var(--orange);
+            color: #FFF;
+            padding: 18px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: none;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: var(--transition);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 80px 0 40px;
+            border-top: 1px solid #EEE;
+            background: #FFFFFF;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .footer-col-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-box {
+            background: #11362F;
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #FFFFFF;
+        }
+
+        .logo-box i {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-box span {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .social-info {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .copyright {
+            padding: 30px 0;
+            background: #000;
+            color: #FFF;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .checkout-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-left .search-bar {
+                display: none;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<%- include('partials/header') %>
+
+    <main class="container">
+        <!-- Checkout Content -->
+        <section class="checkout-page">
+            <h1 class="checkout-title">CHECKOUT</h1>
+            
+            <div class="checkout-grid">
+                <!-- Left: Address & Payment -->
+                <div class="checkout-main">
+                    <div class="checkout-section-title">SELECT SAVED ADDRESS</div>
+                    
+                    <div class="address-card">
+                        <div class="address-actions">
+                            <span class="btn-edit">Edit</span>
+                            <span class="btn-edit">Change</span>
+                        </div>
+                        <h3>Abhinav Choudhary</h3>
+                        <p class="address-text">
+                            A-101, Unique Aptt.,<br>
+                            Opp. Bus Depot,<br>
+                            Virar, Thane, Maharashtra-401301
+                        </p>
+                        <p class="address-mobile">Mobile: 8976451232</p>
+                    </div>
+                    
+                    <span class="add-address-link">Add new address</span>
+                    
+                    <div class="payment-methods">
+                        <div class="payment-header">PAYMENT METHODS</div>
+                        <div class="payment-options-list">
+                            <div class="payment-option">RAZOR PAY</div>
+                            <div class="payment-option">CASH ON DELIVERY</div>
+                            <div class="payment-option">WALLET PAY</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Summary Sidebar -->
+                <aside class="checkout-sidebar">
+                    <div class="coupon-section">
+                        <span class="section-label">COUPONS <br><small style="font-weight: 400; color: #6B7280;">Apply Coupons and save extra</small></span>
+                        <div class="coupon-input-group">
+                            <input type="text" value="WEL20" class="coupon-input">
+                            <button class="btn-apply">APPLY</button>
+                        </div>
+                    </div>
+
+                    <div class="order-details">
+                        <div class="order-details-title">ORDER DETAILS</div>
+                        
+                        <div class="order-item">
+                            <div class="order-item-img">
+                                <img src="../../public/apple_smart_1.png" alt="Apple smart">
+                            </div>
+                            <div class="order-item-info">
+                                <h4 class="order-item-name">Apple smart</h4>
+                                <p class="order-item-meta">Size: Med | Quantity: 2</p>
+                            </div>
+                            <div class="order-item-price">₹2.100</div>
+                        </div>
+
+                        <div class="order-item">
+                            <div class="order-item-img">
+                                <img src="../../public/samsung_watch_pro.png" alt="Samsung pro">
+                            </div>
+                            <div class="order-item-info">
+                                <h4 class="order-item-name">Samsung pro</h4>
+                                <p class="order-item-meta">Size: LG | Quantity: 1</p>
+                            </div>
+                            <div class="order-item-price">₹1.100</div>
+                        </div>
+                    </div>
+
+                    <div class="summary-divider"></div>
+
+                    <div class="order-summary">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>₹3,337</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Discount</span>
+                            <span class="discount-text">-₹130</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Shipping Charges</span>
+                            <span class="free-text">Free</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total</span>
+                            <span>₹4,997</span>
+                        </div>
+                        
+                        <button class="btn-payment">PROCEED TO PAYMENT</button>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <%- include('partials/footer') %>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

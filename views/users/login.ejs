@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <style>
+            /* Auth Specific Styles */
+            .auth-container {
+                flex: 1;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 80px 20px;
+                background-color: #f9f9f9;
+            }
+
+            .auth-box {
+                width: 100%;
+                max-width: 450px;
+                padding: 40px;
+                background: #FFFFFF;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+                border-radius: 12px;
+            }
+
+            .auth-box h1 {
+                text-align: center;
+                font-size: 28px;
+                margin-bottom: 30px;
+                font-weight: 700;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+
+            .form-group label {
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            .form-group input {
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                font-size: 14px;
+                outline: none;
+                transition: border-color 0.3s;
+            }
+
+            .form-group input:focus {
+                border-color: #000;
+            }
+
+            .forgot-link {
+                text-align: right;
+                margin-bottom: 20px;
+            }
+
+            .forgot-link a {
+                font-size: 12px;
+                color: #666;
+                font-weight: 500;
+            }
+
+            .submit-btn {
+                width: 100%;
+                background: #000;
+                color: #FFF;
+                padding: 14px;
+                border: none;
+                border-radius: 8px;
+                font-weight: 700;
+                font-size: 16px;
+                cursor: pointer;
+                transition: opacity 0.3s;
+            }
+
+            .submit-btn:hover {
+                opacity: 0.9;
+            }
+
+            .google-btn-wrapper {
+                margin-top: 20px;
+            }
+
+            .google-btn {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                background: #FFFFFF;
+                border: 1px solid #ddd;
+                padding: 12px;
+                border-radius: 8px;
+                cursor: pointer;
+                text-decoration: none;
+                color: #000;
+                font-weight: 600;
+                font-size: 14px;
+                transition: background 0.3s;
+            }
+
+            .google-btn:hover {
+                background: #f5f5f5;
+            }
+
+            .google-btn img {
+                width: 20px;
+            }
+
+            .auth-footer-links {
+                text-align: center;
+                margin-top: 25px;
+                font-size: 14px;
+                color: #666;
+            }
+
+            .auth-footer-links a {
+                color: #3B82F6;
+                font-weight: 600;
+            }
+        </style>
+</head>
+
+<body>
+
+    <main class="auth-container">
+        <div class="auth-box">
+            <h1>Sign In</h1>
+
+
+
+                            <form method="post" action="/users/login">
+                                <div class="form-group">
+                                    <label>Email Address</label>
+                                    <input type="email" name="email" placeholder="Enter your email" required>
+
+                                    <% if (message && (message.toLowerCase().includes("email") ||
+                                        message.toLowerCase().includes("not found"))) { %>
+                                        <small style="color:red; font-size: 11px;">
+                                            <%= message %>
+                                        </small>
+                                        <% } %>
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <input type="password" name="password" placeholder="Enter your password" required>
+
+                                    <% if (message && message.toLowerCase().includes("password")) { %>
+                                        <small style="color:red; font-size: 11px;">
+                                            <%= message %>
+                                        </small>
+                                        <% } %>
+                                </div>
+                                <div class="forgot-link">
+                                    <a href="/users/forgot-password">Forgot password?</a>
+                                </div>
+                                <button type="submit" class="submit-btn">Continue</button>
+                            </form>
+
+                            <div class="google-btn-wrapper">
+                                <a href="/users/auth/google" class="google-btn">
+                                    <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
+                                        alt="Google">
+                                    Continue with Google
+                                </a>
+                            </div>
+
+                            <div class="auth-footer-links">
+                                Don't have an account? <a href="/users/signup">Sign Up</a>
+                            </div>
+        </div>
+    </main>
+
+    <!-- Navigation protection to prevent back-button access to cached pages -->
+    <script>
+        window.addEventListener("pageshow", function (event) {
+            var historyTraversal = event.persisted || 
+                                   (typeof window.performance != "undefined" && 
+                                    window.performance.navigation.type === 2);
+            if (historyTraversal) {
+                // When navigating back to this page from cache, force a reload to re-verify auth
+                window.location.reload();
+            }
+        });
+
+        // Unified Alert Handling
+        (function() {
+            const msg = "<%= typeof message !== 'undefined' ? message : '' %>";
+            const success = "<%= typeof success !== 'undefined' ? success : '' %>";
+
+            if (typeof Swal !== 'undefined') {
+                if (msg) {
+                    const isBlocked = msg.toLowerCase().includes('blocked');
+                    Swal.fire({
+                        icon: 'error',
+                        title: isBlocked ? 'Account Blocked' : 'Access Denied',
+                        text: msg,
+                        confirmButtonColor: '#000',
+                        footer: isBlocked ? '<a href="/contact">Contact Support</a>' : ''
+                    });
+                } else if (success) {
+                    let title = 'Success!';
+                    let text = 'Operation completed successfully.';
+
+                    if (success === "reset-password") {
+                        title = 'Password Reset!';
+                        text = 'Your password has been changed. Please login with your new password.';
+                    } else if (success === "registered") {
+                        title = 'Registration Successful!';
+                        text = 'Your account has been created. Please login.';
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: title,
+                        text: text,
+                        showConfirmButton: true,
+                        confirmButtonColor: '#4F46E5'
+                    });
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>

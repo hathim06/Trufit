@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <style>
+        /* Profile Content */
+        .profile-page {
+            padding: 80px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .profile-card {
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid #E5E7EB;
+            padding: 60px;
+            border-radius: 4px;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .profile-card h1 {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .profile-avatar {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .profile-avatar i {
+            width: 100px;
+            height: 100px;
+            color: #000;
+        }
+
+        .edit-icon {
+            position: absolute;
+            top: 230px;
+            right: 170px;
+            cursor: pointer;
+            color: #6B7280;
+        }
+
+        .profile-details {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .detail-row {
+            margin-bottom: 25px;
+        }
+
+        .detail-row span:first-child {
+            font-weight: 700;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        .detail-row span:last-child {
+            font-weight: 500;
+            font-size: 16px;
+            color: #374151;
+        }
+
+        /* Navigation Grid */
+        .profile-nav-grid {
+            width: 100%;
+            max-width: 800px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .profile-nav-btn {
+            background: #FFFFFF;
+            border: 1px solid #000;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .profile-nav-btn:hover {
+            background: #000;
+            color: #FFF;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 80px 0 40px;
+            border-top: 1px solid #EEE;
+            background: #FFFFFF;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .footer-col-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-box {
+            background: #11362F;
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #FFFFFF;
+        }
+
+        .logo-box i {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-box span {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .social-info {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .copyright {
+            padding: 30px 0;
+            background: #000;
+            color: #FFF;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .profile-card {
+                padding: 30px;
+            }
+
+            .profile-nav-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header-left .search-bar {
+                display: none;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .profile-avatar img {
+            object-fit: cover;
+        }
+    </style>
+    </head>
+
+    <body>
+        <%- include('partials/header') %>
+
+            <main class="container">
+                <!-- Profile Content -->
+                <section class="profile-page">
+                    <div class="profile-card">
+                        <h1>User Profile</h1>
+
+                        <% if (typeof query !== 'undefined' && query.success) { %>
+                            <div style="background: #D1FAE5; color: #065F46; padding: 10px; border-radius: 4px; margin-bottom: 20px; text-align: center;">
+                                <%= query.success %>
+                            </div>
+                        <% } %>
+
+                        <% if (typeof query !== 'undefined' && query.error) { %>
+                            <div style="background: #FEE2E2; color: #991B1B; padding: 10px; border-radius: 4px; margin-bottom: 20px; text-align: center;">
+                                <%= query.error %>
+                            </div>
+                        <% } %>
+
+                        <form action="/users/profile/upload-picture" method="POST" enctype="multipart/form-data">
+
+                            <label for="fileInput" style="cursor:pointer;">
+                                <div class="profile-avatar">
+
+                                    <% if (user.profilePicture) { %>
+                                        <img src="<%= user.profilePicture %>" width="100" height="100"
+                                            style="border-radius:50%; object-fit:cover;">
+                                        <% } else { %>
+                                            <div style="
+                    width:100px;
+                    height:100px;
+                    border-radius:50%;
+                    background:#000;
+                    color:#fff;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:40px;
+                    font-weight:bold;
+                ">
+                                                <%= user.firstName.charAt(0).toUpperCase() %>
+                                            </div>
+                                            <% } %>
+
+                                </div>
+                            </label>
+
+                            <input type="file" id="fileInput" name="profilePicture" hidden
+                                onchange="this.form.submit()">
+
+                        </form>
+                        <% if (user.profilePicture) { %>
+                            <form action="/users/profile/delete-picture" method="POST" style="text-align:center;">
+                                <button style="
+                        margin-top:10px;
+                        background:red;
+                        color:#fff;
+                        border:none;
+                        padding:8px 15px;
+                        border-radius:20px;
+                        cursor:pointer;
+                    ">
+                                    Remove Profile Picture
+                                </button>
+                            </form>
+                            <% } %>
+                                <a href="/users/edit-profile" class="edit-icon">
+                                    <i data-lucide="pencil" style="width: 20px;"></i>
+                                </a>
+
+                                <div class="profile-details">
+                                    <div class="detail-row">
+                                        <span>Full Name :</span>
+                                        <span>
+                                            <%= user.firstName %>
+                                                <%= user.lastName %>
+                                        </span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span>Email :</span>
+                                        <span>
+                                            <%= user.email %>
+                                        </span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span>Default Address :</span>
+                                        <span>
+                                            <%= defaultAddress ? defaultAddress.addressLine + ', ' + defaultAddress.city
+                                                : 'No address added' %>
+                                        </span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span>Mobile No. :</span>
+                                        <span>
+                                            <%= user.mobile || 'Not provided' %>
+                                        </span>
+                                    </div>
+                                </div>
+                    </div>
+
+                    <!-- Dashboard Navigation -->
+                    <div class="profile-nav-grid">
+                        <div class="profile-nav-btn" onclick="location.href='/users/orders'">MY ORDERS</div>
+                        <div class="profile-nav-btn" onclick="location.href='/users/wishlist'">MY WISHLIST</div>
+                        <div class="profile-nav-btn" onclick="location.href='/users/address'">EDIT / CHANGE ADDRESS
+                        </div>
+                        <div class="profile-nav-btn" onclick="location.href='/users/wallet'">WALLET</div>
+                        <div class="profile-nav-btn" onclick="location.href='/users/coupons'">MY COUPON</div>
+                        <div class="profile-nav-btn" onclick="location.href='/users/refer-and-earn'">REFER AND EARN
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <%- include('partials/footer') %>
+
+                <script>
+                    lucide.createIcons();
+                </script>
+    </body>
+
+</html>

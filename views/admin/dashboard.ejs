@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+    }
+
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .filter-bar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .search-input {
+        flex: 1;
+        min-width: 200px;
+    }
+</style>
+
+<%- include('partials/head') %>
+
+    <body>
+
+        <%- include('./partials/sidebar', { activePage: 'dashboard' }) %>
+            <main class="main-content">
+                <header class="page-header">
+                    <h1 class="page-title">ADMIN DASHBOARD</h1>
+                </header>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Total Revenue</h3>
+                            <div class="value">₹ 45,551</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i data-lucide="indian-rupee"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Orders</h3>
+                            <div class="value">528</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i data-lucide="shopping-cart"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Products</h3>
+                            <div class="value">1,524</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i data-lucide="package"></i>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Customers</h3>
+                            <div class="value">922</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i data-lucide="users"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h2>Recent Orders</h2>
+                        <a href="/admin/orders" class="btn-view-all">View All</a>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#8111</td>
+                                <td>Hans Burger</td>
+                                <td>12/03/2026</td>
+                                <td>₹1,999.00</td>
+                                <td><span class="status-badge status-completed">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>#8112</td>
+                                <td>Kailu Roberts</td>
+                                <td>12/03/2026</td>
+                                <td>₹3,999.00</td>
+                                <td><span class="status-badge status-pending">Pending</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+
+            <script>
+                lucide.createIcons();
+            </script>
+
+    </body>
+
+</html>

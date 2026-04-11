@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Profile Edit Content */
+        .edit-page {
+            padding: 80px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .edit-card {
+            width: 100%;
+            max-width: 800px;
+            border: 1px solid #E5E7EB;
+            padding: 50px 80px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .edit-card h1 {
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 50px;
+            color: #111827;
+        }
+
+        .avatar-top {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .avatar-top i {
+            width: 60px;
+            height: 60px;
+            color: #000;
+        }
+
+        .edit-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+        }
+
+        .form-group input {
+            padding: 12px 20px;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #111827;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus {
+            border-color: #000;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .btn-update {
+            background: #000;
+            color: #FFF;
+            padding: 15px 120px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 20px;
+        }
+
+        .btn-update:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .reset-link {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .reset-link a {
+            color: #3B82F6;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 80px 0 40px;
+            border-top: 1px solid #EEE;
+            background: #FFFFFF;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .footer-col-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-box {
+            background: #11362F;
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #FFFFFF;
+        }
+
+        .logo-box i {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-box span {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .social-info {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .copyright {
+            padding: 30px 0;
+            background: #000;
+            color: #FFF;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* OTP Section Styling */
+        .otp-btn {
+            background: #4F46E5;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            width: fit-content;
+        }
+
+        .otp-btn:hover {
+            background: #4338CA;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        #otpSection {
+            background: #F9FAFB;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+            margin-top: 20px;
+            grid-column: 1 / -1;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .edit-form {
+                grid-template-columns: 1fr;
+            }
+
+            .edit-card {
+                padding: 30px;
+            }
+
+            .btn-update {
+                width: 100%;
+                padding: 15px;
+            }
+
+            .header-left .search-bar {
+                display: none;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    </head>
+
+    <body>
+        <%- include('partials/header') %>
+
+            <main class="container">
+                <!-- Edit Profile Content -->
+                <section class="edit-page">
+                    <div class="edit-card">
+                        <h1>EDIT PROFILE</h1>
+
+                        <div class="avatar-top">
+
+                            <% if (user.profilePicture) { %>
+                                <img src="<%= user.profilePicture %>" width="60" height="60"
+                                    style="border-radius:50%; object-fit:cover;">
+                                <% } else { %>
+                                    <div style="
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            background:#000;
+            color:#fff;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:24px;
+            font-weight:bold;
+        ">
+                                        <%= user.firstName.charAt(0).toUpperCase() %>
+                                    </div>
+                                    <% } %>
+
+                        </div>
+
+                        <form class="edit-form" action="/users/edit-profile" method="POST">
+                            <div class="form-group">
+                                <label>First Name</label>
+                                <input type="text" name="firstName" value="<%= user.firstName %>">
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <input type="text" name="lastName" value="<%= user.lastName %>">
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Mobile</label>
+                                <input type="text" name="mobile" value="<%= user.mobile || '' %>">
+                            </div>
+                            <div class="form-group full-width">
+                                <label>Email</label>
+                                <input type="email" value="<%= user.email %>" readonly>
+                            </div>
+
+                            <!-- New Email Input -->
+                            <div class="form-group full-width">
+                                <label style="color: #4F46E5; font-weight: 700;">CHANGE EMAIL</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="email" id="newEmail" placeholder="Enter new email" style="flex: 1;">
+                                    <button type="button" class="otp-btn" onclick="sendOTP()"
+                                        style="margin-top: 0;">Send OTP</button>
+                                </div>
+                            </div>
+
+                            <!-- OTP Input (Hidden by default) -->
+                            <div id="otpSection" style="display:none;">
+                                <label>Enter 4-Digit OTP</label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" id="emailOtp" placeholder="XXXX" maxlength="4"
+                                        style="width: 100px; text-align: center; letter-spacing: 5px; font-weight: 700;">
+                                    <button type="button" class="otp-btn" onclick="verifyOTP()"
+                                        style="margin-top: 0; background: #059669;">Verify & Update</button>
+                                </div>
+                                <p style="font-size: 12px; color: #6B7280; margin-top: 10px;">Please check your inbox
+                                    for the verification code.</p>
+                            </div>
+
+                            <div id="passwordSection" class="form-group full-width"
+                                data-is-google="<%= !!user.isGoogleAuth %>"
+                                style="margin-top: 30px; border-top: 1px solid #E5E7EB; padding-top: 30px;">
+                                <label style="color: #4F46E5; font-weight: 700; display: block; margin-bottom: 20px;">
+                                    <%= user.isGoogleAuth ? "SET PASSWORD" : "CHANGE PASSWORD" %>
+                                </label>
+
+                                <% if (user.isGoogleAuth) { %>
+                                    <p style="font-size: 13px; color: #6B7280; margin-bottom: 20px;">
+                                        Since you logged in with Google, you don't have a password set yet.
+                                        Creating one will allow you to log in with your email directly.
+                                    </p>
+                                    <% } %>
+
+                                        <div class="edit-form" style="gap: 20px;">
+                                            <% if (!user.isGoogleAuth) { %>
+                                                <div class="form-group full-width">
+                                                    <label>Current Password</label>
+                                                    <input type="password" id="currentPassword"
+                                                        placeholder="Enter current password">
+                                                </div>
+                                                <% } %>
+                                                    <div class="form-group">
+                                                        <label>New Password</label>
+                                                        <input type="password" id="newPassword"
+                                                            placeholder="Enter new password">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Confirm New Password</label>
+                                                        <input type="password" id="confirmPassword"
+                                                            placeholder="Confirm new password">
+                                                    </div>
+                                                    <div class="full-width">
+                                                        <button type="button" class="otp-btn" onclick="updatePassword()"
+                                                            style="background: #111827;">
+                                                            <%= user.isGoogleAuth ? "Set Password" : "Update Password"
+                                                                %>
+                                                        </button>
+                                                    </div>
+                                        </div>
+                            </div>
+
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-update btn-primary">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </main>
+
+            <%- include('partials/footer') %>
+
+                <script>
+                    lucide.createIcons();
+
+                    async function sendOTP() {
+                        const newEmail = document.getElementById('newEmail').value;
+                        if (!newEmail || !newEmail.includes('@')) {
+                            return Swal.fire({
+                                icon: 'error',
+                                title: 'Invalid Email',
+                                text: 'Please enter a valid email address.'
+                            });
+                        }
+
+                        // Show loading state
+                        Swal.fire({
+                            title: 'Sending OTP...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        try {
+                            const response = await fetch('/users/change-email-otp', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ newEmail })
+                            });
+                            const data = await response.json();
+
+                            if (data.success) {
+                                document.getElementById('otpSection').style.display = 'block';
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'OTP Sent!',
+                                    text: 'Please check your email for the verification code.',
+                                    timer: 2500,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire('Error', data.message || 'Failed to send OTP', 'error');
+                            }
+                        } catch (error) {
+                            Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+                        }
+                    }
+
+                    async function verifyOTP() {
+                        const otp = document.getElementById('emailOtp').value;
+                        if (otp.length !== 4) {
+                            return Swal.fire('Error', 'Please enter the 4-digit OTP', 'error');
+                        }
+
+                        try {
+                            const response = await fetch('/users/change-email-verify', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ otp })
+                            });
+                            const data = await response.json();
+
+                            if (data.success) {
+                                await Swal.fire({
+                                    icon: 'success',
+                                    title: 'Email Updated!',
+                                    text: 'Your email has been successfully updated.',
+                                });
+                                window.location.reload();
+                            } else {
+                                Swal.fire('Verification Failed', data.message || 'Invalid OTP', 'error');
+                            }
+                        } catch (error) {
+                            Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+                        }
+                    }
+
+                    async function updatePassword() {
+                        const newPassword = document.getElementById('newPassword').value;
+                        const confirmPassword = document.getElementById('confirmPassword').value;
+                        const isGoogleAuth = document.getElementById('passwordSection').dataset.isGoogle === 'true';
+                        let currentPassword = null;
+
+                        if (!isGoogleAuth) {
+                            currentPassword = document.getElementById('currentPassword').value;
+                            if (!currentPassword) {
+                                return Swal.fire('Error', 'Please enter your current password', 'error');
+                            }
+                        }
+
+                        if (!newPassword || !confirmPassword) {
+                            return Swal.fire('Error', 'Please fill in all password fields', 'error');
+                        }
+
+                        if (newPassword !== confirmPassword) {
+                            return Swal.fire('Error', 'New passwords do not match', 'error');
+                        }
+
+                        try {
+                            const response = await fetch('/users/update-password', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    currentPassword,
+                                    newPassword,
+                                    confirmPassword
+                                })
+                            });
+
+                            const data = await response.json();
+                            if (data.success) {
+                                await Swal.fire({
+                                    icon: 'success',
+                                    title: 'Success!',
+                                    text: data.message,
+                                });
+                                window.location.reload();
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        } catch (error) {
+                            Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+                        }
+                    }
+
+                </script>
+    </body>
+
+</html>

@@ -1,0 +1,77 @@
+
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px;">
+                <i data-lucide="watch" style="width: 24px; color: #FFF;"></i>
+                <div>Mohid</div>
+            </div>
+            <span>SMART WATCH</span>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/admin/dashboard"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>">
+                    <i data-lucide="layout-dashboard"></i>
+                    Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/users"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'users' ? 'active' : '' %>">
+                    <i data-lucide="users"></i>
+                    Users
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/products"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'products' ? 'active' : '' %>">
+                    <i data-lucide="package"></i>
+                    Products
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/categories"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'categories' ? 'active' : '' %>">
+                    <i data-lucide="grid"></i>
+                    Categories
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/add-banner"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'add-banner' ? 'active' : '' %>">
+                    <i data-lucide="plus-square"></i>
+                    Add Banners
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/coupons"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'coupons' ? 'active' : '' %>">
+                    <i data-lucide="ticket"></i>
+                    Coupons
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/orders"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'orders' ? 'active' : '' %>">
+                    <i data-lucide="list-ordered"></i>
+                    Orders
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/report"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'report' ? 'active' : '' %>">
+                    <i data-lucide="file-text"></i>
+                    Report
+                </a>
+            </li>
+        </ul>
+
+        <div class="logout-section">
+            <a href="/admin/logout" class="logout-btn">
+                Logout
+                <i data-lucide="log-out"></i>
+            </a>
+        </div>
+    </aside>

@@ -1,0 +1,32 @@
+<header class="header">
+    <div class="container">
+        <div class="header-left">
+            <a href="/" class="logo">Mohid</a>
+            <div class="search-bar">
+                <input type="text" placeholder="Search for products, brands & more">
+                <i data-lucide="search"></i>
+            </div>
+            <nav class="nav">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/shop">Shop</a></li>
+                    <li><a href="/orders">Orders</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="/about">About</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="header-right">
+            <button class="icon-btn" onclick="location.href='/search'"><i data-lucide="search"></i></button>
+            <button class="icon-btn" onclick="location.href='/users/profile'"><i data-lucide="user"></i></button>
+            <button class="icon-btn cart-btn" onclick="location.href='/cart'">
+                <i data-lucide="shopping-cart"></i>
+            </button>
+            <% if (typeof user !=='undefined' && user) { %>
+                <button class="sign-in-btn" onclick="location.href='/users/logout'">Logout</button>
+                <% } else { %>
+                    <button class="sign-in-btn" onclick="location.href='/users/login'">Sign in</button>
+                    <% } %>
+        </div>
+    </div>
+</header>

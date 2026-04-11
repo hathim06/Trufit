@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <style>
+        /* Wishlist Content */
+        .wishlist-page {
+            padding: 60px 0;
+        }
+
+        .wishlist-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .wishlist-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: #6B7280;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #E5E7EB;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .wishlist-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .wishlist-item {
+            display: flex;
+            align-items: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .item-image {
+            width: 120px;
+            height: 120px;
+            background: #F8F8F8;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .item-image img {
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .item-details {
+            flex: 1;
+            padding: 0 40px;
+        }
+
+        .item-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .item-price {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .old-price {
+            text-decoration: line-through;
+            color: #9CA3AF;
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        .discount-tag {
+            color: #ef4444;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .btn-remove {
+            background: var(--remove-red);
+            color: #FFFFFF;
+        }
+
+        .btn-add {
+            background: var(--cart-yellow);
+            color: #000;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 80px 0 40px;
+            border-top: 1px solid #EEE;
+            background: #FFFFFF;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .footer-col-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-box {
+            background: #00332B;
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #FFFFFF;
+        }
+
+        .logo-box i {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-box span {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .footer-col h4 {
+            font-size: 14px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #9CA3AF;
+            display: none; /* In image, they might just be lists */
+        }
+
+        .footer-col ul li {
+            margin-bottom: 15px;
+        }
+
+        .footer-col ul li a {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .footer-col ul li a:hover {
+            color: #000;
+        }
+
+        .social-info {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .social-info p {
+            margin-bottom: 12px;
+        }
+
+        .copyright {
+            padding: 30px 0;
+            background: #000;
+            color: #FFF;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .wishlist-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            .item-details {
+                padding: 0;
+            }
+            .header-left .search-bar {
+                display: none;
+            }
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<%- include('partials/header') %>
+
+    <main class="container">
+        <!-- Wishlist Content -->
+        <section class="wishlist-page">
+            <h1 class="wishlist-title">WISHLIST</h1>
+            <div class="wishlist-header">PRODUCTS</div>
+            
+            <div class="wishlist-list">
+                <!-- Item 1 -->
+                <div class="wishlist-item">
+                    <div class="item-image">
+                        <img src="../../public/apple_smart_1.png" alt="Apple smart">
+                    </div>
+                    <div class="item-details">
+                        <h3 class="item-name">Apple smart</h3>
+                        <div class="item-price">
+                            <span class="discounted">₹27.99</span>
+                            <span class="old-price">₹34.00</span>
+                            <span class="discount-tag">20% off</span>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn btn-remove">Remove</button>
+                        <button class="btn btn-add">Add to cart</button>
+                    </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="wishlist-item">
+                    <div class="item-image">
+                        <img src="../../public/samsung_watch_pro.png" alt="Samsung watch pro">
+                    </div>
+                    <div class="item-details">
+                        <h3 class="item-name">Samsung watch pro</h3>
+                        <div class="item-price">
+                            <span class="discounted">₹720</span>
+                            <span class="old-price">₹1480</span>
+                            <span class="discount-tag">50% off</span>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn btn-remove">Remove</button>
+                        <button class="btn btn-add">Add to cart</button>
+                    </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="wishlist-item">
+                    <div class="item-image">
+                        <img src="../../public/fitbit_max_1.png" alt="FITBIT MAX 1">
+                    </div>
+                    <div class="item-details">
+                        <h3 class="item-name">FITBIT MAX 1</h3>
+                        <div class="item-price">
+                            <span class="discounted">₹800</span>
+                            <span class="old-price">₹2000</span>
+                            <span class="discount-tag">60% off</span>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn btn-remove">Remove</button>
+                        <button class="btn btn-add">Add to cart</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <%- include('partials/footer') %>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('partials/head') %>
+    <style>
+        .otp-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+
+        .otp-box {
+            background: #fff;
+            padding: 60px 40px;
+            border: 1px solid #111;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .brand-logo {
+            font-size: 10px;
+            color: #111;
+            margin-bottom: 5px;
+        }
+
+        .brand-title {
+            font-size: 20px;
+            letter-spacing: 12px;
+            font-weight: 300;
+            color: #111;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        .otp-box h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .instruction {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+
+        .otp-inputs {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .otp-inputs input {
+            width: 70px;
+            height: 45px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .otp-inputs input:focus {
+            border-color: #000;
+        }
+
+        .divider {
+            width: 15px;
+            height: 1px;
+            background-color: #D1D5DB;
+        }
+
+        .verify-btn {
+            width: 100%;
+            max-width: 300px;
+            background-color: #000;
+            color: #fff;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 25px;
+            transition: opacity 0.3s;
+        }
+
+        .verify-btn:hover {
+            opacity: 0.9;
+        }
+
+        .resend-text {
+            font-size: 13px;
+            color: #6B7280;
+        }
+
+        .resend-text a {
+            color: #3B82F6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .resend-text a.disabled {
+            color: #9CA3AF;
+            pointer-events: none;
+            cursor: default;
+        }
+
+        #timer {
+            font-weight: 700;
+            color: #000;
+        }
+
+        .error-message {
+            color: #EF4444;
+            font-size: 12px;
+            margin-bottom: 20px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <main class="otp-container">
+        <div class="otp-box">
+            <div class="brand-logo">Mohid</div>
+            <div class="brand-title">S M A R T W A T C H</div>
+            
+            <h1>Enter OTP</h1>
+            <p class="instruction">We have sent otp to your email address</p>
+
+            <% if (message) { %>
+                <span class="error-message"><%= message %></span>
+            <% } %>
+
+            <form action="/users/verify-otp" method="POST">
+                <div class="otp-inputs">
+                    <input type="text" maxlength="1" oninput="moveToNext(this, 'otp2')" id="otp1" name="otp[]" required autofocus>
+                    <div class="divider"></div>
+                    <input type="text" maxlength="1" oninput="moveToNext(this, 'otp3')" id="otp2" name="otp[]" required>
+                    <div class="divider"></div>
+                    <input type="text" maxlength="1" oninput="moveToNext(this, 'otp4')" id="otp3" name="otp[]" required>
+                    <div class="divider"></div>
+                    <input type="text" maxlength="1" id="otp4" name="otp[]" required>
+                </div>
+
+                <button type="submit" class="verify-btn">Verify</button>
+            </form>
+
+            <div class="resend-text">
+                Didn't receive code? 
+                <span id="timer-container">Resend in <span id="timer">60</span>s</span>
+                <a href="/users/resend-otp" id="resend-link" class="disabled" style="display: none;">Resend OTP</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function moveToNext(current, nextId) {
+            if (current.value.length >= 1) {
+                document.getElementById(nextId).focus();
+            }
+        }
+
+        // Handle backspace
+        document.querySelectorAll('.otp-inputs input').forEach((input, index, inputs) => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !input.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+        });
+
+        // OTP Timer Logic
+        let timeLeft = 60;
+        const timerElement = document.getElementById('timer');
+        const timerContainer = document.getElementById('timer-container');
+        const resendLink = document.getElementById('resend-link');
+
+        const countdown = setInterval(() => {
+            timeLeft--;
+            timerElement.textContent = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                timerContainer.style.display = 'none';
+                resendLink.style.display = 'inline';
+                resendLink.classList.remove('disabled');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

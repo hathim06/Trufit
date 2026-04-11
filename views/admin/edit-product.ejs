@@ -1,0 +1,193 @@
+<%- include('partials/head') %>
+<style>
+    /* Specific styles for Product forms */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+
+    .size-grid {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .size-box {
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        border-radius: 4px;
+    }
+
+    .size-box.active {
+        background: #000;
+        color: #FFF;
+        border-color: #000;
+    }
+
+    .image-upload-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-top: 10px;
+    }
+
+    .image-upload-box {
+        aspect-ratio: 1;
+        background: #F3F4F6;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 2px dashed transparent;
+        transition: var(--transition);
+    }
+
+    .image-upload-box:hover {
+        border-color: #000;
+    }
+
+    .image-upload-box i {
+        margin-bottom: 10px;
+        color: #4B5563;
+    }
+
+    .description-area {
+        width: 100%;
+        min-height: 150px;
+        padding: 15px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #F3F4F6;
+        outline: none;
+        resize: vertical;
+    }
+</style>
+<body>
+    <%- include('partials/sidebar', { activePage: 'products' }) %>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">EDIT PRODUCT</h1>
+        </header>
+
+        <div class="table-container">
+            <form action="/admin/edit-product" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>PRODUCT NAME</label>
+                    <input type="text" name="productName" value="Apple Watch Series 7" style="background: #E5E7EB; border: none;">
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>CATEGORY</label>
+                        <select name="category" style="background: #E5E7EB; border: none;">
+                            <option selected>Smartwatch</option>
+                            <option>Men</option>
+                            <option>Women</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>OFFER (%)</label>
+                        <input type="number" name="offer" value="10" style="background: #E5E7EB; border: none;">
+                    </div>
+                    <div class="form-group">
+                        <label>Show on Homepage</label>
+                        <select name="showOnHomepage" style="background: #E5E7EB; border: none;">
+                            <option selected>Yes</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>STATUS</label>
+                        <select name="status" style="background: #E5E7EB; border: none;">
+                            <option selected>Active</option>
+                            <option>Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>PRICE</label>
+                        <input type="number" name="price" value="25000" style="background: #E5E7EB; border: none;">
+                    </div>
+                    <div class="form-group">
+                        <label>QUANTITY</label>
+                        <input type="number" name="quantity" value="15" style="background: #E5E7EB; border: none;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 25px;">
+                    <div>
+                        <label style="font-size: 14px; font-weight: 500;">SIZE</label>
+                        <div class="size-grid">
+                            <div class="size-box active">SM</div>
+                            <div class="size-box">MD</div>
+                            <div class="size-box active">LG</div>
+                            <div class="size-box">XL</div>
+                            <div class="size-box">XXL</div>
+                            <div class="size-box">3XL</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Choose colours</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select name="colour1" style="background: #E5E7EB; border: none;">
+                                <option selected>Blue</option>
+                                <option>Red</option>
+                            </select>
+                            <select name="colour2" style="background: #E5E7EB; border: none;">
+                                <option>Blue</option>
+                                <option selected>Red</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>IMAGE</label>
+                    <div class="image-upload-grid">
+                        <div class="image-upload-box">
+                            <i data-lucide="image"></i>
+                            <span style="font-size: 12px; font-weight: 600; background: #000; color: #FFF; padding: 5px 15px; border-radius: 4px;">Uploaded</span>
+                        </div>
+                        <div class="image-upload-box">
+                            <i data-lucide="image"></i>
+                            <span style="font-size: 12px; font-weight: 600; background: #000; color: #FFF; padding: 5px 15px; border-radius: 4px;">Uploaded</span>
+                        </div>
+                        <div class="image-upload-box">
+                            <i data-lucide="upload-cloud"></i>
+                            <span style="font-size: 12px; font-weight: 600; background: #000; color: #FFF; padding: 5px 15px; border-radius: 4px;">Upload here</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 30px;">
+                    <label>DESCRIPTION</label>
+                    <textarea name="description" class="description-area" placeholder="Enter product description">High quality smartwatch with advanced health tracking features.</textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 40px;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 40px;">UPDATE PRODUCT</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

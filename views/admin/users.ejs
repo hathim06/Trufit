@@ -1,0 +1,208 @@
+<%- include('partials/head') %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: #DCFCE7;
+            color: #166534;
+        }
+
+        .status-blocked {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-delete {
+            background: #000;
+            color: #fff;
+        }
+
+        .btn-delete:hover {
+            background: #ef4444;
+        }
+    </style>
+
+    <body>
+        <%- include('partials/sidebar', { activePage: 'users' }) %>
+
+            <main class="main-content">
+                <header class="page-header">
+                    <h1 class="page-title">USER MANAGEMENT</h1>
+                    <a href="/admin/users/add" class="btn-action" style="background: #4F46E5; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">+ ADD NEW USER</a>
+                </header>
+
+                <div class="filter-bar">
+                    <input type="text" id="searchInput" placeholder="Search users..." value="<%= search %>">
+                    <button onclick="clearSearch()">Clear</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>USERS ID</th>
+                                <th>USERS</th>
+                                <th>EMAIL</th>
+                                <th>STATUS</th>
+                                <th>JOINED ON</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% users.forEach(user=> { %>
+                                <tr>
+                                    <td>
+                                        <%= user._id %>
+                                    </td>
+                                    <td>
+                                        <%= user.firstName %>
+                                            <%= user.lastName %>
+                                    </td>
+                                    <td>
+                                        <%= user.email %>
+                                    </td>
+                                    <td>
+                                        <span
+                                            class="status-badge <%= user.isBlocked ? 'status-blocked' : 'status-active' %>">
+                                            <%= user.isBlocked ? 'Blocked' : 'Active' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <%= user.createdAt ? user.createdAt.toDateString() : 'N/A' %>
+                                    </td>
+
+                                    <td style="display: flex; gap: 10px;">
+                                        <a href="/admin/users/edit/<%= user._id %>" class="btn-action" style="background: #4F46E5; color: #fff; text-decoration: none;">EDIT</a>
+                                        
+                                        <button onclick="toggleBlock('<%= user._id %>', '<%= user.isBlocked %>')"
+                                            class="btn-action <%= user.isBlocked ? 'btn-success' : 'btn-danger' %>">
+                                            <%= user.isBlocked ? 'UNBLOCK' : 'BLOCK' %>
+                                        </button>
+
+                                        <button onclick="deleteUser('<%= user._id %>')" class="btn-action btn-delete">
+                                            DELETE
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                        </tbody>
+                    </table>
+
+                    <div class="pagination" style="margin-top: 30px; display: flex; justify-content: center; gap: 10px;">
+                        <% if (currentPage > 1) { %>
+                            <a href="/admin/users?page=<%= currentPage - 1 %>&search=<%= search %>" style="padding: 5px 10px; text-decoration: none; color: #4F46E5; border: 1px solid #D1D5DB; border-radius: 4px;">&laquo; Previous</a>
+                        <% } %>
+
+                        <% for(let i = 1; i <= totalPages; i++) { %>
+                            <% if (i === currentPage) { %>
+                                <span style="font-weight: 700; border: 1px solid #000; padding: 5px 10px; background: #000; color: #fff; border-radius: 4px;"><%= i %></span>
+                            <% } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) { %>
+                                <a href="/admin/users?page=<%= i %>&search=<%= search %>" style="padding: 5px 10px; text-decoration: none; color: #6B7280; border: 1px solid #D1D5DB; border-radius: 4px; margin: 0 2px;"><%= i %></a>
+                            <% } else if (i === currentPage - 3 || i === currentPage + 3) { %>
+                                <span style="padding: 5px 10px; color: #6B7280;">...</span>
+                            <% } %>
+                        <% } %>
+
+                        <% if (currentPage < totalPages) { %>
+                            <a href="/admin/users?page=<%= currentPage + 1 %>&search=<%= search %>" style="padding: 5px 10px; text-decoration: none; color: #4F46E5; border: 1px solid #D1D5DB; border-radius: 4px;">Next &raquo;</a>
+                        <% } %>
+                    </div>
+                </div>
+            </main>
+
+            <script>
+                lucide.createIcons();
+
+                async function toggleBlock(id, isBlocked) {
+                    isBlocked = (isBlocked === "true");
+                    const action = isBlocked ? 'unblock' : 'block';
+
+                    const result = await Swal.fire({
+                        title: `Confirm ${action.toUpperCase()}`,
+                        text: `Are you sure you want to ${action} this user?`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: isBlocked ? '#16a34a' : '#d33',
+                        cancelButtonColor: '#6B7280',
+                        confirmButtonText: `Yes, ${action} them!`
+                    });
+
+                    if (result.isConfirmed) {
+                        const url = isBlocked ? `/admin/users/unblock/${id}` : `/admin/users/block/${id}`;
+                        const res = await fetch(url, { method: "PATCH" });
+                        const data = await res.json();
+
+                        if (data.success) {
+                            await Swal.fire('Updated!', `User has been ${isBlocked ? 'unblocked' : 'blocked'}.`, 'success');
+                            location.reload();
+                        } else {
+                            Swal.fire('Error!', 'Failed to update user status.', 'error');
+                        }
+                    }
+                }
+
+                async function deleteUser(id) {
+                    const result = await Swal.fire({
+                        title: 'Are you sure?',
+                        text: "This action cannot be undone!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#000',
+                        cancelButtonColor: '#6B7280',
+                        confirmButtonText: 'Yes, delete it!'
+                    });
+
+                    if (result.isConfirmed) {
+                        const res = await fetch(`/admin/users/delete/${id}`, {
+                            method: "DELETE"
+                        });
+                        const data = await res.json();
+
+                        if (data.success) {
+                            await Swal.fire('Deleted!', data.message || 'User has been removed.', 'success');
+                            location.reload();
+                        } else {
+                            Swal.fire('Error!', data.message || 'Failed to delete user.', 'error');
+                        }
+                    }
+                }
+
+                let timer;
+
+                document.getElementById("searchInput").addEventListener("input", function () {
+                    clearTimeout(timer);
+
+                    const value = this.value;
+
+                    timer = setTimeout(() => {
+                        window.location.href = `/admin/users?search=${value}&page=1`;
+                    }, 500); // 500ms delay
+                });
+
+                // Clear button
+                function clearSearch() {
+                    window.location.href = "/admin/users";
+                }
+
+            </script>
+    </body>
+
+    </html>

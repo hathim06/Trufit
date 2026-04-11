@@ -1,0 +1,73 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'coupons' }) %>
+
+    <main class="main-content">
+        <!-- Mock internal header from screenshot -->
+        <div style="background: #FFF; padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; justify-content: center; align-items: center; flex-direction: column; position: relative; border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="watch" style="width: 24px;"></i>
+                <div style="font-weight: 700;">Mohid</div>
+            </div>
+            <div style="font-size: 12px; letter-spacing: 2px;">SMART WATCH</div>
+            <i data-lucide="log-out" style="position: absolute; right: 20px; top: 20px; width: 18px; color: #666; cursor: pointer;"></i>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 40px;">
+            <h1 class="page-title">ADD COUPONS</h1>
+        </div>
+
+        <div class="table-container" style="max-width: 800px; margin: 0 auto; padding: 40px;">
+            <form action="/admin/add-coupon" method="POST">
+                <div class="form-group">
+                    <label>COUPON CODE</label>
+                    <input type="text" name="couponCode" placeholder="Enter coupon code">
+                </div>
+
+                <div class="form-group">
+                    <label>COUPON DESCRIPTION</label>
+                    <textarea name="description" class="description-area" style="min-height: 100px;"></textarea>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>START DATE</label>
+                        <input type="date" name="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label>EXPIRY DATE</label>
+                        <input type="date" name="expiryDate">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>MINIMUM PURCHASE AMOUNT</label>
+                        <input type="number" name="minPurchase" placeholder="Enter amount">
+                    </div>
+                    <div class="form-group">
+                        <label>STATUS</label>
+                        <select name="status">
+                            <option>Active</option>
+                            <option>Expired</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>DISCOUNT PERCENTAGE</label>
+                    <input type="number" name="discount" placeholder="Enter percentage">
+                </div>
+
+                <div style="display: flex; justify-content: center; margin-top: 40px;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 60px;">SAVE COUPON</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
