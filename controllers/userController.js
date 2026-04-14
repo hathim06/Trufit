@@ -108,7 +108,6 @@ const forgotPassword = async (req, res) => {
 
         await sendOtpEmail(email, otp);
 
-        // Store email in session to be used in the reset step
         req.session.resetEmail = email;
 
         console.log("OTP:", otp);
@@ -141,7 +140,6 @@ const resetPassword = async (req, res) => {
             confirmPassword
         });
 
-        // Clear reset session
         delete req.session.resetEmail;
 
         res.redirect('/users/login?success=reset-password');
@@ -192,7 +190,6 @@ const verifyOtp = async (req, res) => {
             });
         }
 
-        // Delete OTP after successful verification
         await otpModel.deleteOne({ _id: otpRecord._id });
 
         if (tempUser.isGoogleAuth) {
@@ -234,7 +231,7 @@ const verifyOtp = async (req, res) => {
         console.log("OTP Verification Error:", error.message);
         res.render('users/verify-otp', {
             message: error.message,
-            user: null
+            user: req.session.user || null
         });
     }
 };
@@ -245,11 +242,9 @@ const googleAuthCallback = async (req, res) => {
         const existingUser = await userModel.findOne({ email });
 
         if (existingUser) {
-            // Check if existing user is blocked
             if (existingUser.isBlocked) {
                 return res.redirect('/users/login?message=Your account has been blocked by admin');
             }
-            // User exists, log them in directly
             req.session.user = existingUser._id;
             return res.redirect('/');
         }
@@ -349,13 +344,13 @@ const resendOtp = async (req, res) => {
         console.log("Resent OTP:", otp);
         res.render('users/verify-otp', {
             message: "OTP has been resent to your email.",
-            user: null
+            user: req.session.user || null
         });
     } catch (error) {
         console.log("Resend OTP Error:", error.message);
         res.render('users/verify-otp', {
             message: "Failed to resend OTP. Please try again.",
-            user: null
+            user: req.session.user || null
         });
     }
 }
@@ -363,7 +358,10 @@ const resendOtp = async (req, res) => {
 const loadAddress = async (req, res) => {
     try {
         const addresses = await userService.getAddressService(req.session.user);
-        res.render('users/address', { addresses });
+        res.render('users/address', {
+            addresses,
+            user: req.session.user || null
+        });
     } catch (error) {
         console.log(error);
         res.redirect('/');
@@ -433,7 +431,10 @@ const setDefaultAddress = async (req, res) => {
 const getDefaultAddress = async (req, res) => {
     try {
         const user = await userModel.findById(req.session.user);
-        res.render('users/address', user);
+        res.render('users/address', {
+            user: req.session.user || null,
+            addresses: user.addresses || []
+        });
     } catch (error) {
         console.log("Get Default Address Error:", error.message);
         res.redirect('/');
@@ -542,7 +543,6 @@ const updatePassword = async (req, res) => {
         const { currentPassword, newPassword, confirmPassword } = req.body;
         const user = await userModel.findById(req.session.user);
 
-        // Security check for regular users
         if (!user.isGoogleAuth) {
             if (!currentPassword) {
                 return res.status(400).json({ success: false, message: "Current password is required" });
@@ -556,9 +556,9 @@ const updatePassword = async (req, res) => {
         // Validation
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
         if (!passwordRegex.test(newPassword)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Password must include uppercase, lowercase, number and special character" 
+            return res.status(400).json({
+                success: false,
+                message: "Password must include uppercase, lowercase, number and special character"
             });
         }
 
@@ -569,7 +569,7 @@ const updatePassword = async (req, res) => {
         // Update password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         user.password = hashedPassword;
-        
+
         // If they were Google Auth, they now have a password
         if (user.isGoogleAuth) {
             user.isGoogleAuth = false;

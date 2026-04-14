@@ -20,8 +20,8 @@ const registerUserService = async (data) => {
     if (existingUser) {
         throw new Error("Email already exists");
     }
-    if (existingUser.isBlocked) {
-        return res.redirect('/signup?message=This account is blocked. Contact support.');
+    if (existingUser && existingUser.isBlocked) {
+        throw new Error("This account is blocked. Contact support.");
     }
     if (!passwordRegex.test(password)) {
         throw new Error("Weak password");
@@ -107,10 +107,9 @@ const resetPasswordService = async (data) => {
 
     const hashPassword = await bcrypt.hash(password, 10);
     user.password = hashPassword;
-    user.isGoogleAuth = false; // Allow traditional login after password reset
+    user.isGoogleAuth = false;
     await user.save();
 
-    // Delete OTP after successful reset
     await otpModel.deleteOne({ _id: otpRecord._id });
 
     return user;

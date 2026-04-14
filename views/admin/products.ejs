@@ -3,10 +3,10 @@
     <%- include('partials/sidebar', { activePage: 'products' }) %>
 
     <main class="main-content">
-        <header class="page-header">
-            <h1 class="page-title">PRODUCT MANAGEMENT</h1>
+        <%- include('./partials/adminHeader', { title: 'PRODUCT MANAGEMENT' }) %>
+        <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
             <button class="btn btn-primary" onclick="location.href='/admin/add-product'">ADD PRODUCTS</button>
-        </header>
+        </div>
 
         <div class="filter-bar">
             <input type="text" class="search-input" placeholder="Search Product...">

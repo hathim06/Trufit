@@ -233,3 +233,45 @@ img {
     text-align: center;
     font-size: 14px;
 }
+
+/* Validation and Form Enhancements */
+.error-message {
+    color: #FF0000;
+    font-size: 11px;
+    margin-top: 2px;
+    display: none;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 45px !important;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    cursor: pointer;
+    color: #6B7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    z-index: 10;
+}
+
+.toggle-password:hover {
+    color: #111827;
+}
+
+.toggle-password i {
+    width: 18px;
+    height: 18px;
+}

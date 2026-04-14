@@ -44,14 +44,12 @@
         <%- include('partials/sidebar', { activePage: 'users' }) %>
 
             <main class="main-content">
-                <header class="page-header">
-                    <h1 class="page-title">USER MANAGEMENT</h1>
-                    <a href="/admin/users/add" class="btn-action" style="background: #4F46E5; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">+ ADD NEW USER</a>
-                </header>
+                <%- include('./partials/adminHeader', { title: 'USER MANAGEMENT' }) %>
 
                 <div class="filter-bar">
                     <input type="text" id="searchInput" placeholder="Search users..." value="<%= search %>">
-                    <button onclick="clearSearch()">Clear</button>
+                    <button onclick="clearSearch()" class="btn-action"
+                        style="background: #4F46E5; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">Clear</button>
                 </div>
 
                 <div class="table-container">
@@ -90,8 +88,8 @@
                                     </td>
 
                                     <td style="display: flex; gap: 10px;">
-                                        <a href="/admin/users/edit/<%= user._id %>" class="btn-action" style="background: #4F46E5; color: #fff; text-decoration: none;">EDIT</a>
-                                        
+                                        <!-- <a href="/admin/users/edit/<%= user._id %>" class="btn-action" style="background: #4F46E5; color: #fff; text-decoration: none;">EDIT</a> -->
+
                                         <button onclick="toggleBlock('<%= user._id %>', '<%= user.isBlocked %>')"
                                             class="btn-action <%= user.isBlocked ? 'btn-success' : 'btn-danger' %>">
                                             <%= user.isBlocked ? 'UNBLOCK' : 'BLOCK' %>
@@ -106,24 +104,36 @@
                         </tbody>
                     </table>
 
-                    <div class="pagination" style="margin-top: 30px; display: flex; justify-content: center; gap: 10px;">
-                        <% if (currentPage > 1) { %>
-                            <a href="/admin/users?page=<%= currentPage - 1 %>&search=<%= search %>" style="padding: 5px 10px; text-decoration: none; color: #4F46E5; border: 1px solid #D1D5DB; border-radius: 4px;">&laquo; Previous</a>
-                        <% } %>
-
-                        <% for(let i = 1; i <= totalPages; i++) { %>
-                            <% if (i === currentPage) { %>
-                                <span style="font-weight: 700; border: 1px solid #000; padding: 5px 10px; background: #000; color: #fff; border-radius: 4px;"><%= i %></span>
-                            <% } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) { %>
-                                <a href="/admin/users?page=<%= i %>&search=<%= search %>" style="padding: 5px 10px; text-decoration: none; color: #6B7280; border: 1px solid #D1D5DB; border-radius: 4px; margin: 0 2px;"><%= i %></a>
-                            <% } else if (i === currentPage - 3 || i === currentPage + 3) { %>
-                                <span style="padding: 5px 10px; color: #6B7280;">...</span>
+                    <div class="pagination"
+                        style="margin-top: 30px; display: flex; justify-content: center; gap: 10px;">
+                        <% if (currentPage> 1) { %>
+                            <a href="/admin/users?page=<%= currentPage - 1 %>&search=<%= search %>"
+                                style="padding: 5px 10px; text-decoration: none; color: #4F46E5; border: 1px solid #D1D5DB; border-radius: 4px;">&laquo;
+                                Previous</a>
                             <% } %>
-                        <% } %>
 
-                        <% if (currentPage < totalPages) { %>
-                            <a href="/admin/users?page=<%= currentPage + 1 %>&search=<%= search %>" style="padding: 5px 10px; text-decoration: none; color: #4F46E5; border: 1px solid #D1D5DB; border-radius: 4px;">Next &raquo;</a>
-                        <% } %>
+                                <% for(let i=1; i <=totalPages; i++) { %>
+                                    <% if (i===currentPage) { %>
+                                        <span
+                                            style="font-weight: 700; border: 1px solid #000; padding: 5px 10px; background: #000; color: #fff; border-radius: 4px;">
+                                            <%= i %>
+                                        </span>
+                                        <% } else if (i===1 || i===totalPages || (i>= currentPage - 2 && i <=
+                                                currentPage + 2)) { %>
+                                                <a href="/admin/users?page=<%= i %>&search=<%= search %>"
+                                                    style="padding: 5px 10px; text-decoration: none; color: #6B7280; border: 1px solid #D1D5DB; border-radius: 4px; margin: 0 2px;">
+                                                    <%= i %>
+                                                </a>
+                                                <% } else if (i===currentPage - 3 || i===currentPage + 3) { %>
+                                                    <span style="padding: 5px 10px; color: #6B7280;">...</span>
+                                                    <% } %>
+                                                        <% } %>
+
+                                                            <% if (currentPage < totalPages) { %>
+                                                                <a href="/admin/users?page=<%= currentPage + 1 %>&search=<%= search %>"
+                                                                    style="padding: 5px 10px; text-decoration: none; color: #4F46E5; border: 1px solid #D1D5DB; border-radius: 4px;">Next
+                                                                    &raquo;</a>
+                                                                <% } %>
                     </div>
                 </div>
             </main>

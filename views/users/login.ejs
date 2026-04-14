@@ -135,11 +135,11 @@
 
 
 
-                            <form method="post" action="/users/login">
+                            <form method="post" action="/users/login" id="loginForm">
                                 <div class="form-group">
                                     <label>Email Address</label>
-                                    <input type="email" name="email" placeholder="Enter your email" required>
-
+                                    <span id="email-error" class="error-message"></span>
+                                    <input type="email" name="email" id="email" placeholder="Enter your email" required>
                                     <% if (message && (message.toLowerCase().includes("email") ||
                                         message.toLowerCase().includes("not found"))) { %>
                                         <small style="color:red; font-size: 11px;">
@@ -149,8 +149,13 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Password</label>
-                                    <input type="password" name="password" placeholder="Enter your password" required>
-
+                                    <span id="password-error" class="error-message"></span>
+                                    <div class="password-wrapper">
+                                        <input type="password" name="password" id="password" placeholder="Enter your password" required>
+                                        <span class="toggle-password" onclick="togglePassword('password')">
+                                            <i data-lucide="eye"></i>
+                                        </span>
+                                    </div>
                                     <% if (message && message.toLowerCase().includes("password")) { %>
                                         <small style="color:red; font-size: 11px;">
                                             <%= message %>
@@ -160,7 +165,7 @@
                                 <div class="forgot-link">
                                     <a href="/users/forgot-password">Forgot password?</a>
                                 </div>
-                                <button type="submit" class="submit-btn">Continue</button>
+                                <button type="submit" class="submit-btn" id="submitBtn">Continue</button>
                             </form>
 
                             <div class="google-btn-wrapper">
@@ -179,6 +184,84 @@
 
     <!-- Navigation protection to prevent back-button access to cached pages -->
     <script>
+        lucide.createIcons();
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        const form = document.getElementById('loginForm');
+        const inputs = {
+            email: document.getElementById('email'),
+            password: document.getElementById('password')
+        };
+
+        const errors = {
+            email: document.getElementById('email-error'),
+            password: document.getElementById('password-error')
+        };
+
+        function validateField(name, value) {
+            let isValid = true;
+            let message = '';
+
+            switch (name) {
+                case 'email':
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(value)) {
+                        isValid = false;
+                        message = 'Enter a valid email address';
+                    }
+                    break;
+                case 'password':
+                    if (value.length < 8) {
+                        isValid = false;
+                        message = 'Password must be at least 8 characters';
+                    }
+                    break;
+            }
+
+            if (!isValid) {
+                errors[name].textContent = message;
+                errors[name].style.display = 'block';
+                inputs[name].style.borderColor = '#FF0000';
+            } else {
+                errors[name].style.display = 'none';
+                inputs[name].style.borderColor = '#ddd';
+            }
+
+            return isValid;
+        }
+
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', () => {
+                validateField(key, inputs[key].value);
+            });
+        });
+
+        form.addEventListener('submit', (e) => {
+            let isFormValid = true;
+            Object.keys(inputs).forEach(key => {
+                if (!validateField(key, inputs[key].value)) {
+                    isFormValid = false;
+                }
+            });
+
+            if (!isFormValid) {
+                e.preventDefault();
+            }
+        });
+
         window.addEventListener("pageshow", function (event) {
             var historyTraversal = event.persisted || 
                                    (typeof window.performance != "undefined" && 

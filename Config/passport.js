@@ -11,12 +11,18 @@ passport.use(new GoogleStrategy({
         try {
             const email = profile.emails[0].value;
 
-            return done(null, {
-                email,
-                firstName: profile.name.givenName,
-                lastName: profile.name.familyName,
-                isGoogleAuth: true
-            });
+            let user = await userModel.findOne({ email });
+
+            if (!user) {
+                user = await userModel.create({
+                    email,
+                    firstName: profile.name.givenName,
+                    lastName: profile.name.familyName,
+                    isGoogleAuth: true
+                });
+            }
+
+            return done(null, user);
 
         } catch (error) {
             return done(error, null);

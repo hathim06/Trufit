@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Mohid</title>
+    <title>Admin Dashboard - Trufit</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 80px;
             --sidebar-bg: #000000;
             --sidebar-text: #AAAAAA;
             --sidebar-active: #FFFFFF;
@@ -19,7 +21,7 @@
             --text-muted: #6B7280;
             --accent: #000000;
             --border: #E5E7EB;
-            --transition: all 0.3s ease;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -38,17 +40,63 @@
 
         /* Sidebar Styling */
         .sidebar {
-            width: 260px;
+            width: var(--sidebar-width);
             background-color: var(--sidebar-bg);
             color: var(--sidebar-text);
-            padding: 30px 20px;
+            padding: 30px 15px;
             display: flex;
             flex-direction: column;
             position: fixed;
             height: 100vh;
             left: 0;
             top: 0;
-            z-index: 1000;
+            z-index: 1001;
+            transition: var(--transition);
+            overflow-x: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+            padding: 30px 0;
+        }
+
+        .sidebar.collapsed .sidebar-logo-container {
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .sidebar-logo div,
+        .sidebar.collapsed .sidebar-logo span,
+        .sidebar.collapsed .nav-text,
+        .sidebar.collapsed .logout-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .nav-link {
+            justify-content: center;
+            padding: 12px 0;
+            gap: 0;
+        }
+
+        .sidebar.collapsed .sidebar-logo-container {
+            margin-bottom: 30px;
+        }
+
+        .sidebar.collapsed .logout-btn {
+            justify-content: center;
+            gap: 0;
+        }
+
+        .sidebar.collapsed .sidebar-logo-container {
+            justify-content: center !important;
+        }
+
+        .sidebar-logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 0 10px;
+            transition: var(--transition);
         }
 
         .sidebar-logo {
@@ -133,17 +181,81 @@
 
         /* Main Content Styling */
         .main-content {
-            margin-left: 260px;
+            margin-left: var(--sidebar-width);
             flex-grow: 1;
-            padding: 40px;
-            width: calc(100% - 260px);
+            padding: 30px;
+            width: calc(100% - var(--sidebar-width));
+            transition: var(--transition);
+        }
+
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
         }
 
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
+            background: #FFF;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .toggle-btn:hover {
+            background-color: #F3F4F6;
+        }
+
+        .sidebar .toggle-btn {
+            color: #FFFFFF;
+        }
+
+        .sidebar .toggle-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-logout {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #EF4444;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .header-logout:hover {
+            background: #FEF2F2;
         }
 
         .page-title {
@@ -363,9 +475,22 @@
 
         @media (max-width: 768px) {
             .sidebar {
-                display: none;
+                left: -100%;
+            }
+            .sidebar.mobile-active {
+                left: 0;
+                width: var(--sidebar-width);
+            }
+            .sidebar.mobile-active .nav-text,
+            .sidebar.mobile-active .sidebar-logo div,
+            .sidebar.mobile-active .sidebar-logo span {
+                display: block;
             }
             .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            .main-content.expanded {
                 margin-left: 0;
                 width: 100%;
             }
@@ -374,4 +499,27 @@
             }
         }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('.main-content');
+            
+            // Restore state from localStorage
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed && window.innerWidth > 768) {
+                sidebar.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+            }
+
+            window.toggleSidebar = function() {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.toggle('mobile-active');
+                } else {
+                    sidebar.classList.toggle('collapsed');
+                    mainContent.classList.toggle('expanded');
+                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+                }
+            };
+        });
+    </script>
 </head>

@@ -162,20 +162,20 @@
                                 <% } %>
                         </div>
                         <div class="forgot-link">
-                            <a href="/users/forgot-password">Forgot password?</a>
+                            <a href="/admin/adminForgotPassword">Forgot password?</a>
                         </div>
                         <button type="submit" class="submit-btn">Continue</button>
                     </form>
-
-                    <div class="google-btn-wrapper">
-                        <a href="/auth/google" class="google-btn">
-                            <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google">
-                            Continue with Google
-                        </a>
-                    </div>
         </div>
     </main>
 
+    <script>
+        window.onpageshow = function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        };
+    </script>
 </body>
 
 </html>

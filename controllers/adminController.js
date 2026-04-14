@@ -26,7 +26,13 @@ const login = async (req, res) => {
         }
 
         req.session.admin = admin._id;
-        return res.redirect('/admin/dashboard');
+        req.session.save((err) => {
+            if (err) {
+                console.error("Session Save Error:", err);
+                return res.redirect('/admin/login?message=Session error');
+            }
+            res.redirect('/admin/dashboard');
+        });
     } catch (error) {
         console.error("Admin Login Error:", error);
         res.redirect('/admin/login?message=An error occurred during login');
@@ -35,8 +41,14 @@ const login = async (req, res) => {
 
 const logout = async (req, res) => {
     try {
-        req.session.destroy();
-        res.redirect('/admin/login');
+        req.session.destroy((err) => {
+            if (err) {
+                console.log(err);
+                res.redirect('/admin/login');
+            } else {
+                res.redirect('/admin/login');
+            }
+        });
     } catch (error) {
         console.log(error);
         res.redirect('/admin/login');
@@ -45,7 +57,8 @@ const logout = async (req, res) => {
 
 const dashboard = async (req, res) => {
     try {
-        res.render('admin/dashboard');
+        const customerCount = await User.countDocuments({ isAdmin: false });
+        res.render('admin/dashboard', { customerCount });
     } catch (error) {
         console.log(error);
         res.redirect('/admin/login');
@@ -127,56 +140,56 @@ const deleteUser = async (req, res) => {
     }
 }
 
-const loadAddUser = async (req, res) => {
-    try {
-        res.render('admin/add-user', { message: req.query.message });
-    } catch (error) {
-        console.log(error);
-        res.redirect('/admin/users');
-    }
-}
+// const loadAddUser = async (req, res) => {
+//     try {
+//         res.render('admin/add-user', { message: req.query.message });
+//     } catch (error) {
+//         console.log(error);
+//         res.redirect('/admin/users');
+//     }
+// }
 
-const addUser = async (req, res) => {
-    try {
-        const result = await adminService.addUserService(req.body);
-        if (result.success) {
-            res.redirect('/admin/users?success=User added successfully');
-        } else {
-            res.redirect(`/admin/users/add?message=${result.message}`);
-        }
-    } catch (error) {
-        console.log(error);
-        res.redirect('/admin/users/add?message=Something went wrong');
-    }
-}
+// const addUser = async (req, res) => {
+//     try {
+//         const result = await adminService.addUserService(req.body);
+//         if (result.success) {
+//             res.redirect('/admin/users?success=User added successfully');
+//         } else {
+//             res.redirect(`/admin/users/add?message=${result.message}`);
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         res.redirect('/admin/users/add?message=Something went wrong');
+//     }
+// }
 
-const loadEditUser = async (req, res) => {
-    try {
-        const result = await adminService.getUserByIdService(req.params.id);
-        if (result.success) {
-            res.render('admin/edit-user', { user: result.user, message: req.query.message });
-        } else {
-            res.redirect('/admin/users?message=User not found');
-        }
-    } catch (error) {
-        console.log(error);
-        res.redirect('/admin/users');
-    }
-}
+// const loadEditUser = async (req, res) => {
+//     try {
+//         const result = await adminService.getUserByIdService(req.params.id);
+//         if (result.success) {
+//             res.render('admin/edit-user', { user: result.user, message: req.query.message });
+//         } else {
+//             res.redirect('/admin/users?message=User not found');
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         res.redirect('/admin/users');
+//     }
+// }
 
-const updateUser = async (req, res) => {
-    try {
-        const result = await adminService.editUserService(req.params.id, req.body);
-        if (result.success) {
-            res.redirect('/admin/users?success=User updated successfully');
-        } else {
-            res.redirect(`/admin/users/edit/${req.params.id}?message=${result.message}`);
-        }
-    } catch (error) {
-        console.log(error);
-        res.redirect('/admin/users');
-    }
-}
+// const updateUser = async (req, res) => {
+//     try {
+//         const result = await adminService.editUserService(req.params.id, req.body);
+//         if (result.success) {
+//             res.redirect('/admin/users?success=User updated successfully');
+//         } else {
+//             res.redirect(`/admin/users/edit/${req.params.id}?message=${result.message}`);
+//         }
+//     } catch (error) {
+//         console.log(error);
+//         res.redirect('/admin/users');
+//     }
+// }
 
 module.exports = {
     login,
@@ -187,8 +200,8 @@ module.exports = {
     blockUser,
     unblockUser,
     deleteUser,
-    loadAddUser,
-    addUser,
-    loadEditUser,
-    updateUser
+    // loadAddUser,
+    // addUser,
+    // loadEditUser,
+    // updateUser
 }

@@ -15,16 +15,17 @@ app.use(session({
 
 app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.locals.user = req.session.user || null;
+    res.locals.admin = req.session.admin || null;
     next();
 });
-
-// Connect to Database
 connectDB();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(passport.initialize());
-// app.use(passport.session());
 
 const userRoute = require('./Routes/userRoute');
 const adminRoute = require('./Routes/adminRoute');
@@ -32,7 +33,6 @@ app.use('/users', userRoute);
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoute);
 
-// Set static folders
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.set('view engine', 'ejs');

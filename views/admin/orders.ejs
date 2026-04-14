@@ -13,9 +13,7 @@
     <%- include('partials/sidebar', { activePage: 'orders' }) %>
 
     <main class="main-content">
-        <header class="page-header">
-            <h1 class="page-title">ORDER MANAGEMENT</h1>
-        </header>
+        <%- include('./partials/adminHeader', { title: 'ORDER MANAGEMENT' }) %>
 
         <div class="filter-bar">
             <input type="text" class="search-input" placeholder="Search Order...">

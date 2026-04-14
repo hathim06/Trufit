@@ -259,18 +259,21 @@
 
                         </div>
 
-                        <form class="edit-form" action="/users/edit-profile" method="POST">
+                        <form class="edit-form" action="/users/edit-profile" method="POST" id="profileForm">
                             <div class="form-group">
                                 <label>First Name</label>
-                                <input type="text" name="firstName" value="<%= user.firstName %>">
+                                <span id="firstName-error" class="error-message"></span>
+                                <input type="text" name="firstName" id="firstName" value="<%= user.firstName %>">
                             </div>
                             <div class="form-group">
                                 <label>Last Name</label>
-                                <input type="text" name="lastName" value="<%= user.lastName %>">
+                                <span id="lastName-error" class="error-message"></span>
+                                <input type="text" name="lastName" id="lastName" value="<%= user.lastName %>">
                             </div>
                             <div class="form-group full-width">
                                 <label>Mobile</label>
-                                <input type="text" name="mobile" value="<%= user.mobile || '' %>">
+                                <span id="mobile-error" class="error-message"></span>
+                                <input type="text" name="mobile" id="mobile" value="<%= user.mobile || '' %>">
                             </div>
                             <div class="form-group full-width">
                                 <label>Email</label>
@@ -280,21 +283,27 @@
                             <!-- New Email Input -->
                             <div class="form-group full-width">
                                 <label style="color: #4F46E5; font-weight: 700;">CHANGE EMAIL</label>
-                                <div style="display: flex; gap: 10px;">
-                                    <input type="email" id="newEmail" placeholder="Enter new email" style="flex: 1;">
-                                    <button type="button" class="otp-btn" onclick="sendOTP()"
-                                        style="margin-top: 0;">Send OTP</button>
+                                <div style="display: flex; flex-direction: column; gap: 5px;">
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="email" id="newEmail" placeholder="Enter new email" style="flex: 1;">
+                                        <button type="button" class="otp-btn" onclick="sendOTP()"
+                                            style="margin-top: 0;">Send OTP</button>
+                                    </div>
+                                    <span id="newEmail-error" class="error-message"></span>
                                 </div>
                             </div>
 
                             <!-- OTP Input (Hidden by default) -->
                             <div id="otpSection" style="display:none;">
                                 <label>Enter 4-Digit OTP</label>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="text" id="emailOtp" placeholder="XXXX" maxlength="4"
-                                        style="width: 100px; text-align: center; letter-spacing: 5px; font-weight: 700;">
-                                    <button type="button" class="otp-btn" onclick="verifyOTP()"
-                                        style="margin-top: 0; background: #059669;">Verify & Update</button>
+                                <div style="display: flex; flex-direction: column; gap: 5px;">
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <input type="text" id="emailOtp" placeholder="XXXX" maxlength="4"
+                                            style="width: 100px; text-align: center; letter-spacing: 5px; font-weight: 700;">
+                                        <button type="button" class="otp-btn" onclick="verifyOTP()"
+                                            style="margin-top: 0; background: #059669;">Verify & Update</button>
+                                    </div>
+                                    <span id="emailOtp-error" class="error-message"></span>
                                 </div>
                                 <p style="font-size: 12px; color: #6B7280; margin-top: 10px;">Please check your inbox
                                     for the verification code.</p>
@@ -318,19 +327,34 @@
                                             <% if (!user.isGoogleAuth) { %>
                                                 <div class="form-group full-width">
                                                     <label>Current Password</label>
-                                                    <input type="password" id="currentPassword"
-                                                        placeholder="Enter current password">
+                                                    <span id="currentPassword-error" class="error-message"></span>
+                                                    <div class="password-wrapper">
+                                                        <input type="password" id="currentPassword" placeholder="Enter current password">
+                                                        <span class="toggle-password" onclick="togglePassword('currentPassword')">
+                                                            <i data-lucide="eye"></i>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <% } %>
                                                     <div class="form-group">
                                                         <label>New Password</label>
-                                                        <input type="password" id="newPassword"
-                                                            placeholder="Enter new password">
+                                                        <span id="newPassword-error" class="error-message"></span>
+                                                        <div class="password-wrapper">
+                                                            <input type="password" id="newPassword" placeholder="Enter new password">
+                                                            <span class="toggle-password" onclick="togglePassword('newPassword')">
+                                                                <i data-lucide="eye"></i>
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                     <div class="form-group">
                                                         <label>Confirm New Password</label>
-                                                        <input type="password" id="confirmPassword"
-                                                            placeholder="Confirm new password">
+                                                        <span id="confirmPassword-error" class="error-message"></span>
+                                                        <div class="password-wrapper">
+                                                            <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                                                            <span class="toggle-password" onclick="togglePassword('confirmPassword')">
+                                                                <i data-lucide="eye"></i>
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                     <div class="full-width">
                                                         <button type="button" class="otp-btn" onclick="updatePassword()"
@@ -356,15 +380,95 @@
                 <script>
                     lucide.createIcons();
 
-                    async function sendOTP() {
-                        const newEmail = document.getElementById('newEmail').value;
-                        if (!newEmail || !newEmail.includes('@')) {
-                            return Swal.fire({
-                                icon: 'error',
-                                title: 'Invalid Email',
-                                text: 'Please enter a valid email address.'
+                    function togglePassword(inputId) {
+                        const input = document.getElementById(inputId);
+                        const icon = input.nextElementSibling.querySelector('i');
+                        
+                        if (input.type === 'password') {
+                            input.type = 'text';
+                            icon.setAttribute('data-lucide', 'eye-off');
+                        } else {
+                            input.type = 'password';
+                            icon.setAttribute('data-lucide', 'eye');
+                        }
+                        lucide.createIcons();
+                    }
+
+                    // Validation Helper
+                    function showError(id, message) {
+                        const errorSpan = document.getElementById(id + '-error');
+                        const input = document.getElementById(id);
+                        if (errorSpan) {
+                            errorSpan.textContent = message;
+                            errorSpan.style.display = 'block';
+                        }
+                        if (input) {
+                            input.style.borderColor = '#FF0000';
+                        }
+                    }
+
+                    function hideError(id) {
+                        const errorSpan = document.getElementById(id + '-error');
+                        const input = document.getElementById(id);
+                        if (errorSpan) {
+                            errorSpan.style.display = 'none';
+                        }
+                        if (input) {
+                            input.style.borderColor = '#E5E7EB';
+                        }
+                    }
+
+                    // Real-time validation for main profile
+                    const profileInputs = ['firstName', 'lastName', 'mobile'];
+                    profileInputs.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.addEventListener('input', () => {
+                                if (id === 'mobile') {
+                                    if (!/^[6-9]\d{9}$/.test(el.value)) {
+                                        showError(id, 'Enter a valid 10-digit mobile number');
+                                    } else {
+                                        hideError(id);
+                                    }
+                                } else {
+                                    if (el.value.trim().length < 2) {
+                                        showError(id, 'Must be at least 2 characters');
+                                    } else {
+                                        hideError(id);
+                                    }
+                                }
                             });
                         }
+                    });
+
+                    document.getElementById('profileForm').addEventListener('submit', function(e) {
+                        let isValid = true;
+                        profileInputs.forEach(id => {
+                            const el = document.getElementById(id);
+                            if (id === 'mobile') {
+                                if (!/^[6-9]\d{9}$/.test(el.value)) {
+                                    showError(id, 'Enter a valid 10-digit mobile number');
+                                    isValid = false;
+                                }
+                            } else {
+                                if (el.value.trim().length < 2) {
+                                    showError(id, 'Must be at least 2 characters');
+                                    isValid = false;
+                                }
+                            }
+                        });
+                        if (!isValid) e.preventDefault();
+                    });
+
+                    async function sendOTP() {
+                        const newEmail = document.getElementById('newEmail').value;
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        
+                        if (!emailRegex.test(newEmail)) {
+                            showError('newEmail', 'Please enter a valid email address');
+                            return;
+                        }
+                        hideError('newEmail');
 
                         // Show loading state
                         Swal.fire({
@@ -402,9 +506,11 @@
 
                     async function verifyOTP() {
                         const otp = document.getElementById('emailOtp').value;
-                        if (otp.length !== 4) {
-                            return Swal.fire('Error', 'Please enter the 4-digit OTP', 'error');
+                        if (!/^\d{4}$/.test(otp)) {
+                            showError('emailOtp', 'Please enter the 4-digit OTP');
+                            return;
                         }
+                        hideError('emailOtp');
 
                         try {
                             const response = await fetch('/users/change-email-verify', {
@@ -432,23 +538,36 @@
                     async function updatePassword() {
                         const newPassword = document.getElementById('newPassword').value;
                         const confirmPassword = document.getElementById('confirmPassword').value;
-                        const isGoogleAuth = document.getElementById('passwordSection').dataset.isGoogle === 'true';
+                        const passwordSection = document.getElementById('passwordSection');
+                        const isGoogleAuth = passwordSection.dataset.isGoogle === 'true';
                         let currentPassword = null;
+                        let isValid = true;
 
                         if (!isGoogleAuth) {
                             currentPassword = document.getElementById('currentPassword').value;
                             if (!currentPassword) {
-                                return Swal.fire('Error', 'Please enter your current password', 'error');
+                                showError('currentPassword', 'Please enter your current password');
+                                isValid = false;
+                            } else {
+                                hideError('currentPassword');
                             }
                         }
 
-                        if (!newPassword || !confirmPassword) {
-                            return Swal.fire('Error', 'Please fill in all password fields', 'error');
+                        if (newPassword.length < 8) {
+                            showError('newPassword', 'Password must be at least 8 characters');
+                            isValid = false;
+                        } else {
+                            hideError('newPassword');
                         }
 
                         if (newPassword !== confirmPassword) {
-                            return Swal.fire('Error', 'New passwords do not match', 'error');
+                            showError('confirmPassword', 'Passwords do not match');
+                            isValid = false;
+                        } else {
+                            hideError('confirmPassword');
                         }
+
+                        if (!isValid) return;
 
                         try {
                             const response = await fetch('/users/update-password', {

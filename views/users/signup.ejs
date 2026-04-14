@@ -142,59 +142,64 @@
     <main class="auth-container">
         <div class="auth-box">
             <h1>Sign Up</h1>
-            <form method="post" action="/users/signup">
+            <form method="post" action="/users/signup" id="signupForm">
                 <div class="form-grid">
                     <div class="form-group">
                         <label>First Name</label>
-                        <input type="text" name="firstName" placeholder="First Name" required>
+                        <span id="firstName-error" class="error-message"></span>
+                        <input type="text" name="firstName" id="firstName" placeholder="First Name" required>
                         <% if (message && message.toLowerCase().includes('first name')) { %>
-                            <small style="color:red; font-size: 11px;">
-                                <%= message %>
-                            </small>
-                            <% } %>
+                            <small style="color:red; font-size: 11px;"><%= message %></small>
+                        <% } %>
                     </div>
                     <div class="form-group">
                         <label>Last Name</label>
-                        <input type="text" name="lastName" placeholder="Last Name" required>
+                        <span id="lastName-error" class="error-message"></span>
+                        <input type="text" name="lastName" id="lastName" placeholder="Last Name" required>
                         <% if (message && message.toLowerCase().includes('last name')) { %>
-                            <small style="color:red; font-size: 11px;">
-                                <%= message %>
-                            </small>
-                            <% } %>
+                            <small style="color:red; font-size: 11px;"><%= message %></small>
+                        <% } %>
                     </div>
                     <div class="form-group full-width">
                         <label>Email Address</label>
-                        <input type="email" name="email" placeholder="Enter your email" required>
+                        <span id="email-error" class="error-message"></span>
+                        <input type="email" name="email" id="email" placeholder="Enter your email" required>
                         <% if (message && message.toLowerCase().includes('email')) { %>
-                            <small style="color:red; font-size: 11px;">
-                                <%= message %>
-                            </small>
-                            <% } %>
+                            <small style="color:red; font-size: 11px;"><%= message %></small>
+                        <% } %>
                     </div>
                     <div class="form-group full-width">
                         <label>Password</label>
-                        <input type="password" name="password" placeholder="Create a password" required>
+                        <span id="password-error" class="error-message"></span>
+                        <div class="password-wrapper">
+                            <input type="password" name="password" id="password" placeholder="Create a password" required>
+                            <span class="toggle-password" onclick="togglePassword('password')">
+                                <i data-lucide="eye"></i>
+                            </span>
+                        </div>
                         <% if (message && message.toLowerCase().includes('password')) { %>
-                            <small style="color:red; font-size: 11px;">
-                                <%= message %>
-                            </small>
-                            <% } %>
+                            <small style="color:red; font-size: 11px;"><%= message %></small>
+                        <% } %>
                     </div>
                     <div class="form-group full-width">
                         <label>Confirm Password</label>
-                        <input type="password" name="confirmPassword" placeholder="Confirm password" required>
+                        <span id="confirmPassword-error" class="error-message"></span>
+                        <div class="password-wrapper">
+                            <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm password" required>
+                            <span class="toggle-password" onclick="togglePassword('confirmPassword')">
+                                <i data-lucide="eye"></i>
+                            </span>
+                        </div>
                         <% if (message && message.toLowerCase().includes('match')) { %>
-                            <small style="color:red; font-size: 11px;">
-                                <%= message %>
-                            </small>
-                            <% } %>
+                            <small style="color:red; font-size: 11px;"><%= message %></small>
+                        <% } %>
                     </div>
                     <div class="form-group full-width">
                         <label>Referral Code (Optional)</label>
                         <input type="text" name="referalCode" placeholder="Enter referral code">
                     </div>
                 </div>
-                <button type="submit" class="submit-btn">Create Account</button>
+                <button type="submit" class="submit-btn" id="submitBtn">Create Account</button>
             </form>
 
             <div class="google-btn-wrapper">
@@ -209,6 +214,109 @@
             </div>
         </div>
     </main>
+
+    <script>
+        lucide.createIcons();
+
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                input.type = 'password';
+                icon.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        const form = document.getElementById('signupForm');
+        const inputs = {
+            firstName: document.getElementById('firstName'),
+            lastName: document.getElementById('lastName'),
+            email: document.getElementById('email'),
+            password: document.getElementById('password'),
+            confirmPassword: document.getElementById('confirmPassword')
+        };
+
+        const errors = {
+            firstName: document.getElementById('firstName-error'),
+            lastName: document.getElementById('lastName-error'),
+            email: document.getElementById('email-error'),
+            password: document.getElementById('password-error'),
+            confirmPassword: document.getElementById('confirmPassword-error')
+        };
+
+        function validateField(name, value) {
+            let isValid = true;
+            let message = '';
+
+            switch (name) {
+                case 'firstName':
+                case 'lastName':
+                    if (value.trim() === '') {
+                        isValid = false;
+                        message = 'This field is required';
+                    } else if (value.trim().length < 2) {
+                        isValid = false;
+                        message = 'Must be at least 2 characters';
+                    }
+                    break;
+                case 'email':
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(value)) {
+                        isValid = false;
+                        message = 'Enter a valid email address';
+                    }
+                    break;
+                case 'password':
+                    if (value.length < 8) {
+                        isValid = false;
+                        message = 'Password must be at least 8 characters';
+                    }
+                    break;
+                case 'confirmPassword':
+                    const password = document.getElementById('password').value;
+                    if (value !== password) {
+                        isValid = false;
+                        message = 'Passwords do not match';
+                    }
+                    break;
+            }
+
+            if (!isValid) {
+                errors[name].textContent = message;
+                errors[name].style.display = 'block';
+                inputs[name].style.borderColor = '#FF0000';
+            } else {
+                errors[name].style.display = 'none';
+                inputs[name].style.borderColor = '#ddd';
+            }
+
+            return isValid;
+        }
+
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', () => {
+                validateField(key, inputs[key].value);
+            });
+        });
+
+        form.addEventListener('submit', (e) => {
+            let isFormValid = true;
+            Object.keys(inputs).forEach(key => {
+                if (!validateField(key, inputs[key].value)) {
+                    isFormValid = false;
+                }
+            });
+
+            if (!isFormValid) {
+                e.preventDefault();
+            }
+        });
+    </script>
 
 </body>
 

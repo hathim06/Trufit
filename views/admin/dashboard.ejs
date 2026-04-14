@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <style>
     .stats-grid {
@@ -44,9 +45,7 @@
 
         <%- include('./partials/sidebar', { activePage: 'dashboard' }) %>
             <main class="main-content">
-                <header class="page-header">
-                    <h1 class="page-title">ADMIN DASHBOARD</h1>
-                </header>
+                <%- include('./partials/adminHeader', { title: 'ADMIN DASHBOARD' }) %>
 
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -79,12 +78,19 @@
                     <div class="stat-card">
                         <div class="stat-info">
                             <h3>Customers</h3>
-                            <div class="value">922</div>
+                            <div class="value"><%= customerCount %></div>
                         </div>
                         <div class="stat-icon">
                             <i data-lucide="users"></i>
                         </div>
                     </div>
+                </div>
+
+                <div class="table-container" style="margin-top: 30px; margin-bottom: 30px;">
+                    <div class="table-header">
+                        <h2>Revenue Overview</h2>
+                    </div>
+                    <canvas id="revenueOverviewChart" height="100"></canvas>
                 </div>
 
                 <div class="table-container">
@@ -124,6 +130,27 @@
 
             <script>
                 lucide.createIcons();
+
+                // Revenue Overview Chart
+                const revenueCtx = document.getElementById('revenueOverviewChart').getContext('2d');
+                new Chart(revenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        datasets: [{
+                            label: 'Revenue',
+                            data: [20, 30, 45, 25, 60, 15, 40, 95, 20, 35, 10, 50],
+                            borderColor: '#B4A7FF',
+                            tension: 0.4,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
             </script>
 
     </body>

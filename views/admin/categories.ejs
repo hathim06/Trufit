@@ -3,10 +3,10 @@
     <%- include('partials/sidebar', { activePage: 'categories' }) %>
 
     <main class="main-content">
-        <header class="page-header">
-            <h1 class="page-title">CATEGORY MANAGEMENT</h1>
+        <%- include('./partials/adminHeader', { title: 'CATEGORY MANAGEMENT' }) %>
+        <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
             <button class="btn btn-primary" onclick="location.href='/admin/add-category'">ADD CATEGORY</button>
-        </header>
+        </div>
 
         <div class="filter-bar">
             <input type="text" class="search-input" placeholder="Search Category...">
