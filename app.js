@@ -10,7 +10,7 @@ const authRoutes = require('./Routes/auth');
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: false
 }));
 
 app.use((req, res, next) => {
@@ -29,20 +29,40 @@ app.use(passport.initialize());
 
 const userRoute = require('./Routes/userRoute');
 const adminRoute = require('./Routes/adminRoute');
+const productRoute = require('./Routes/productRoute');
+const productModel = require('./models/productModel');
+const userAuth = require('./Middlewares/userAuth');
+
 app.use('/users', userRoute);
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoute);
+app.use('/admin', productRoute);
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.get('/', (req, res) => {
-    res.render('users/home', {
-        user: req.session.user
-    });
+app.get('/', async (req, res) => {
+    try {
+        const products = await productModel.find({
+            showOnHomepage: true,
+            isDeleted: false
+        }).sort({ createdAt: -1 });
+
+        res.render('users/home', {
+            user: req.session.user,
+            products: products
+        });
+    } catch (error) {
+        console.log("Home Page Load Error:", error);
+        res.render('users/home', {
+            user: req.session.user,
+            products: []
+        });
+    }
 });
+
 
 app.use((req, res, next) => {
     if (

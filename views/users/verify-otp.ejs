@@ -139,9 +139,7 @@
             <h1>Enter OTP</h1>
             <p class="instruction">We have sent otp to your email address</p>
 
-            <% if (message) { %>
-                <span class="error-message"><%= message %></span>
-            <% } %>
+            <%- include('partials/alerts') %>
 
             <form action="/users/verify-otp" method="POST">
                 <div class="otp-inputs">

@@ -148,7 +148,7 @@
                         <label>First Name</label>
                         <span id="firstName-error" class="error-message"></span>
                         <input type="text" name="firstName" id="firstName" placeholder="First Name" required>
-                        <% if (message && message.toLowerCase().includes('first name')) { %>
+                        <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('first name')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
                         <% } %>
                     </div>
@@ -156,7 +156,7 @@
                         <label>Last Name</label>
                         <span id="lastName-error" class="error-message"></span>
                         <input type="text" name="lastName" id="lastName" placeholder="Last Name" required>
-                        <% if (message && message.toLowerCase().includes('last name')) { %>
+                        <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('last name')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
                         <% } %>
                     </div>
@@ -164,7 +164,7 @@
                         <label>Email Address</label>
                         <span id="email-error" class="error-message"></span>
                         <input type="email" name="email" id="email" placeholder="Enter your email" required>
-                        <% if (message && message.toLowerCase().includes('email')) { %>
+                        <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('email')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
                         <% } %>
                     </div>
@@ -177,7 +177,7 @@
                                 <i data-lucide="eye"></i>
                             </span>
                         </div>
-                        <% if (message && message.toLowerCase().includes('password')) { %>
+                        <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('password')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
                         <% } %>
                     </div>
@@ -190,7 +190,7 @@
                                 <i data-lucide="eye"></i>
                             </span>
                         </div>
-                        <% if (message && message.toLowerCase().includes('match')) { %>
+                        <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('match')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
                         <% } %>
                     </div>
@@ -215,6 +215,7 @@
         </div>
     </main>
 
+    <%- include('partials/alerts') %>
     <script>
         lucide.createIcons();
 

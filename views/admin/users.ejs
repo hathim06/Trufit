@@ -88,7 +88,9 @@
                                     </td>
 
                                     <td style="display: flex; gap: 10px;">
-                                        <!-- <a href="/admin/users/edit/<%= user._id %>" class="btn-action" style="background: #4F46E5; color: #fff; text-decoration: none;">EDIT</a> -->
+                                        <a href="/admin/users/view/<%= user._id %>" class="btn-action" style="background: #10B981; color: #fff; text-decoration: none; display: flex; align-items: center; justify-content: center; padding: 8px;">
+                                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                                        </a>
 
                                         <button onclick="toggleBlock('<%= user._id %>', '<%= user.isBlocked %>')"
                                             class="btn-action <%= user.isBlocked ? 'btn-success' : 'btn-danger' %>">

@@ -1,0 +1,70 @@
+<script>
+    (function() {
+        // Function to get URL parameters
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // 1. Check for messages passed via EJS locals (res.render)
+        const ejsMessage = "<%= typeof message !== 'undefined' ? message : '' %>";
+        const ejsSuccess = "<%= typeof success !== 'undefined' ? success : '' %>";
+        const ejsError = "<%= typeof error !== 'undefined' ? error : '' %>";
+
+        // 2. Check for messages passed via URL query parameters (res.redirect)
+        const urlSuccess = getQueryParam('success');
+        const urlMessage = getQueryParam('message');
+        const urlError = getQueryParam('error');
+
+        // Priority logic: EJS locals first, then URL params
+        const finalSuccess = ejsSuccess || urlSuccess;
+        const finalMessage = ejsMessage || urlMessage;
+        const finalError = ejsError || urlError;
+
+        if (typeof Swal !== 'undefined') {
+            // Handle Success
+            if (finalSuccess) {
+                let title = 'Success!';
+                let text = finalSuccess;
+
+                // Customizable titles for specific keys
+                if (finalSuccess === "registered") {
+                    title = 'Registration Successful!';
+                    text = 'Your account has been created. Please login.';
+                } else if (finalSuccess === "reset-password") {
+                    title = 'Password Reset!';
+                    text = 'Your password has been changed. Please login.';
+                } else if (finalSuccess === "verified") {
+                    title = 'Verified!';
+                    text = 'Your account has been verified successfully.';
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: title,
+                    text: text,
+                    showConfirmButton: true,
+                    confirmButtonColor: '#000',
+                    timer: 3000
+                });
+            } 
+            // Handle Error/Message
+            else if (finalError || finalMessage) {
+                const isError = finalError || (finalMessage && (finalMessage.toLowerCase().includes('failed') || finalMessage.toLowerCase().includes('error') || finalMessage.toLowerCase().includes('invalid') || finalMessage.toLowerCase().includes('blocked')));
+                
+                Swal.fire({
+                    icon: isError ? 'error' : 'info',
+                    title: isError ? 'Oops...' : 'Notice',
+                    text: finalError || finalMessage,
+                    confirmButtonColor: '#000'
+                });
+            }
+        }
+        
+        // Clean up URL parameters without refreshing the page
+        if (urlSuccess || urlMessage || urlError) {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    })();
+</script>

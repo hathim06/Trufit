@@ -191,11 +191,10 @@
                                     <a href="/users/address/edit/<%= address._id %>" class="edit-link"
                                         style="color: #3B82F6; text-decoration: none; font-size: 14px; font-weight: 600;">Edit</a>
 
-                                    <form action="/users/address/delete/<%= address._id %>" method="POST"
-                                        style="margin: 0;">
-                                        <button type="submit" class="delete-btn"
-                                            style="background: none; border: none; color: #EF4444; font-size: 14px; font-weight: 600; cursor: pointer; padding: 0;">Delete</button>
-                                    </form>
+                                    <button type="button" onclick="confirmDeleteAddress('<%= address._id %>')"
+                                        style="background: none; border: none; color: #EF4444; font-size: 14px; font-weight: 600; cursor: pointer; padding: 0;">Delete</button>
+
+                                    <form id="deleteForm-<%= address._id %>" action="/users/address/delete/<%= address._id %>" method="POST" style="display: none;"></form>
 
                                     <% if (!address.isDefault) { %>
                                         <form action="/users/address/default/<%= address._id %>" method="POST"
@@ -220,9 +219,25 @@
 
             <%- include('partials/footer') %>
 
+                <%- include('partials/alerts') %>
                 <script>
                     lucide.createIcons();
+
+                    function confirmDeleteAddress(addressId) {
+                        Swal.fire({
+                            title: 'Are you sure?',
+                            text: "You won't be able to revert this!",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#000',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Yes, delete it!'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                document.getElementById('deleteForm-' + addressId).submit();
+                            }
+                        })
+                    }
                 </script>
     </body>
-
 </html>

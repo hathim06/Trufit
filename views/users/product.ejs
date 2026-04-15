@@ -101,11 +101,55 @@
             cursor: pointer;
             font-size: 14px;
             transition: var(--transition);
+            display: inline-block;
         }
 
-        .size-item:hover, .size-item.active {
+        .size-item:hover,
+        .size-item.active {
             border-color: #000;
-            background: #F3F4F6;
+            background-color: #000;
+            color: #FFF;
+        }
+
+        .color-item:hover,
+        .color-item.active {
+            border-color: #000;
+            transform: scale(1.1);
+        }
+
+        .color-item {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid #E5E7EB;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .thumbnail-list {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .thumb-item {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #F3F4F6;
+            border-radius: 8px;
+            cursor: pointer;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .thumb-item:hover, .thumb-item.active {
+            border-color: #000;
+        }
+
+        .thumb-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .color-grid {
@@ -122,7 +166,8 @@
             transition: var(--transition);
         }
 
-        .color-item:hover, .color-item.active {
+        .color-item:hover,
+        .color-item.active {
             border-color: #000;
             transform: scale(1.1);
         }
@@ -175,12 +220,12 @@
         }
 
         .btn-buy {
-            background: var(--buy-now);
+            background: #000000;
             color: #FFF;
         }
 
         .btn-cart {
-            background: var(--add-to-cart);
+            background: #E5E7EB;
             color: #000;
         }
 
@@ -198,7 +243,8 @@
             gap: 80px;
         }
 
-        .info-left h2, .info-right h2 {
+        .info-left h2,
+        .info-right h2 {
             font-size: 16px;
             font-weight: 700;
             text-transform: uppercase;
@@ -433,211 +479,370 @@
 
         /* Responsive */
         @media (max-width: 992px) {
-            .product-section, .info-section, .reviews-grid, .product-grid {
+
+            .product-section,
+            .info-section,
+            .reviews-grid,
+            .product-grid {
                 grid-template-columns: 1fr;
             }
+
             .header .search-bar {
                 width: 250px;
             }
         }
     </style>
-</head>
+    </head>
 
-<body>
-<%- include('partials/header') %>
+    <body>
+        <%- include('partials/header') %>
 
-    <main class="container">
-        <!-- Main Product Section -->
-        <section class="product-section">
-            <div class="product-gallery">
-                <div class="main-image">
-                    <img src="../../public/apple_smart_1.png" alt="Apple smart I">
-                </div>
-            </div>
-
-            <div class="product-info">
-                <h1>Apple smart I <i data-lucide="heart" class="wishlist-heart"></i></h1>
-                <div class="price-row">
-                    <span class="current-price">₹27.99</span>
-                    <span class="old-price">₹34.00</span>
-                    <span class="discount">20% off</span>
-                </div>
-                <p class="stock-status">In Stock</p>
-
-                <div class="option-group">
-                    <p class="option-label">Size</p>
-                    <div class="size-grid">
-                        <div class="size-item">247</div>
-                        <div class="size-item active">3.2</div>
-                        <div class="size-item">4.0</div>
-                        <div class="size-item">5</div>
-                        <div class="size-item">5.0</div>
-                    </div>
-                </div>
-
-                <div class="option-group">
-                    <p class="option-label">Colors</p>
-                    <div class="color-grid">
-                        <div class="color-item active" style="background: #000;"></div>
-                        <div class="color-item" style="background: #C49B71;"></div>
-                        <div class="color-item" style="background: #8E8A85;"></div>
-                        <div class="color-item" style="background: #E5E7EB;"></div>
-                        <div class="color-item" style="background: #1D1D35;"></div>
-                    </div>
-                </div>
-
-                <div class="quantity-row">
-                    <div class="quantity-selector">
-                        <button class="qty-btn">-</button>
-                        <input type="text" value="1" class="qty-input">
-                        <button class="qty-btn">+</button>
-                    </div>
-                </div>
-
-                <div class="action-btns">
-                    <button class="btn btn-buy">Buy Now</button>
-                    <button class="btn btn-cart">Add to Cart</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- Information Section -->
-        <section class="info-section">
-            <div class="info-left">
-                <h2>Information</h2>
-                <div class="feature-thumbnails">
-                    <div class="thumbnail-card">
-                        <img src="../../public/apple_smart_1.png" alt="Heart rate">
-                        <p>Get meaningful health insights.</p>
-                    </div>
-                    <div class="thumbnail-card">
-                        <img src="../../public/apple_smart_2.png" alt="Activity">
-                        <p>Track your daily activity and workoute.</p>
-                    </div>
-                    <div class="thumbnail-card">
-                        <img src="../../public/apple_smart_3.png" alt="Detail 1">
-                    </div>
-                    <div class="thumbnail-card">
-                        <img src="../../public/fitbit_max_1.png" alt="Detail 2">
-                    </div>
-                </div>
-            </div>
-
-            <div class="info-right">
-                <h2>Description</h2>
-                <div class="description-text">
-                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ut viverra semper sed tortor. Praesent auctor viverra urna, fringilla bibendum purus sodales sed nisi. Interdum et fames ac ante.</p>
-                    <p>Apple watch Series 7 is above 40 mm in weight and has 3 watches.</p>
-                    <p>The latest watch is 41 mm & 42 mm for All, but 2 watch height is 1.25.</p>
-                    <p>Polyester is the most better quality duct in the now most of quality. Made the polyester was made into several itemized Polyester is just buy into several body and also known for not being breathable. Polyester suits tend to have a shininess about compared with wool and cotton suits This can make this look item cheap.</p>
-                    <p>The texture of which is both firm and breathable. Fabric is a great choice for demonstrated padded and comfortable display sound.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Reviews Section -->
-        <section class="reviews-section">
-            <div class="section-header">
-                <h2>Reviews</h2>
-            </div>
-            <div class="reviews-grid">
-                <!-- Review 1 -->
-                <div class="review-card">
-                    <div class="reviewer-img">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop" alt="Hamza Faizi">
-                    </div>
-                    <div class="review-content">
-                        <h3>Hamza Faizi</h3>
-                        <p>Don’t waste time, just order! This is the best website to purchase smart watches.</p>
-                        <div class="stars">
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
+            <main class="container">
+                <!-- Main Product Section -->
+                <div id="variantData" data-variants='<%- JSON.stringify(variants) %>'></div>
+                <section class="product-section">
+                    <div class="product-gallery">
+                        <div class="main-image">
+                            <% if (product.image && product.image.length > 0) { %>
+                                <img src="<%= product.image[0] %>" alt="<%= product.name %>" id="mainProductImage">
+                            <% } else { %>
+                                <img src="../../public/placeholder.png" alt="No Image" id="mainProductImage">
+                            <% } %>
+                        </div>
+                        <div class="thumbnail-list">
+                            <% if (product.image && product.image.length > 0) { %>
+                                <% product.image.slice(0, 3).forEach((img, index) => { %>
+                                    <div class="thumb-item <%= index === 0 ? 'active' : '' %>" onclick="updateMainImage('<%= img %>', this)">
+                                        <img src="<%= img %>" alt="Thumbnail <%= index + 1 %>">
+                                    </div>
+                                <% }) %>
+                            <% } %>
                         </div>
                     </div>
-                </div>
-                <!-- Review 2 -->
-                <div class="review-card">
-                    <div class="reviewer-img">
-                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop" alt="Hamza Faizi">
+
+                    <div class="product-info">
+                        <h1>
+                            <%= product.name %> <i data-lucide="heart" class="wishlist-heart"></i>
+                        </h1>
+                        <div class="price-row">
+                            <% if (product.offerPrice && product.offerPrice < product.price) { %>
+                                <span class="current-price">₹<%= product.offerPrice %></span>
+                                <span class="old-price">₹<%= product.price %></span>
+                                <span class="discount">
+                                    <%= Math.round((1 - product.offerPrice/product.price) * 100) %>% off
+                                </span>
+                                <% } else { %>
+                                    <span class="current-price">₹<%= product.price %></span>
+                                    <% } %>
+                        </div>
+                        <p class="stock-status">
+                            <%= product.quantity> 0 ? 'In Stock' : 'Out of Stock' %>
+                        </p>
+
+                        <% if (variants && variants.length > 0) { %>
+                            <div class="option-group">
+                                <p class="option-label">Size</p>
+                                <div class="size-grid">
+                                    <% [...new Set(variants.map(v => v.size))].forEach(size => { %>
+                                        <div class="size-item" onclick="selectVariantBySize('<%= size %>', this)">
+                                            <%= size %>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        <% } else if (product.size && Array.isArray(product.size)) { %>
+                            <div class="option-group">
+                                <p class="option-label">Size</p>
+                                <div class="size-grid">
+                                    <% product.size.forEach(size => { %>
+                                        <div class="size-item" onclick="selectManualAttribute('size', '<%= size %>', this)">
+                                            <%= size %>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <% if (variants && variants.length > 0) { %>
+                            <div class="option-group">
+                                <p class="option-label">Colors</p>
+                                <div class="color-grid">
+                                    <% variants.forEach(variant => { %>
+                                        <div class="color-item" 
+                                             data-color="<%- variant.color %>"
+                                             onclick="switchVariant('<%= JSON.stringify(variant) %>', this)"
+                                             title="<%= variant.color %>">
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        <% } else if (product.color && Array.isArray(product.color)) { %>
+                            <div class="option-group">
+                                <p class="option-label">Colors</p>
+                                <div class="color-grid">
+                                    <% product.color.forEach(color => { %>
+                                        <div class="color-item" 
+                                             data-color="<%- color %>" 
+                                             onclick="selectManualAttribute('color', '<%= color %>', this)"
+                                             title="<%= color %>"></div>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <input type="hidden" id="selectedSize" name="selectedSize">
+                        <input type="hidden" id="selectedColor" name="selectedColor">
+
+                                        <div class="quantity-row">
+                                            <div class="quantity-selector">
+                                                <button class="qty-btn" onclick="decrementQty()">-</button>
+                                                <input type="text" value="1" id="productQty" class="qty-input"
+                                                    data-stock="<%= product.quantity %>" readonly>
+                                                <button class="qty-btn" onclick="incrementQty()">+</button>
+                                            </div>
+                                            <span style="font-size: 14px; color: #6B7280;">Only <%= product.quantity %>
+                                                    items left!</span>
+                                        </div>
+
+                                        <div class="action-btns">
+                                            <button class="btn btn-buy btn-primary">Buy Now</button>
+                                            <button class="btn btn-cart btn-secondary">Add to Cart</button>
+                                        </div>
                     </div>
-                    <div class="review-content">
-                        <h3>Hamza Faizi</h3>
-                        <p>Don’t waste time, just order! This is the best website to purchase smart watches.</p>
-                        <div class="stars">
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
-                            <i data-lucide="star" style="fill: #FBBF24;"></i>
+                </section>
+
+                <!-- Information Section -->
+                <section class="info-section">
+                    <div class="info-left">
+                        <h2>Information</h2>
+                        <div class="feature-thumbnails">
+                            <% if (product.image && product.image.length> 1) { %>
+                                <% for(let i=1; i < product.image.length; i++) { %>
+                                    <div class="thumbnail-card">
+                                        <img src="<%= product.image[i] %>" alt="Detail <%= i %>">
+                                    </div>
+                                    <% } %>
+                                        <% } else { %>
+                                            <p style="color: #6B7280; font-size: 14px;">No additional detail images
+                                                available.</p>
+                                            <% } %>
                         </div>
                     </div>
-                </div>
-            </div>
-        </section>
 
-        <!-- Related Products Section -->
-        <section class="related-section">
-            <div class="section-header" style="margin-bottom: 40px;">
-                <h2>Related products</h2>
-            </div>
-            <div class="product-grid">
-                <!-- Related 1 -->
-                <div class="related-card">
-                    <div class="card-icons">
-                        <div class="icon-circ"><i data-lucide="heart" class="heart-icon"></i></div>
+                    <div class="info-right">
+                        <h2>Description</h2>
+                        <div class="description-text">
+                            <p>
+                                <%= product.description %>
+                            </p>
+                        </div>
                     </div>
-                    <img src="../../public/apple_smart_1.png" alt="Apple smart I">
-                    <h3>Apple smart I</h3>
-                    <div class="related-price">
-                        <span class="related-old-price">$300.00</span>
-                        <span>$255.00</span>
-                    </div>
-                    <div class="cart-icon-black"><i data-lucide="shopping-cart"></i></div>
-                </div>
-                <!-- Related 2 -->
-                <div class="related-card">
-                    <div class="card-icons">
-                        <div class="icon-circ"><i data-lucide="heart" class="heart-icon"></i></div>
-                    </div>
-                    <img src="../../public/apple_smart_2.png" alt="Apple smart II">
-                    <h3>Apple smart II</h3>
-                    <div class="related-price">
-                        <span class="related-old-price">$300.00</span>
-                        <span>$255.00</span>
-                    </div>
-                    <div class="cart-icon-black"><i data-lucide="shopping-cart"></i></div>
-                </div>
-                <!-- Related 3 -->
-                <div class="related-card">
-                    <div class="card-icons">
-                        <div class="icon-circ"><i data-lucide="heart" class="heart-icon"></i></div>
-                    </div>
-                    <img src="../../public/apple_smart_3.png" alt="Apple smart III">
-                    <h3>Apple smart III</h3>
-                    <div class="related-price">
-                        <span class="related-old-price">$300.00</span>
-                        <span>$255.00</span>
-                    </div>
-                    <div class="cart-icon-black"><i data-lucide="shopping-cart"></i></div>
-                </div>
-            </div>
-        </section>
-    </main>
+                </section>
 
-                </div>
-            </div>
-        </div>
-        <div class="copyright">
-            Copyright @ 2022 | Trufit
-        </div>
-    </footer>
+                <!-- Reviews Section -->
+                <section class="reviews-section">
+                    <div class="section-header">
+                        <h2>Reviews</h2>
+                    </div>
+                    <div class="reviews-grid">
+                        <!-- Review 1 -->
+                        <div class="review-card">
+                            <div class="reviewer-img">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop"
+                                    alt="Hamza Faizi">
+                            </div>
+                            <div class="review-content">
+                                <h3>Hamza Faizi</h3>
+                                <p>Don’t waste time, just order! This is the best website to purchase smart watches.</p>
+                                <div class="stars">
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Review 2 -->
+                        <div class="review-card">
+                            <div class="reviewer-img">
+                                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop"
+                                    alt="Hamza Faizi">
+                            </div>
+                            <div class="review-content">
+                                <h3>Hamza Faizi</h3>
+                                <p>Don’t waste time, just order! This is the best website to purchase smart watches.</p>
+                                <div class="stars">
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                    <i data-lucide="star" style="fill: #FBBF24;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
-    <script>
-        lucide.createIcons();
-    </script>
-</body>
+                <!-- Related Products Section -->
+                <section class="related-section">
+                    <div class="section-header" style="margin-bottom: 40px;">
+                        <h2>Related products</h2>
+                    </div>
+                    <div class="product-grid">
+                        <!-- Related 1 -->
+                        <div class="related-card">
+                            <div class="card-icons">
+                                <div class="icon-circ"><i data-lucide="heart" class="heart-icon"></i></div>
+                            </div>
+                            <img src="../../public/apple_smart_1.png" alt="Apple smart I">
+                            <h3>Apple smart I</h3>
+                            <div class="related-price">
+                                <span class="related-old-price">$300.00</span>
+                                <span>$255.00</span>
+                            </div>
+                            <div class="cart-icon-black"><i data-lucide="shopping-cart"></i></div>
+                        </div>
+                        <!-- Related 2 -->
+                        <div class="related-card">
+                            <div class="card-icons">
+                                <div class="icon-circ"><i data-lucide="heart" class="heart-icon"></i></div>
+                            </div>
+                            <img src="../../public/apple_smart_2.png" alt="Apple smart II">
+                            <h3>Apple smart II</h3>
+                            <div class="related-price">
+                                <span class="related-old-price">$300.00</span>
+                                <span>$255.00</span>
+                            </div>
+                            <div class="cart-icon-black"><i data-lucide="shopping-cart"></i></div>
+                        </div>
+                        <!-- Related 3 -->
+                        <div class="related-card">
+                            <div class="card-icons">
+                                <div class="icon-circ"><i data-lucide="heart" class="heart-icon"></i></div>
+                            </div>
+                            <img src="../../public/apple_smart_3.png" alt="Apple smart III">
+                            <h3>Apple smart III</h3>
+                            <div class="related-price">
+                                <span class="related-old-price">$300.00</span>
+                                <span>$255.00</span>
+                            </div>
+                            <div class="cart-icon-black"><i data-lucide="shopping-cart"></i></div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer>
+                <div class="copyright">
+                    Copyright @ 2022 | Trufit
+                </div>
+            </footer>
+
+            <script>
+                // Apply colors from data attributes on load
+                document.querySelectorAll('.color-item').forEach(item => {
+                    if (item.dataset.color) {
+                        item.style.backgroundColor = item.dataset.color;
+                    }
+                });
+
+                lucide.createIcons();
+
+                function updateMainImage(src, element) {
+                    document.getElementById('mainProductImage').src = src;
+                    document.querySelectorAll('.thumb-item').forEach(item => item.classList.remove('active'));
+                    element.classList.add('active');
+                }
+
+                function switchVariant(variantStr, element) {
+                    const variant = JSON.parse(variantStr);
+                    
+                    // Update Image
+                    if (variant.image && variant.image.length > 0) {
+                        document.getElementById('mainProductImage').src = variant.image[0];
+                        
+                        // Update thumbnails for the new variant
+                        const thumbList = document.querySelector('.thumbnail-list');
+                        thumbList.innerHTML = '';
+                        variant.image.slice(0, 3).forEach((img, index) => {
+                            const thumb = document.createElement('div');
+                            thumb.className = `thumb-item ${index === 0 ? 'active' : ''}`;
+                            thumb.onclick = () => updateMainImage(img, thumb);
+                            thumb.innerHTML = `<img src="${img}" alt="Thumbnail ${index + 1}">`;
+                            thumbList.appendChild(thumb);
+                        });
+                    }
+
+                    // Update Stock
+                    const stockStatus = document.querySelector('.stock-status');
+                    const qtyLabel = document.querySelector('.quantity-row span');
+                    const qtyInput = document.getElementById('productQty');
+                    
+                    stockStatus.innerText = variant.quantity > 0 ? 'In Stock' : 'Out of Stock';
+                    qtyLabel.innerText = `Only ${variant.quantity} items left!`;
+                    qtyInput.dataset.stock = variant.quantity;
+                    qtyInput.value = 1;
+
+                    // Highlight active color
+                    document.querySelectorAll('.color-item').forEach(item => item.classList.remove('active'));
+                    element.classList.add('active');
+
+                    // Also highlight the corresponding size if it matches
+                    document.querySelectorAll('.size-item').forEach(item => {
+                        if (item.innerText.trim() === variant.size) {
+                            item.classList.add('active');
+                        } else {
+                            item.classList.remove('active');
+                        }
+                    });
+                }
+
+                function selectVariantBySize(size, element) {
+                    // Find the first variant with this size
+                    const variantsData = document.getElementById('variantData').dataset.variants;
+                    const variants = JSON.parse(variantsData);
+                    const match = variants.find(v => v.size === size);
+                    if (match) {
+                        switchVariant(JSON.stringify(match), document.querySelector(`.color-item[title="${match.color}"]`) || element);
+                    }
+                }
+
+                function decrementQty() {
+                    const qtyInput = document.getElementById('productQty');
+                    let currentQty = parseInt(qtyInput.value);
+                    if (currentQty > 1) {
+                        qtyInput.value = currentQty - 1;
+                    }
+                }
+
+                function incrementQty() {
+                    const qtyInput = document.getElementById('productQty');
+                    const stockLimit = parseInt(qtyInput.dataset.stock);
+                    let currentQty = parseInt(qtyInput.value);
+                    if (currentQty < stockLimit) {
+                        qtyInput.value = currentQty + 1;
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Stock Limit Reached',
+                            text: `Only ${stockLimit} items available in stock.`
+                        });
+                    }
+                }
+
+                function selectManualAttribute(type, value, element) {
+                    if (type === 'size') {
+                        document.getElementById('selectedSize').value = value;
+                        document.querySelectorAll('.size-item').forEach(item => item.classList.remove('active'));
+                        element.classList.add('active');
+                    } else if (type === 'color') {
+                        document.getElementById('selectedColor').value = value;
+                        document.querySelectorAll('.color-item').forEach(item => item.classList.remove('active'));
+                        element.classList.add('active');
+                    }
+                }
+            </script>
+    </body>
 
 </html>

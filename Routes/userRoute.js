@@ -37,4 +37,8 @@ router.post('/update-password', userAuth.isLoggedIn, userController.updatePasswo
 router.get('/auth/google', userAuth.isLoggedOut, passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account consent', session: false }));
 router.get('/auth/google/callback', userAuth.isLoggedOut, passport.authenticate('google', { failureRedirect: '/login', session: false }), userController.googleAuthCallback);
 
+router.get('/product/:id', userAuth.isLoggedIn, userController.loadProductDetails);
+
+router.get('/shop', userAuth.isLoggedIn, userController.loadShopPage);
+
 module.exports = router;
