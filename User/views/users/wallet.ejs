@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <style>
+        /* Wallet Page Content */
+        .page-title {
+            margin: 60px 0 40px;
+            font-size: 24px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .wallet-overview {
+            margin-bottom: 60px;
+        }
+
+        .balance-box {
+            border: 1px solid #E5E7EB;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .balance-header {
+            background: var(--blue-light);
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .balance-header .refresh-btn {
+            position: absolute;
+            right: 20px;
+            cursor: pointer;
+            width: 20px;
+        }
+
+        .balance-content {
+            padding: 60px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .balance-content i {
+            width: 32px;
+        }
+
+        /* Action Buttons */
+        .wallet-actions {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 30px;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 16px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-add-money {
+            background: var(--orange);
+        }
+
+        .btn-refer-earn {
+            background: var(--green);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            opacity: 0.9;
+        }
+
+        /* Transactions Table */
+        .transactions-section h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .transactions-table th {
+            text-align: left;
+            padding: 15px 0;
+            border-bottom: 1px solid #000;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .transactions-table td {
+            padding: 20px 0;
+            border-bottom: 1px solid #E5E7EB;
+            font-size: 14px;
+            color: #000;
+        }
+
+        /* Footer Styling */
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        @media (max-width: 768px) {
+            .wallet-actions {
+                flex-direction: column;
+                gap: 20px;
+            }
+            .transactions-table th, .transactions-table td {
+                padding: 10px 5px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<%- include('partials/header') %>
+
+    <main class="container">
+        <section class="profile-page">
+            <div class="profile-container">
+                <%- include('partials/user-sidebar', { activePage: 'wallet' }) %>
+
+                <div class="profile-main-content">
+                    <h1>MY WALLET</h1>
+
+        <section class="wallet-overview">
+            <div class="balance-box">
+                <div class="balance-header">
+                    <i data-lucide="wallet"></i>
+                    <span>BALANCE OVERVIEW</span>
+                    <i data-lucide="refresh-cw" class="refresh-btn"></i>
+                </div>
+                <div class="balance-content">
+                    <i data-lucide="indian-rupee"></i>
+                    <span>500.00</span>
+                </div>
+            </div>
+
+            <div class="wallet-actions">
+                <button class="action-btn btn-add-money">ADD MONEY</button>
+                <button class="action-btn btn-refer-earn" onclick="location.href='refer-earn.html'">REFER AND EARN</button>
+            </div>
+        </section>
+
+        <section class="transactions-section">
+            <h2>Recent Transactions</h2>
+            <table class="transactions-table">
+                <thead>
+                    <tr>
+                        <th>DATE</th>
+                        <th>DISCRIPTION</th>
+                        <th>STATUS</th>
+                        <th>AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Feb 28, 2025</td>
+                        <td>ORDER PAYMENT</td>
+                        <td>DEBITED</td>
+                        <td>7,990.00</td>
+                    </tr>
+                </tbody>
+            </table>
+                </div> <!-- profile-main-content -->
+            </div> <!-- profile-container -->
+        </section>
+    </main>
+
+    <%- include('partials/footer') %>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

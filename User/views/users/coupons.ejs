@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <style>
+        /* Coupons Page Content */
+        .page-title {
+            margin: 40px 0;
+            font-size: 24px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .coupons-table-container {
+            margin-bottom: 80px;
+            overflow-x: auto;
+        }
+
+        .coupons-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .coupons-table th {
+            padding: 20px 30px;
+            border-bottom: 1px solid #E5E7EB;
+            font-size: 14px;
+            font-weight: 700;
+            color: #000;
+            text-transform: uppercase;
+        }
+
+        .coupons-table td {
+            padding: 40px 30px;
+            border-bottom: 1px solid #E5E7EB;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .coupon-code {
+            color: var(--coupon-green);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .coupon-details {
+            color: #6B7280;
+        }
+
+        .coupon-expires {
+            color: #6B7280;
+        }
+
+        .copy-code {
+            color: #000;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            border-bottom: 1px solid transparent;
+            transition: var(--transition);
+        }
+
+        .copy-code:hover {
+            border-bottom-color: #000;
+        }
+
+        /* Footer Styling */
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        @media (max-width: 768px) {
+            .coupons-table td, .coupons-table th {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<%- include('partials/header') %>
+
+    <main class="container">
+        <section class="profile-page">
+            <div class="profile-container">
+                <%- include('partials/user-sidebar', { activePage: 'coupons' }) %>
+
+                <div class="profile-main-content">
+                    <h1>MY COUPONS</h1>
+
+        <div class="coupons-table-container">
+            <table class="coupons-table">
+                <thead>
+                    <tr>
+                        <th>COUPON</th>
+                        <th>DETAILS</th>
+                        <th>EXPIRES</th>
+                        <th>-</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (coupons && coupons.length > 0) { %>
+                        <% coupons.forEach(coupon => { %>
+                            <tr>
+                                <td class="coupon-code"><%= coupon.couponCode %></td>
+                                <td class="coupon-details">
+                                    <strong><%= coupon.discountPercentage %>% Off</strong><br>
+                                    <%= coupon.description %><br>
+                                    <small>Min. Purchase: ₹<%= coupon.minPurchase %></small>
+                                </td>
+                                <td class="coupon-expires"><%= new Date(coupon.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+                                <td><a href="#" class="copy-code" onclick="copyToClipboard('<%= coupon.couponCode %>')">COPY CODE</a></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 60px; color: #6B7280;">
+                                <i data-lucide="tag" style="width: 40px; height: 40px; margin-bottom: 10px; opacity: 0.3;"></i>
+                                <p>No coupons available at the moment.</p>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+                </div> <!-- profile-main-content -->
+            </div> <!-- profile-container -->
+        </section>
+    </main>
+
+    <%- include('partials/footer') %>
+
+    <script>
+        lucide.createIcons();
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Copied: ' + text,
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

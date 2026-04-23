@@ -1,0 +1,283 @@
+<header class="header">
+    <div class="container">
+        <div class="header-left">
+            <a href="/" class="logo" style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="watch"></i>
+                Trufit
+            </a>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search for products, brands & more">
+                <i data-lucide="search"></i>
+                <div id="searchSuggestionsDropdown" class="search-suggestions-dropdown" style="display: none;"></div>
+            </div>
+            <nav class="nav" id="mainNav">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/shop">Shop</a></li>
+                    <li><a href="/orders">Orders</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="/about">About</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="header-right">
+            <button class="icon-btn" onclick="location.href='/search'"><i data-lucide="search"></i></button>
+            <button class="icon-btn" onclick="location.href='/profile'"><i data-lucide="user"></i></button>
+            <button class="icon-btn wishlist-btn" onclick="location.href='/wishlist'">
+                <i data-lucide="heart"></i>
+            </button>
+            <button class="icon-btn cart-btn" onclick="location.href='/cart'">
+                <i data-lucide="shopping-cart"></i>
+            </button>
+            <% if (typeof user !=='undefined' && user) { %>
+                <button class="sign-in-btn" onclick="location.href='/logout'">Logout</button>
+                <% } else { %>
+                    <button class="sign-in-btn" onclick="location.href='/login'">Sign in</button>
+                    <% } %>
+            <!-- Hamburger (mobile only) -->
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<style>
+    .search-bar {
+        position: relative;
+        width: 300px;
+    }
+
+    .search-suggestions-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #D1D5DB;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 1000;
+    }
+
+    .suggestion-category {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #9CA3AF;
+        text-transform: uppercase;
+        background: #F9FAFB;
+        border-bottom: 1px solid #E5E7EB;
+        margin-top: 8px;
+    }
+
+    .suggestion-category:first-child {
+        margin-top: 0;
+    }
+
+    .suggestion-item {
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 14px;
+        color: #374151;
+    }
+
+    .suggestion-item:hover {
+        background: #F3F4F6;
+    }
+
+    .suggestion-item i {
+        color: #9CA3AF;
+        flex-shrink: 0;
+    }
+
+    .suggestion-item span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+
+    .suggestion-item.no-results {
+        text-align: center;
+        color: #9CA3AF;
+        padding: 20px 12px;
+        cursor: default;
+    }
+
+    .suggestion-item.no-results:hover {
+        background: white;
+    }
+
+    .suggestion-item.search-all {
+        background: #F0F9FF;
+        color: #0369A1;
+        font-weight: 500;
+        border-top: 1px solid #E5E7EB;
+        margin-top: 4px;
+    }
+
+    .suggestion-item.search-all:hover {
+        background: #E0F2FE;
+    }
+
+    @media (max-width: 768px) {
+        .search-bar {
+            width: 100%;
+            max-width: 250px;
+        }
+
+        .search-suggestions-dropdown {
+            max-height: 300px;
+        }
+    }
+</style>
+
+<script>
+    (function () {
+        const btn = document.getElementById('hamburger');
+        const nav = document.getElementById('mainNav');
+        if (!btn || !nav) return;
+
+        btn.addEventListener('click', function () {
+            const isOpen = nav.classList.toggle('mobile-open');
+            btn.classList.toggle('open', isOpen);
+            btn.setAttribute('aria-expanded', isOpen);
+        });
+
+        // Close nav when a link is clicked
+        nav.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function () {
+                nav.classList.remove('mobile-open');
+                btn.classList.remove('open');
+                btn.setAttribute('aria-expanded', 'false');
+            });
+        });
+    })();
+
+    // ============== SEARCH SUGGESTIONS ==============
+    const searchInput = document.getElementById('searchInput');
+    const suggestionsDropdown = document.getElementById('searchSuggestionsDropdown');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        if (query.length === 0) {
+            suggestionsDropdown.innerHTML = '';
+            suggestionsDropdown.style.display = 'none';
+            return;
+        }
+
+        // Debounce the search request
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/search/suggestions?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.success && data.results.length > 0) {
+                    displaySuggestions(data.results);
+                } else {
+                    suggestionsDropdown.innerHTML = '<div class="suggestion-item no-results">No products found</div>';
+                    suggestionsDropdown.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }, 300); // 300ms debounce
+    });
+
+    function displaySuggestions(results) {
+        let html = '';
+        
+        // Group results by type
+        const products = results.filter(r => r.type === 'product');
+        const categories = results.filter(r => r.type === 'category');
+
+        // Display products
+        if (products.length > 0) {
+            html += '<div class="suggestion-category">Products</div>';
+            products.forEach(product => {
+                html += `<div class="suggestion-item product-item" onclick="goToProduct('${product._id}')">
+                    <i data-lucide="box" style="width: 16px; height: 16px;"></i>
+                    <span>${escapeHtml(product.name)}</span>
+                </div>`;
+            });
+        }
+
+        // Display categories
+        if (categories.length > 0) {
+            html += '<div class="suggestion-category">Categories</div>';
+            categories.forEach(category => {
+                html += `<div class="suggestion-item category-item" onclick="goToCategory('${category._id}')">
+                    <i data-lucide="tag" style="width: 16px; height: 16px;"></i>
+                    <span>${escapeHtml(category.name)}</span>
+                </div>`;
+            });
+        }
+
+        // Add search all option
+        if (searchInput.value.trim()) {
+            html += `<div class="suggestion-item search-all" onclick="searchAll()">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                <span>Search for "${escapeHtml(searchInput.value.trim())}"</span>
+            </div>`;
+        }
+
+        suggestionsDropdown.innerHTML = html;
+        suggestionsDropdown.style.display = 'block';
+        
+        // Re-create lucide icons for new elements
+        lucide.createIcons();
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function goToProduct(productId) {
+        location.href = `/product/${productId}`;
+    }
+
+    function goToCategory(categoryId) {
+        location.href = `/shop?category=${categoryId}`;
+    }
+
+    function searchAll() {
+        const query = searchInput.value.trim();
+        if (query) {
+            location.href = `/shop?search=${encodeURIComponent(query)}`;
+        }
+    }
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-bar')) {
+            suggestionsDropdown.style.display = 'none';
+        }
+    });
+
+    // Reopen suggestions when clicking on search input
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim().length > 0 && suggestionsDropdown.innerHTML) {
+            suggestionsDropdown.style.display = 'block';
+        }
+    });
+</script>

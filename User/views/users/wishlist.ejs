@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <style>
+        /* Wishlist Content */
+        .wishlist-page {
+            padding: 60px 0;
+        }
+
+        .wishlist-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .wishlist-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: #6B7280;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #E5E7EB;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .wishlist-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .wishlist-item {
+            display: flex;
+            align-items: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .item-image {
+            width: 120px;
+            height: 120px;
+            background: #F8F8F8;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .item-image img {
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .item-details {
+            flex: 1;
+            padding: 0 40px;
+        }
+
+        .item-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .item-price {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .old-price {
+            text-decoration: line-through;
+            color: #9CA3AF;
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        .discount-tag {
+            color: #ef4444;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .btn-remove {
+            background: #EF4444; /* Solid red pill */
+            color: #FFFFFF;
+        }
+
+        .btn-add {
+            background: #F97316; /* Solid orange pill */
+            color: #000;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        
+
+        
+
+        
+
+        
+
+        .logo-box i {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-box span {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .footer-col h4 {
+            font-size: 14px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #9CA3AF;
+            display: none; /* In image, they might just be lists */
+        }
+
+        .footer-col ul li {
+            margin-bottom: 15px;
+        }
+
+        .footer-col ul li a {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .footer-col ul li a:hover {
+            color: #000;
+        }
+
+        
+
+        .social-info p {
+            margin-bottom: 12px;
+        }
+
+        
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .wishlist-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+            .item-details {
+                padding: 0;
+            }
+            .header-left .search-bar {
+                display: none;
+            }
+            
+        }
+    </style>
+</head>
+
+<body>
+<%- include('partials/header') %>
+
+    <main class="container">
+        <!-- Wishlist Content -->
+        <section class="wishlist-page">
+            <h1 class="wishlist-title">WISHLIST</h1>
+            <div class="wishlist-header">PRODUCTS</div>
+            
+            <div class="wishlist-list">
+                <% if (typeof wishlist !== 'undefined' && wishlist.length > 0) { %>
+                    <% wishlist.forEach(item => { %>
+                        <div class="wishlist-item">
+                            <div class="item-image">
+                                <% if (item.productId.image && item.productId.image.length > 0) { %>
+                                    <img src="<%= item.productId.image[0] %>" alt="<%= item.productId.name %>">
+                                <% } else { %>
+                                    <img src="/public/placeholder.png" alt="No image">
+                                <% } %>
+                            </div>
+                            <div class="item-details">
+                                <h3 class="item-name"><%= item.productId.name %></h3>
+                                <div class="item-price">
+                                    <% if (item.productId.offerPrice && item.productId.offerPrice < item.productId.price) { %>
+                                        <span class="discounted">₹<%= item.productId.offerPrice %></span>
+                                        <span class="old-price">₹<%= item.productId.price %></span>
+                                        <% let discount = Math.round(((item.productId.price - item.productId.offerPrice) / item.productId.price) * 100); %>
+                                        <span class="discount-tag"><%= discount %>% off</span>
+                                    <% } else { %>
+                                        <span class="discounted">₹<%= item.productId.price %></span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="item-actions">
+                                <form action="/wishlist/remove/<%= item.productId._id %>" method="POST" style="margin: 0;">
+                                    <button type="submit" class="btn btn-remove">Remove</button>
+                                </form>
+                                <button class="btn btn-add" onclick="addToCart(event, '<%= item.productId._id %>')">Add to cart</button>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div style="padding: 50px 0; text-align: center; color: #6B7280;">
+                        <p style="font-size: 18px;">Your wishlist is currently empty.</p>
+                        <a href="/shop" class="btn" style="background:#000; color:#fff; display:inline-block; margin-top:20px;">Explore Products</a>
+                    </div>
+                <% } %>
+            </div>
+        </section>
+    </main>
+
+    <%- include('partials/footer') %>
+
+    <script>
+        lucide.createIcons();
+
+        async function addToCart(event, productId) {
+            event.preventDefault();
+            try {
+                const response = await fetch('/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId: productId, quantity: 1 })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success', title: 'Added to Cart',
+                        text: 'Product successfully added to your cart!',
+                        timer: 1500, showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error', title: 'Oops...',
+                        text: data.message || 'Error adding to cart'
+                    });
+                }
+            } catch (error) {
+                console.error("Cart Error:", error);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Something went wrong!' });
+            }
+        }
+    </script>
+</body>
+
+</html>

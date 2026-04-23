@@ -1,0 +1,118 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'orders' }) %>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">ORDER MANAGEMENT</h1>
+        </header>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ORDER ID</th>
+                        <th>CUSTOMER</th>
+                        <th>DATE</th>
+                        <th>TOTAL</th>
+                        <th>PAYMENT</th>
+                        <th>STATUS</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (orders && orders.length > 0) { %>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td><strong><%= order.orderId %></strong></td>
+                                <td>
+                                    <%= order.userId ? order.userId.firstName + ' ' + order.userId.lastName : 'Unknown' %><br>
+                                    <small><%= order.userId ? order.userId.email : '' %></small>
+                                </td>
+                                <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                                <td>₹<%= order.grandTotal.toLocaleString() %></td>
+                                <td><%= order.paymentMethod %></td>
+                                <td>
+                                    <select class="status-select" onchange="updateStatus('<%= order._id %>', this.value)">
+                                        <option value="Placed" <%= order.orderStatus === 'Placed' ? 'selected' : '' %>>Placed</option>
+                                        <option value="Processing" <%= order.orderStatus === 'Processing' ? 'selected' : '' %>>Processing</option>
+                                        <option value="Shipped" <%= order.orderStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                                        <option value="Delivered" <%= order.orderStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                        <option value="Cancelled" <%= order.orderStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                        <option value="Returned" <%= order.orderStatus === 'Returned' ? 'selected' : '' %>>Returned</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="action-btn" title="View Items" onclick="viewOrderItems('<%= order._id %>')">
+                                        <i data-lucide="eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #6B7280;">No orders found yet.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        lucide.createIcons();
+
+        async function updateStatus(orderId, newStatus) {
+            try {
+                const response = await fetch(`/admin/orders/status/${orderId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated!',
+                        text: 'Order status has been updated.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to update status', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Something went wrong', 'error');
+            }
+        }
+
+        function viewOrderItems(orderId) {
+            // Placeholder: In a real app we might show a modal or redirect
+            Swal.fire({
+                title: 'Order Details',
+                text: 'Order ID: ' + orderId,
+                icon: 'info'
+            });
+        }
+    </script>
+    
+    <style>
+        .status-select {
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #E5E7EB;
+            font-size: 12px;
+            font-weight: 600;
+            background: #FFF;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .status-select:focus {
+            border-color: #000;
+        }
+    </style>
+</body>
+</html>

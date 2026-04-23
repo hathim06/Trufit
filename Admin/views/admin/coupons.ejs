@@ -1,0 +1,114 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'coupons' }) %>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">COUPON MANAGEMENT</h1>
+            <button class="btn btn-primary" onclick="location.href='/admin/add-coupon'">ADD COUPON</button>
+        </header>
+
+        <div class="filter-bar">
+            <input type="text" class="search-input" placeholder="Search Coupons..." value="<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>">
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>COUPON NAME</th>
+                        <th>OFFER UPTO</th>
+                        <th>STARTING DATE</th>
+                        <th>EXPIRY DATE</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (typeof coupons !== 'undefined' && coupons && coupons.length > 0) { %>
+                        <% coupons.forEach((coupon, index) => { %>
+                            <tr>
+                                <td><%= index + 1 + (currentPage - 1) * limit %></td>
+                                <td><strong><%= coupon.couponCode %></strong><br><small><%= coupon.description %></small></td>
+                                <td><%= coupon.discountPercentage %>% (Min: ₹<%= coupon.minPurchase %>)</td>
+                                <td><%= new Date(coupon.startDate).toLocaleDateString() %></td>
+                                <td><%= new Date(coupon.expiryDate).toLocaleDateString() %></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="action-btn" onclick="location.href='/admin/edit-coupon/<%= coupon._id %>'"><i data-lucide="edit-3"></i></button>
+                                        <button class="action-btn" onclick="deleteCoupon('<%= coupon._id %>')"><i data-lucide="trash-2"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px; color: #6B7280;">No coupons found. Click "ADD COUPON" to create one.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+
+            <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+                <div style="margin-top: 30px; display: flex; justify-content: center; gap: 10px;">
+                    <% for (var pageNum = 1; pageNum <= totalPages; pageNum++) { %>
+                        <% if (typeof currentPage !== 'undefined' && currentPage == pageNum) { %>
+                            <a href="/admin/coupons?page=<%= pageNum %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>" 
+                               style="text-decoration: none; padding: 5px 15px; border-radius: 4px; background: #000; color: #FFF; font-weight: 700;">
+                                <%= pageNum %>
+                            </a>
+                        <% } else { %>
+                            <a href="/admin/coupons?page=<%= pageNum %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>" 
+                               style="text-decoration: none; padding: 5px 15px; border-radius: 4px; background: #F3F4F6; color: #6B7280;">
+                                <%= pageNum %>
+                            </a>
+                        <% } %>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        lucide.createIcons();
+
+        async function deleteCoupon(id) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#000',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/coupons/delete/${id}`, { method: 'DELETE' });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('Deleted!', data.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Error!', data.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error!', 'Something went wrong', 'error');
+                }
+            }
+        }
+
+        const searchInput = document.querySelector('.search-input');
+        if (searchInput) {
+            let debounceTimer;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    location.href = `/admin/coupons?search=${e.target.value}`;
+                }, 500);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<aside class="profile-sidebar">
+    <div class="sidebar-header">My Profile</div>
+    <ul class="sidebar-menu">
+        <li>
+            <a href="/profile" class="<%= activePage === 'profile' ? 'active' : '' %>">
+                <i data-lucide="user"></i> My Profile
+            </a>
+        </li>
+        <li>
+            <a href="/profile/orders" class="<%= activePage === 'orders' ? 'active' : '' %>">
+                <i data-lucide="shopping-bag"></i> My Orders
+            </a>
+        </li>
+        <li>
+            <a href="/wishlist" class="<%= activePage === 'wishlist' ? 'active' : '' %>">
+                <i data-lucide="heart"></i> My Wishlist
+            </a>
+        </li>
+        <li>
+            <a href="/address" class="<%= activePage === 'address' ? 'active' : '' %>">
+                <i data-lucide="map-pin"></i> Addresses
+            </a>
+        </li>
+        <li>
+            <a href="/wallet" class="<%= activePage === 'wallet' ? 'active' : '' %>">
+                <i data-lucide="wallet"></i> Wallet
+            </a>
+        </li>
+        <li>
+            <a href="/profile/coupons" class="<%= activePage === 'coupons' ? 'active' : '' %>">
+                <i data-lucide="tag"></i> My Coupons
+            </a>
+        </li>
+        <li>
+            <a href="/refer-and-earn" class="<%= activePage === 'refer' ? 'active' : '' %>">
+                <i data-lucide="gift"></i> Refer & Earn
+            </a>
+        </li>
+    </ul>
+</aside>

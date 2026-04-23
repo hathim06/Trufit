@@ -1,0 +1,95 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'categories' }) %>
+
+    <main class="main-content">
+        <%- include('./partials/adminHeader', { title: 'CATEGORY MANAGEMENT' }) %>
+
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="alert alert-success" style="background:#D1FAE5;color:#065F46;padding:12px 20px;border-radius:8px;margin-bottom:20px;"><%= success %></div>
+        <% } %>
+        <% if (typeof message !== 'undefined' && message) { %>
+            <div class="alert alert-error" style="background:#FEE2E2;color:#991B1B;padding:12px 20px;border-radius:8px;margin-bottom:20px;"><%= message %></div>
+        <% } %>
+
+        <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
+            <button class="btn btn-primary" onclick="location.href='/admin/add-category'">ADD CATEGORY</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">CATEGORY</th>
+                        <th style="width: 30%;">DESCRIPTION</th>
+                        <th style="width: 15%;">STATUS</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                        <% categories.forEach(cat => { %>
+                            <tr>
+                                <td><strong><%= cat.name %></strong></td>
+                                <td style="color:#6B7280;font-size:13px;"><%= cat.description || '-' %></td>
+                                <td>
+                                    <span class="status-badge" <%- cat.isListed ? 'style="background: #D1FAE5; color: #065F46;"' : 'style="background: #FEE2E2; color: #991B1B;"' %>>
+                                        <%= cat.isListed ? 'ACTIVE' : 'INACTIVE' %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="action-btn" onclick="location.href='/admin/edit-category/<%= cat._id %>'">
+                                            <i data-lucide="edit-3"></i>
+                                        </button>
+                                        <button class="action-btn" onclick="toggleListing('<%= cat._id %>')" title="<%= cat.isListed ? 'Deactivate' : 'Activate' %>">
+                                            <i data-lucide="<%= cat.isListed ? 'eye-off' : 'eye' %>"></i>
+                                        </button>
+                                        <button class="action-btn" style="color:#EF4444;" onclick="deleteCategory('<%= cat._id %>')">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" style="text-align:center; padding: 40px; color: #6B7280;">
+                                No categories found. <a href="/admin/add-category">Add one now.</a>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        async function toggleListing(id) {
+            const res = await fetch(`/admin/categories/toggle/${id}`, { method: 'PATCH' });
+            const data = await res.json();
+            if (data.success) location.reload();
+            else Swal.fire('Error', data.message || 'Failed', 'error');
+        }
+
+        async function deleteCategory(id) {
+            const result = await Swal.fire({
+                title: 'Delete Category?',
+                text: 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Yes, Delete'
+            });
+            if (result.isConfirmed) {
+                const res = await fetch(`/admin/categories/delete/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) location.reload();
+                else Swal.fire('Error', data.message || 'Failed', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <style>
+        /* Cart Content */
+        .cart-page {
+            padding: 60px 0;
+        }
+
+        .cart-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            text-decoration: underline;
+            text-underline-offset: 8px;
+            text-decoration-thickness: 3px;
+        }
+
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+
+        .cart-table th {
+            text-align: left;
+            padding: 15px 10px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #EEE;
+            background: #F9FAFB;
+            color: #6B7280;
+            font-weight: 600;
+        }
+
+        .cart-table td {
+            padding: 30px 10px;
+            border-bottom: 1px solid #F3F4F6;
+            vertical-align: middle;
+        }
+
+        .product-cell {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .product-img {
+            width: 100px;
+            height: 100px;
+            background: #F8F8F8;
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .product-img img {
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .product-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .size-text {
+            font-size: 14px;
+            color: #4B5563;
+        }
+
+        .price-text,
+        .total-text {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Quantity Selector */
+        .qty-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #F9FAFB;
+            padding: 5px 15px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+
+        .qty-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #9CA3AF;
+        }
+
+        .qty-input {
+            width: 30px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn-remove {
+            background: #EF4444;
+            color: #FFF;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .cart-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 20px;
+        }
+
+        .btn-checkout {
+            background: #F97316;
+            color: #000;
+            padding: 15px 35px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 80px 0 40px;
+            border-top: 1px solid #EEE;
+            background: #FFFFFF;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .footer-col-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-box {
+            background: #11362F;
+            /* Dark green as in mockup */
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #FFFFFF;
+        }
+
+        .logo-box i {
+            width: 40px;
+            height: 40px;
+        }
+
+        .logo-box span {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 15px;
+        }
+
+        .footer-col ul li a {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .footer-col ul li a:hover {
+            color: #000;
+        }
+
+        .social-info {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .social-info p {
+            margin-bottom: 12px;
+        }
+
+        .copyright {
+            padding: 30px 0;
+            background: #000;
+            color: #FFF;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .cart-table thead {
+                display: none;
+            }
+
+            .cart-table tr {
+                display: block;
+                padding: 20px 0;
+                border-bottom: 1px solid #EEE;
+            }
+
+            .cart-table td {
+                display: flex;
+                justify-content: space-between;
+                padding: 10px 0;
+                border: none;
+            }
+
+            .product-cell {
+                justify-content: center;
+                margin-bottom: 15px;
+            }
+
+            .header-left .search-bar {
+                display: none;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    </head>
+
+    <body>
+        <%- include('partials/header') %>
+
+            <main class="container">
+                <!-- Cart Content -->
+                <section class="cart-page">
+                    <h1 class="cart-title">YOUR CART</h1>
+
+                    <table class="cart-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Product</th>
+                                <th>Size</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% let cartTotal = 0; %>
+                            <% if (typeof cart !== 'undefined' && cart && cart.items && cart.items.length > 0) { %>
+                                <% cart.items.forEach(item => { %>
+                                    <% let currentPrice = (item.productId.offerPrice && item.productId.offerPrice < item.productId.price) ? item.productId.offerPrice : item.productId.price; %>
+                                    <% let itemTotal = currentPrice * item.quantity; %>
+                                    <% cartTotal += itemTotal; %>
+                                    <tr>
+                                        <td>
+                                            <div class="product-cell">
+                                                <div class="product-img">
+                                                    <% if (item.productId.image && item.productId.image.length > 0) { %>
+                                                        <img src="<%= item.productId.image[0] %>" alt="<%= item.productId.name %>">
+                                                    <% } else { %>
+                                                        <img src="/public/placeholder.png" alt="No image">
+                                                    <% } %>
+                                                </div>
+                                                <span class="product-name"><%= item.productId.name %></span>
+                                            </div>
+                                        </td>
+                                        <td><span class="size-text">-</span></td>
+                                        <td><span class="price-text">₹<%= currentPrice %></span></td>
+                                        <td>
+                                            <form action="/cart/update/<%= item.productId._id %>" method="POST" style="margin: 0; display: inline-block;">
+                                                <div class="qty-selector">
+                                                    <button type="submit" name="quantity" value="<%= item.quantity - 1 %>" class="qty-btn" <%= item.quantity <= 1 ? 'disabled' : '' %>>-</button>
+                                                    <input type="text" value="<%= item.quantity %>" class="qty-input" readonly>
+                                                    <button type="submit" name="quantity" value="<%= item.quantity + 1 %>" class="qty-btn">+</button>
+                                                </div>
+                                            </form>
+                                        </td>
+                                        <td><span class="total-text">₹<%= itemTotal %></span></td>
+                                        <td>
+                                            <form action="/cart/remove/<%= item.productId._id %>" method="POST" style="margin: 0;">
+                                                <button type="submit" class="btn btn-remove">Remove</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 50px 0;">
+                                        <p style="color: #6B7280; font-size: 18px; margin-bottom: 20px;">Your cart is currently empty.</p>
+                                        <a href="/shop" class="btn btn-checkout">Continue Shopping</a>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+
+                    <% if (typeof cart !== 'undefined' && cart && cart.items && cart.items.length > 0) { %>
+                    <div style="display: grid; grid-template-columns: 1fr 350px; gap: 40px; align-items: start;">
+                        <!-- Coupon Section -->
+                        <div style="background: #F9FAFB; padding: 25px; border-radius: 12px; border: 1px solid #E5E7EB;">
+                            <h4 style="margin-top: 0; margin-bottom: 15px; font-size: 16px;">Apply Coupon</h4>
+                            <% if (cart.appliedCoupon && cart.appliedCoupon.code) { %>
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: #ECFDF5; border: 1px dashed #10B981; padding: 10px 15px; border-radius: 6px;">
+                                    <div>
+                                        <span style="font-weight: 700; color: #059669;"><%= cart.appliedCoupon.code %></span>
+                                        <small style="display: block; color: #059669;"><%= cart.appliedCoupon.discountPercentage %>% Discount Applied</small>
+                                    </div>
+                                    <button onclick="removeCoupon()" style="background: none; border: none; color: #EF4444; font-weight: 600; cursor: pointer;">Remove</button>
+                                </div>
+                            <% } else { %>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" id="couponCode" placeholder="Enter coupon code" style="flex: 1; padding: 10px; border: 1px solid #D1D5DB; border-radius: 6px; text-transform: uppercase;">
+                                    <button onclick="applyCoupon()" style="background: #000; color: #FFF; padding: 10px 20px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">APPLY</button>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Summary Section -->
+                        <div class="cart-footer" style="flex-direction: column; align-items: stretch; gap: 15px; background: #FFF; padding: 25px; border-radius: 12px; border: 1px solid #EEE;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                <span style="color: #6B7280;">Subtotal</span>
+                                <span style="font-weight: 600;">₹<%= cartTotal %></span>
+                            </div>
+                            
+                            <% let discount = 0; %>
+                            <% if (cart.appliedCoupon && cart.appliedCoupon.code) { %>
+                                <% discount = Math.round((cartTotal * cart.appliedCoupon.discountPercentage) / 100); %>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #10B981;">
+                                    <span>Coupon Discount (<%= cart.appliedCoupon.discountPercentage %>%)</span>
+                                    <span>-₹<%= discount %></span>
+                                </div>
+                            <% } %>
+
+                            <div style="height: 1px; background: #EEE; margin: 10px 0;"></div>
+                            
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                                <span style="font-size: 18px; font-weight: 700;">Grand Total</span>
+                                <span style="font-size: 18px; font-weight: 700;">₹<%= cartTotal - discount %></span>
+                            </div>
+                            
+                            <a href="/checkout" class="btn btn-checkout" style="text-align: center;">Proceed to checkout</a>
+                        </div>
+                    </div>
+                    <% } %>
+                </section>
+                
+                <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                <script>
+                    async function applyCoupon() {
+                        const code = document.getElementById('couponCode').value;
+                        if (!code) return;
+                        
+                        try {
+                            const response = await fetch('/cart/apply-coupon', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    couponCode: code,
+                                    cartTotal: Number('<%= cartTotal %>')
+                                })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                Swal.fire('Success', data.message, 'success').then(() => location.reload());
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        } catch (error) {
+                            Swal.fire('Error', 'Failed to apply coupon', 'error');
+                        }
+                    }
+
+                    async function removeCoupon() {
+                        try {
+                            const response = await fetch('/cart/remove-coupon', { method: 'POST' });
+                            const data = await response.json();
+                            if (data.success) {
+                                Swal.fire('Removed', data.message, 'success').then(() => location.reload());
+                            }
+                        } catch (error) {
+                            Swal.fire('Error', 'Failed to remove coupon', 'error');
+                        }
+                    }
+                </script>
+                </section>
+            </main>
+
+            <footer class="footer">
+                <div class="copyright">
+                    Copyright @ 2022 | Trufit
+                </div>
+            </footer>
+
+            <script>
+                lucide.createIcons();
+            </script>
+    </body>
+
+</html>

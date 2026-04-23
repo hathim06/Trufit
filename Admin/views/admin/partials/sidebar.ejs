@@ -1,0 +1,89 @@
+
+
+    <aside class="sidebar">
+        <div class="sidebar-logo-container">
+            <div class="sidebar-logo">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                    <i data-lucide="watch" style="width: 20px; height: 20px; color: #FFF;"></i>
+                    <div class="nav-text" style="font-weight: 700; font-size: 18px; color: #FFF; letter-spacing: 2px;">Trufit</div>
+                </div>
+                <span class="nav-text" style="font-size: 10px; opacity: 0.8; letter-spacing: 1px;">SMART WATCH</span>
+            </div>
+            <button class="toggle-btn" onclick="toggleSidebar()">
+                <i data-lucide="menu"></i>
+            </button>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="/admin/dashboard"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/users"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'users' ? 'active' : '' %>">
+                    <i data-lucide="users"></i>
+                    <span class="nav-text">Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/products"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'products' ? 'active' : '' %>">
+                    <i data-lucide="package"></i>
+                    <span class="nav-text">Products</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/categories"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'categories' ? 'active' : '' %>">
+                    <i data-lucide="grid"></i>
+                    <span class="nav-text">Categories</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/banners"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'banners' ? 'active' : '' %>">
+                    <i data-lucide="image"></i>
+                    <span class="nav-text">Banners</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/coupons"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'coupons' ? 'active' : '' %>">
+                    <i data-lucide="ticket"></i>
+                    <span class="nav-text">Coupons</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/orders"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'orders' ? 'active' : '' %>">
+                    <i data-lucide="list-ordered"></i>
+                    <span class="nav-text">Orders</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/report"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'report' ? 'active' : '' %>">
+                    <i data-lucide="file-text"></i>
+                    <span class="nav-text">Report</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/profile"
+                    class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'profile' ? 'active' : '' %>">
+                    <i data-lucide="user-cog"></i>
+                    <span class="nav-text">Profile</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="logout-section" style="padding: 0 10px;">
+            <a href="/admin/logout" class="logout-btn" style="padding: 12px 15px;">
+                <i data-lucide="log-out"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+        </div>
+    </aside>

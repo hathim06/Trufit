@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<%- include('partials/head') %>
+    <style>
+        /* Profile Content */
+        .profile-page {
+            padding: 80px 20px;
+            min-height: 100vh;
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 40px;
+        }
+
+        /* Sidebar Styles */
+        .profile-sidebar {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            padding: 0;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar-header {
+            background: #000;
+            color: #FFF;
+            padding: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar-menu li {
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .sidebar-menu li:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            color: #374151;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .sidebar-menu a:hover {
+            background: #F3F4F6;
+            color: #000;
+            padding-left: 24px;
+        }
+        
+        .sidebar-menu a.active {
+            background: #F3F4F6;
+            color: #000;
+            border-left: 3px solid #000;
+        }
+
+        .sidebar-menu a i {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        /* Main Content */
+        .profile-main-content {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            padding: 40px;
+        }
+
+        .profile-main-content h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+
+        /* Table Styles */
+        .orders-table-container {
+            overflow-x: auto;
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .orders-table th {
+            padding: 15px;
+            background: #F9FAFB;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #6B7280;
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .orders-table td {
+            padding: 20px 15px;
+            border-bottom: 1px solid #E5E7EB;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .orders-table tr:hover {
+            background: #F9FAFB;
+        }
+
+        .order-id {
+            font-weight: 700;
+            color: #3B82F6;
+            text-decoration: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-placed { background: #DBEAFE; color: #1E40AF; }
+        .status-processing { background: #FEF3C7; color: #92400E; }
+        .status-shipped { background: #E0E7FF; color: #3730A3; }
+        .status-delivered { background: #D1FAE5; color: #065F46; }
+        .status-cancelled { background: #FEE2E2; color: #991B1B; }
+
+        .btn-view {
+            background: #000;
+            color: #FFF;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .btn-view:hover {
+            background: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 0;
+            color: #6B7280;
+        }
+
+        .empty-state i {
+            display: block;
+            margin: 0 auto 20px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .profile-container {
+                grid-template-columns: 1fr;
+            }
+            .profile-main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('partials/header') %>
+
+    <main class="container">
+        <section class="profile-page">
+            <div class="profile-container">
+                <%- include('partials/user-sidebar', { activePage: 'orders' }) %>
+
+                <div class="profile-main-content">
+                    <h1>My Orders</h1>
+
+                    <div class="orders-table-container">
+                        <% if (orders && orders.length > 0) { %>
+                            <table class="orders-table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Date</th>
+                                        <th>Total</th>
+                                        <th>Payment</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% orders.forEach(order => { %>
+                                        <tr>
+                                            <td>
+                                                <a href="/profile/orders/<%= order._id %>" class="order-id">
+                                                    <%= order.orderId %>
+                                                </a>
+                                            </td>
+                                            <td><%= new Date(order.createdAt).toLocaleDateString('en-GB') %></td>
+                                            <td style="font-weight: 600;">₹<%= order.grandTotal.toLocaleString() %></td>
+                                            <td><%= order.paymentMethod %></td>
+                                            <td>
+                                                <span class="status-badge status-<%= order.orderStatus.toLowerCase() %>">
+                                                    <%= order.orderStatus %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="/profile/orders/<%= order._id %>" class="btn-view">Details</a>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        <% } else { %>
+                            <div class="empty-state">
+                                <i data-lucide="package-open" style="width: 64px; height: 64px;"></i>
+                                <p>You haven't placed any orders yet.</p>
+                                <a href="/shop" class="btn-view" style="display: inline-block; margin-top: 20px;">Start Shopping</a>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <%- include('partials/footer') %>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
