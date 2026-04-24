@@ -5,6 +5,19 @@ const cartModel = require('../../User/models/cartModel');
 const wishlistModel = require('../../User/models/wishlistModel');
 const categoryModel = require('../../User/models/categoryModel');
 
+const syncProductWithVariants = async (productId) => {
+    const variants = await variantModel.find({ productId, isDeleted: false, quantity: { $gt: 0 } });
+    const uniqueSizes = [...new Set(variants.map(v => v.size))];
+    const uniqueColors = [...new Set(variants.map(v => v.color))];
+    const totalQuantity = variants.reduce((sum, v) => sum + v.quantity, 0);
+    
+    await productModel.findByIdAndUpdate(productId, {
+        size: uniqueSizes,
+        color: uniqueColors,
+        quantity: totalQuantity
+    });
+};
+
 const addProductService = async (req) => {
     // Validate categoryId
     if (!req.body.categoryId || req.body.categoryId.trim() === '') {
@@ -101,6 +114,8 @@ const addProductService = async (req) => {
         product.image = [firstVariantImage];
         await product.save();
     }
+
+    await syncProductWithVariants(product._id);
 
     return product;
 };
@@ -263,6 +278,8 @@ const updateProductService = async (req) => {
         }
     }
 
+    await syncProductWithVariants(id);
+
     return product;
 };
 
@@ -296,7 +313,9 @@ const addVariantService = async (productId, variantData, imageFiles) => {
         isDeleted: false
     });
 
-    return await variant.save();
+    const saved = await variant.save();
+    await syncProductWithVariants(productId);
+    return saved;
 };
 
 const updateVariantService = async (variantId, variantData, imageFiles) => {
@@ -313,12 +332,15 @@ const updateVariantService = async (variantId, variantData, imageFiles) => {
     }
 
     variant.updatedAt = new Date();
-    return await variant.save();
+    const saved = await variant.save();
+    await syncProductWithVariants(variant.productId);
+    return saved;
 };
 
 const deleteVariantService = async (variantId) => {
     const variant = await variantModel.findByIdAndUpdate(variantId, { isDeleted: true });
     if (!variant) throw new Error('Variant not found');
+    await syncProductWithVariants(variant.productId);
     return variant;
 };
 

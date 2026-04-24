@@ -11,6 +11,7 @@ const productController = require('../controllers/productController');
 const couponController = require('../controllers/couponController');
 const orderController = require('../controllers/orderController');
 const bannerController = require('../controllers/bannerController');
+const colorController = require('../controllers/colorController');
 
 // Auth & Dashboard
 router.get('/login', adminAuth.isLoggedOut, adminController.showLogin);
@@ -87,5 +88,10 @@ router.get('/edit-banner/:id', adminAuth.isAdmin, bannerController.loadEditBanne
 router.post('/update-banner/:id', adminAuth.isAdmin, upload.single('image'), bannerController.updateBanner);
 router.patch('/banner-status/:id', adminAuth.isAdmin, bannerController.toggleBannerStatus);
 router.delete('/delete-banner/:id', adminAuth.isAdmin, bannerController.deleteBanner);
+
+// Color Management
+router.get('/colors', adminAuth.isAdmin, colorController.getColorsPage);
+router.post('/colors/add', adminAuth.isAdmin, colorController.addColor);
+router.delete('/colors/delete/:id', adminAuth.isAdmin, colorController.deleteColor);
 
 module.exports = router;

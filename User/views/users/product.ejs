@@ -296,7 +296,7 @@
         .thumb-item.active {
             border-color: #000;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .thumb-item img {
@@ -830,92 +830,122 @@
                         </div>
 
                         <p class="stock-status" id="stockStatus">
-                            <%= product.quantity > 0 ? 'In Stock' : 'Out of Stock' %>
+                            <%= product.quantity> 0 ? 'In Stock' : 'Out of Stock' %>
                         </p>
-                        <p id="stockQtyDisplay" style="font-size:13px;color:#6B7280;margin-bottom:20px;margin-top:-10px;"></p>
 
-                        <% if (variants && variants.length > 0) { %>
-                            <div class="option-group" id="sizeOptionGroup">
-                                <p class="option-label">Size</p>
-                                <div class="size-grid" id="sizeGrid">
-                                    <%
-                                        // Show sizes for first color only initially
-                                        const firstColor = [...new Set(variants.map(v => v.color))][0];
-                                        const firstColorSizes = [...new Set(variants.filter(v => v.color === firstColor).map(v => v.size))];
-                                    %>
-                                    <% firstColorSizes.forEach(size => { %>
-                                        <div class="size-item" onclick="selectSize('<%= size %>', this)"
-                                            data-size="<%= size %>">
-                                            <%= size %>
-                                        </div>
-                                    <% }) %>
-                                </div>
+                        <!-- Highlights Section -->
+                        <% if (product.highlights && product.highlights.length> 0) { %>
+                            <div style="margin-bottom: 25px;">
+                                <ul style="padding-left: 20px; color: #4B5563; font-size: 14px; line-height: 1.8;">
+                                    <% product.highlights.forEach(point=> { %>
+                                        <li>
+                                            <%= point %>
+                                        </li>
+                                        <% }) %>
+                                </ul>
                             </div>
-                            <% } else if (product.size && Array.isArray(product.size)) { %>
-                                <div class="option-group">
-                                    <p class="option-label">Size</p>
-                                    <div class="size-grid">
-                                        <% product.size.forEach(size=> { %>
-                                            <div class="size-item"
-                                                onclick="selectManualAttribute('size', '<%= size %>', this)">
-                                                <%= size %>
-                                            </div>
-                                            <% }) %>
-                                    </div>
-                                </div>
-                                <% } %>
+                            <% } %>
 
-                                    <% if (variants && variants.length> 0) { %>
+                                <p id="stockQtyDisplay"
+                                    style="font-size:13px;color:#6B7280;margin-bottom:20px;margin-top:-10px;"></p>
+
+                                <% if (variants && variants.length> 0) { %>
+                                    <div class="option-group" id="sizeOptionGroup">
+                                        <p class="option-label">Size</p>
+                                        <div class="size-grid" id="sizeGrid">
+                                            <% 
+                                                // Show sizes for first color only initially
+                                                const firstColor = [...new Set(variants.map(v => v.color))][0];
+                                                const firstColorSizes = [...new Set(variants.filter(v => v.color === firstColor).map(v => v.size))];
+                                            %>
+                                                <% firstColorSizes.forEach(size=> { %>
+                                                    <div class="size-item" onclick="selectSize('<%= size %>', this)"
+                                                        data-size="<%= size %>">
+                                                        <%= size %>
+                                                    </div>
+                                                    <% }) %>
+                                        </div>
+                                    </div>
+                                    <% } else if (product.size && Array.isArray(product.size)) { %>
                                         <div class="option-group">
-                                            <p class="option-label">Colors: <span id="selectedColorName"
-                                                    style="color: #6B7280; font-weight: 500; text-transform: none;"></span>
-                                            </p>
-                                            <div class="color-grid">
-                                                <% [...new Set(variants.map(v=> v.color))].forEach(color => { %>
-                                                    <div class="color-item bg-<%= color %>" data-color="<%= color %>"
-                                                        onclick="selectColor('<%= color %>', this)"
-                                                        title="<%= color %>">
+                                            <p class="option-label">Size</p>
+                                            <div class="size-grid">
+                                                <% product.size.forEach(size=> { %>
+                                                    <div class="size-item"
+                                                        onclick="selectManualAttribute('size', '<%= size %>', this)">
+                                                        <%= size %>
                                                     </div>
                                                     <% }) %>
                                             </div>
                                         </div>
-                                        <% } else if (product.color && Array.isArray(product.color)) { %>
-                                            <div class="option-group">
-                                                <p class="option-label">Colors: <span id="selectedColorName"
-                                                        style="color: #6B7280; font-weight: 500; text-transform: none;"></span>
-                                                </p>
-                                                <div class="color-grid">
-                                                    <% product.color.forEach(color=> { %>
-                                                        <div class="color-item" data-color="<%- color %>"
-                                                            onclick="selectManualAttribute('color', '<%= color %>', this)"
-                                                            title="<%= color %>"></div>
-                                                        <% }) %>
-                                                </div>
-                                            </div>
-                                            <% } %>
+                                        <% } %>
 
-                                                <input type="hidden" id="selectedSize" name="selectedSize">
-                                                <input type="hidden" id="selectedColor" name="selectedColor">
-                                                <input type="hidden" id="selectedVariantId" name="selectedVariantId">
-
-                                                <div class="quantity-row">
-                                                    <div class="quantity-selector">
-                                                        <button class="qty-btn" onclick="decrementQty()">-</button>
-                                                        <input type="text" value="1" id="productQty" class="qty-input"
-                                                            data-stock="<%= product.quantity %>" readonly>
-                                                        <button class="qty-btn" onclick="incrementQty()">+</button>
+                                            <% if (variants && variants.length> 0) { %>
+                                                <div class="option-group">
+                                                    <p class="option-label">Colors: <span id="selectedColorName"
+                                                            style="color: #6B7280; font-weight: 500; text-transform: none;"></span>
+                                                    </p>
+                                                    <div class="color-grid">
+                                                        <% [...new Set(variants.map(v=> v.color))].forEach(color => { %>
+                                                            <div class="color-item bg-<%= color %>"
+                                                                data-color="<%= color %>"
+                                                                onclick="selectColor('<%= color %>', this)"
+                                                                title="<%= color %>">
+                                                            </div>
+                                                            <% }) %>
                                                     </div>
-                                                    <span id="stockRemainingLabel" style="font-size: 14px; color: #6B7280;">Only <%=
-                                                            product.quantity %>
-                                                            items left!</span>
                                                 </div>
+                                                <% } else if (product.color && Array.isArray(product.color)) { %>
+                                                    <div class="option-group">
+                                                        <p class="option-label">Colors: <span id="selectedColorName"
+                                                                style="color: #6B7280; font-weight: 500; text-transform: none;"></span>
+                                                        </p>
+                                                        <div class="color-grid">
+                                                            <% product.color.forEach(color=> { %>
+                                                                <div class="color-item" data-color="<%- color %>"
+                                                                    onclick="selectManualAttribute('color', '<%= color %>', this)"
+                                                                    title="<%= color %>"></div>
+                                                                <% }) %>
+                                                        </div>
+                                                    </div>
+                                                    <% } %>
 
-                                                <div class="action-btns">
-                                                    <button class="btn btn-buy btn-primary">Buy Now</button>
-                                                    <button class="btn btn-cart btn-secondary"
-                                                        onclick="addToCart(event, '<%= product._id %>')">Add to
-                                                        Cart</button>
-                                                </div>
+                                                        <input type="hidden" id="selectedSize" name="selectedSize">
+                                                        <input type="hidden" id="selectedColor" name="selectedColor">
+                                                        <input type="hidden" id="selectedVariantId"
+                                                            name="selectedVariantId">
+
+                                                        <div class="quantity-row">
+                                                            <div class="quantity-selector">
+                                                                <button class="qty-btn"
+                                                                    onclick="decrementQty()">-</button>
+                                                                <input type="text" value="1" id="productQty"
+                                                                    class="qty-input"
+                                                                    data-stock="<%= product.quantity %>" readonly>
+                                                                <button class="qty-btn"
+                                                                    onclick="incrementQty()">+</button>
+                                                            </div>
+                                                            <span id="stockRemainingLabel"
+                                                                style="font-size: 14px; color: #6B7280;">Only <%=
+                                                                    product.quantity %>
+                                                                    items left!</span>
+                                                        </div>
+
+                                                        <div class="action-btns">
+                                                            <button class="btn btn-buy btn-primary" id="buyNowBtn"
+                                                                onclick="buyNow(event, '<%= product._id %>')"
+                                                                <%=product.quantity <=0
+                                                                ? 'disabled style="opacity: 0.5; cursor: not-allowed;"'
+                                                                : '' %>>Buy Now</button>
+                                                            <button class="btn btn-cart btn-secondary" id="addToCartBtn"
+                                                                onclick="addToCart(event, '<%= product._id %>')"
+                                                                <%=product.quantity <=0
+                                                                ? 'disabled style="opacity: 0.5; cursor: not-allowed;"'
+                                                                : '' %>>
+                                                                <%= product.quantity> 0 ? 'Add to Cart' : 'Out of Stock'
+                                                                    %>
+                                                            </button>
+                                                        </div>
                     </div>
                 </section>
 
@@ -924,16 +954,19 @@
                     <div class="info-left">
                         <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 20px;">Product Gallery</h2>
                         <div class="feature-thumbnails">
-                            <% if (product.image && product.image.length > 0) { %>
-                                <% product.image.forEach((img, index) => { %>
-                                    <div class="thumbnail-card" onclick="updateMainImage('<%= img %>', this)" style="cursor: pointer; transition: transform 0.2s;">
+                            <% if (product.image && product.image.length> 0) { %>
+                                <% product.image.forEach((img, index)=> { %>
+                                    <div class="thumbnail-card" onclick="updateMainImage('<%= img %>', this)"
+                                        style="cursor: pointer; transition: transform 0.2s;">
                                         <img src="<%= img %>" alt="Detail <%= index + 1 %>">
-                                        <p>View Angle <%= index + 1 %></p>
+                                        <p>View Angle <%= index + 1 %>
+                                        </p>
                                     </div>
-                                <% }) %>
-                            <% } else { %>
-                                <p style="color: #6B7280; font-size: 14px;">No additional detail images available.</p>
-                            <% } %>
+                                    <% }) %>
+                                        <% } else { %>
+                                            <p style="color: #6B7280; font-size: 14px;">No additional detail images
+                                                available.</p>
+                                            <% } %>
                         </div>
                     </div>
 
@@ -950,34 +983,49 @@
                             <table class="product-details-table">
                                 <tr>
                                     <th>Category</th>
-                                    <td><%= product.categoryId ? product.categoryId.name : 'Uncategorized' %></td>
+                                    <td>
+                                        <%= product.categoryId ? product.categoryId.name : 'Uncategorized' %>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>Base Price</th>
-                                    <td>₹<%= product.price %></td>
+                                    <td>₹<%= product.price %>
+                                    </td>
                                 </tr>
                                 <% if (product.offerPrice) { %>
-                                <tr>
-                                    <th>Offer Price</th>
-                                    <td>₹<%= product.offerPrice %></td>
-                                </tr>
-                                <% } %>
-                                <tr>
-                                    <th>Availability</th>
-                                    <td><%= product.quantity > 0 ? 'In Stock (' + product.quantity + ' items)' : 'Out of Stock' %></td>
-                                </tr>
-                                <tr>
-                                    <th>Sizes</th>
-                                    <td><%= product.size && Array.isArray(product.size) && product.size.length > 0 ? product.size.join(', ') : 'Standard' %></td>
-                                </tr>
-                                <tr>
-                                    <th>Colors</th>
-                                    <td><%= product.color && Array.isArray(product.color) && product.color.length > 0 ? product.color.join(', ') : 'Default' %></td>
-                                </tr>
-                                <tr>
-                                    <th>Verification</th>
-                                    <td><%= product.isVerified ? 'Verified Authentic' : 'Standard' %></td>
-                                </tr>
+                                    <tr>
+                                        <th>Offer Price</th>
+                                        <td>₹<%= product.offerPrice %>
+                                        </td>
+                                    </tr>
+                                    <% } %>
+                                        <tr>
+                                            <th>Availability</th>
+                                            <td>
+                                                <%= product.quantity> 0 ? 'In Stock (' + product.quantity + ' items)' :
+                                                    'Out of Stock' %>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Sizes</th>
+                                            <td>
+                                                <%= product.size && Array.isArray(product.size) && product.size.length>
+                                                    0 ? product.size.join(', ') : 'Standard' %>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Colors</th>
+                                            <td>
+                                                <%= product.color && Array.isArray(product.color) &&
+                                                    product.color.length> 0 ? product.color.join(', ') : 'Default' %>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Verification</th>
+                                            <td>
+                                                <%= product.isVerified ? 'Verified Authentic' : 'Standard' %>
+                                            </td>
+                                        </tr>
                             </table>
                         </div>
                     </div>
@@ -1230,7 +1278,7 @@
                             const div = document.createElement('div');
                             div.className = 'size-item' + (size === variant.size ? ' active' : '');
                             div.setAttribute('data-size', size);
-                            div.onclick = function() { selectSize(size, this); };
+                            div.onclick = function () { selectSize(size, this); };
                             div.innerText = size;
                             if (qty <= 0) {
                                 div.style.opacity = '0.4';
@@ -1250,7 +1298,7 @@
                     let match = variantsData.find(v => v.color === color && v.size === currentSelectedSize && v.quantity > 0);
                     if (!match) match = variantsData.find(v => v.color === color && v.quantity > 0);
                     if (!match) match = variantsData.find(v => v.color === color);
-                    
+
                     if (match) updateProductUI(match);
                 }
 
@@ -1371,12 +1419,15 @@
                 async function addToCart(event, productId) {
                     // Stop the click from triggering the anchor tag
                     event.preventDefault();
-                    event.stopPropagation();
+                    const variantId = document.getElementById('selectedVariantId').value;
+                    const quantity = parseInt(document.getElementById('productQty').value);
 
+                    if (quantity < 1) {
+                        return Swal.fire('Error', 'Please select at least 1 item', 'error');
+                    }
+
+                    if (window.TrufitLoader) window.TrufitLoader.show();
                     try {
-                        const variantId = document.getElementById('selectedVariantId').value;
-
-                        // Replace '/cart/add' with your actual backend route if different
                         const response = await fetch('/cart/add', {
                             method: 'POST',
                             headers: {
@@ -1385,11 +1436,12 @@
                             body: JSON.stringify({
                                 productId: productId,
                                 variantId: variantId,
-                                quantity: 1
+                                quantity: quantity
                             })
                         });
 
                         const data = await response.json();
+                        if (window.TrufitLoader) window.TrufitLoader.hide();
 
                         if (response.ok) {
                             Swal.fire({
@@ -1407,12 +1459,48 @@
                             });
                         }
                     } catch (error) {
+                        if (window.TrufitLoader) window.TrufitLoader.hide();
                         console.error("Cart Error:", error);
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
                             text: 'Something went wrong!'
                         });
+                    }
+                }
+
+                async function buyNow(event, productId) {
+                    event.preventDefault();
+                    const variantId = document.getElementById('selectedVariantId').value;
+                    const quantity = parseInt(document.getElementById('productQty').value);
+
+                    if (quantity < 1) {
+                        return Swal.fire('Error', 'Please select at least 1 item', 'error');
+                    }
+
+                    if (window.TrufitLoader) window.TrufitLoader.show();
+                    try {
+                        const response = await fetch('/cart/add', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ productId, variantId, quantity })
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            window.location.href = '/checkout';
+                        } else {
+                            if (window.TrufitLoader) window.TrufitLoader.hide();
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: data.message || 'Please log in to purchase items'
+                            });
+                        }
+                    } catch (error) {
+                        if (window.TrufitLoader) window.TrufitLoader.hide();
+                        console.error("Buy Now Error:", error);
+                        Swal.fire('Error', 'Something went wrong!', 'error');
                     }
                 }
 

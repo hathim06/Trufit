@@ -45,7 +45,16 @@ const getShopProductsService = async (filters = {}, page = 1) => {
     }
 
     if (filters.size && filters.size.trim() !== '') {
-        query.size = { $in: [filters.size] };
+        const productIdsWithSelectedSize = await variantModel.find({
+            size: filters.size,
+            isDeleted: false,
+            quantity: { $gt: 0 }
+        }).distinct('productId');
+        
+        query.$or = [
+            { _id: { $in: productIdsWithSelectedSize } },
+            { size: filters.size }
+        ];
     }
 
     if (filters.minPrice || filters.maxPrice) {

@@ -9,8 +9,8 @@ router.get('/shop', productController.loadShopPage);
 router.get('/search-suggestions', productController.getSearchSuggestions);
 
 // Review routes
-router.post('/product/:productId/review', userAuth.isLoggedIn, reviewController.addReview);
-router.get('/product/:productId/reviews', reviewController.getProductReviews);
+router.post('/review/add/:productId', userAuth.isLoggedIn, reviewController.addReview);
+router.get('/review/:productId', reviewController.getProductReviews);
 router.put('/review/:reviewId', userAuth.isLoggedIn, reviewController.updateReview);
 router.delete('/review/:reviewId', userAuth.isLoggedIn, reviewController.deleteReview);
 

@@ -3,6 +3,7 @@ const addressModel = require('../../User/models/addressModel');
 
 const getUsersService = async (queryParams) => {
     const search = queryParams.search || "";
+    const status = queryParams.status || "";
     const page = parseInt(queryParams.page) || 1;
     const limit = 5;
     const skip = (page - 1) * limit;
@@ -16,6 +17,9 @@ const getUsersService = async (queryParams) => {
         ]
     };
 
+    if (status === 'active') query.isBlocked = false;
+    if (status === 'blocked') query.isBlocked = true;
+
     const totalUsers = await userModel.countDocuments(query);
     const totalPages = Math.ceil(totalUsers / limit);
 
@@ -27,6 +31,7 @@ const getUsersService = async (queryParams) => {
     return {
         users,
         search,
+        status,
         currentPage: page,
         totalPages,
         totalUsers,

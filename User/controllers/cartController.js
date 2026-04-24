@@ -22,22 +22,23 @@ const addToCart = async (req, res) => {
 const removeFromCart = async (req, res) => {
     try {
         await cartService.removeFromCartService(req.session.user, req.params.id);
-        res.redirect('/cart');
+        return res.status(200).json({ success: true, message: "Removed from cart" });
     } catch (error) {
-        res.redirect('/login');
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 
 const updateCartQuantity = async (req, res) => {
     try {
+        const { quantity } = req.body;
         await cartService.updateCartQuantityService(
             req.session.user,
             req.params.id,
-            req.body.quantity
+            quantity
         );
-        res.redirect('/cart');
+        return res.status(200).json({ success: true, message: "Quantity updated" });
     } catch (error) {
-        res.redirect('/login');
+        return res.status(400).json({ success: false, message: error.message });
     }
 };
 

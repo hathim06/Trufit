@@ -51,7 +51,7 @@
                     <div class="stat-card">
                         <div class="stat-info">
                             <h3>Total Revenue</h3>
-                            <div class="value">₹ 45,551</div>
+                            <div class="value">₹ <%= totalRevenue.toLocaleString() %></div>
                         </div>
                         <div class="stat-icon">
                             <i data-lucide="indian-rupee"></i>
@@ -60,7 +60,7 @@
                     <div class="stat-card">
                         <div class="stat-info">
                             <h3>Orders</h3>
-                            <div class="value">528</div>
+                            <div class="value"><%= orderCount %></div>
                         </div>
                         <div class="stat-icon">
                             <i data-lucide="shopping-cart"></i>
@@ -69,7 +69,7 @@
                     <div class="stat-card">
                         <div class="stat-info">
                             <h3>Products</h3>
-                            <div class="value">1,524</div>
+                            <div class="value"><%= productCount %></div>
                         </div>
                         <div class="stat-icon">
                             <i data-lucide="package"></i>
@@ -109,20 +109,25 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>#8111</td>
-                                <td>Hans Burger</td>
-                                <td>12/03/2026</td>
-                                <td>₹1,999.00</td>
-                                <td><span class="status-badge status-completed">Completed</span></td>
-                            </tr>
-                            <tr>
-                                <td>#8112</td>
-                                <td>Kailu Roberts</td>
-                                <td>12/03/2026</td>
-                                <td>₹3,999.00</td>
-                                <td><span class="status-badge status-pending">Pending</span></td>
-                            </tr>
+                            <% if (recentOrders && recentOrders.length > 0) { %>
+                                <% recentOrders.forEach(order => { %>
+                                    <tr>
+                                        <td>#<%= order.orderId %></td>
+                                        <td><%= order.userId ? order.userId.firstName + ' ' + order.userId.lastName : 'Unknown' %></td>
+                                        <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                                        <td>₹<%= order.grandTotal.toLocaleString() %></td>
+                                        <td>
+                                            <span class="status-badge status-<%= order.orderStatus.toLowerCase() %>">
+                                                <%= order.orderStatus %>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 20px;">No recent orders.</td>
+                                </tr>
+                            <% } %>
                         </tbody>
                     </table>
                 </div>

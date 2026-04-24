@@ -1,0 +1,139 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'colors' }) %>
+
+    <main class="main-content">
+        <%- include('./partials/adminHeader', { title: 'COLOR MANAGEMENT' }) %>
+
+        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 30px; margin-top: 30px;">
+            <!-- Colors List -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Available Colors</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Preview</th>
+                            <th>Color Name</th>
+                            <th>Hex Code</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="colorsTableBody">
+                        <% if (colors && colors.length > 0) { %>
+                            <% colors.forEach(color => { %>
+                                <tr>
+                                    <td>
+                                        <div style="width: 30px; height: 30px; border-radius: 50%; background-color: <%= color.hex %>; border: 2px solid #E5E7EB;"></div>
+                                    </td>
+                                    <td><strong><%= color.name %></strong></td>
+                                    <td><code><%= color.hex %></code></td>
+                                    <td>
+                                        <button class="action-btn" onclick="deleteColor('<%= color._id %>')">
+                                            <i data-lucide="trash-2" style="width: 18px; height: 18px; color: #EF4444;"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 40px; color: #6B7280;">No colors added yet.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add Color Form -->
+            <div class="table-container" style="height: fit-content;">
+                <div class="table-header">
+                    <h2>Add New Color</h2>
+                </div>
+                <form id="addColorForm" style="padding: 20px;">
+                    <div class="form-group">
+                        <label>Color Name</label>
+                        <input type="text" id="colorName" placeholder="e.g. Midnight Blue" required style="width: 100%; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px;">
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>Hex Code</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="color" id="colorHexPicker" value="#000000" style="width: 50px; height: 45px; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; padding: 5px;">
+                            <input type="text" id="colorHexText" placeholder="#000000" required style="flex: 1; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 30px; padding: 15px; font-weight: 700;">ADD COLOR</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        lucide.createIcons();
+
+        // Sync color picker and text input
+        const hexPicker = document.getElementById('colorHexPicker');
+        const hexText = document.getElementById('colorHexText');
+
+        hexPicker.addEventListener('input', (e) => {
+            hexText.value = e.target.value.toUpperCase();
+        });
+
+        hexText.addEventListener('input', (e) => {
+            if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                hexPicker.value = e.target.value;
+            }
+        });
+
+        document.getElementById('addColorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('colorName').value;
+            const hex = hexText.value;
+
+            try {
+                const response = await fetch('/admin/colors/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, hex })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire('Success', data.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Something went wrong', 'error');
+            }
+        });
+
+        async function deleteColor(id) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "This will remove this color from the available options.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#000',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/colors/delete/${id}`, { method: 'DELETE' });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('Deleted!', data.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Something went wrong', 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

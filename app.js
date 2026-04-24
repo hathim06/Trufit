@@ -89,11 +89,20 @@ app.use('/auth', authRoutes);
 // Home Page
 app.get('/', async (req, res) => {
     try {
-        const products = await productModel.find({
+        // Try to find products specifically marked for the homepage
+        let products = await productModel.find({
             showOnHomepage: true,
             isDeleted: false,
             status: 'Active'
-        }).sort({ createdAt: -1 });
+        }).sort({ createdAt: -1 }).limit(3);
+
+        // Fallback: If no products are marked for homepage, just show the 3 latest active products
+        if (products.length === 0) {
+            products = await productModel.find({
+                isDeleted: false,
+                status: 'Active'
+            }).sort({ createdAt: -1 }).limit(3);
+        }
 
         const banners = await bannerModel.find({
             isDeleted: false,

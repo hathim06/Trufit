@@ -46,10 +46,21 @@
             <main class="main-content">
                 <%- include('./partials/adminHeader', { title: 'USER MANAGEMENT' }) %>
 
-                <div class="filter-bar">
-                    <input type="text" id="searchInput" placeholder="Search users..." value="<%= search %>">
-                    <button onclick="clearSearch()" class="btn-action"
-                        style="background: #4F46E5; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 4px;">Clear</button>
+                <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; margin-bottom: 30px;">
+                    <div style="position: relative; flex: 1; max-width: 500px;">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search users..." value="<%= search %>" style="width: 100%; padding-right: 36px;">
+                        <% if (search) { %>
+                            <button onclick="clearSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9CA3AF; display: block;">✕</button>
+                        <% } else { %>
+                            <button onclick="clearSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9CA3AF; display: none;">✕</button>
+                        <% } %>
+                    </div>
+                    
+                    <select id="statusFilter" class="search-input" style="max-width: 200px;">
+                        <option value="">All Status</option>
+                        <option value="active" <%= status === 'active' ? 'selected' : '' %>>Active</option>
+                        <option value="blocked" <%= status === 'blocked' ? 'selected' : '' %>>Blocked</option>
+                    </select>
                 </div>
 
                 <div class="table-container">
@@ -109,7 +120,7 @@
                     <div class="pagination"
                         style="margin-top: 30px; display: flex; justify-content: center; gap: 10px;">
                         <% if (currentPage> 1) { %>
-                            <a href="/admin/users?page=<%= currentPage - 1 %>&search=<%= search %>"
+                            <a href="/admin/users?page=<%= currentPage - 1 %>&search=<%= search %>&status=<%= status %>"
                                 style="padding: 5px 10px; text-decoration: none; color: #4F46E5; border: 1px solid #D1D5DB; border-radius: 4px;">&laquo;
                                 Previous</a>
                             <% } %>
@@ -122,7 +133,7 @@
                                         </span>
                                         <% } else if (i===1 || i===totalPages || (i>= currentPage - 2 && i <=
                                                 currentPage + 2)) { %>
-                                                <a href="/admin/users?page=<%= i %>&search=<%= search %>"
+                                                <a href="/admin/users?page=<%= i %>&search=<%= search %>&status=<%= status %>"
                                                     style="padding: 5px 10px; text-decoration: none; color: #6B7280; border: 1px solid #D1D5DB; border-radius: 4px; margin: 0 2px;">
                                                     <%= i %>
                                                 </a>
@@ -203,10 +214,17 @@
                     clearTimeout(timer);
 
                     const value = this.value;
+                    const status = document.getElementById("statusFilter").value;
 
                     timer = setTimeout(() => {
-                        window.location.href = `/admin/users?search=${value}&page=1`;
+                        window.location.href = `/admin/users?search=${value}&status=${status}&page=1`;
                     }, 500); // 500ms delay
+                });
+
+                document.getElementById("statusFilter").addEventListener("change", function () {
+                    const search = document.getElementById("searchInput").value;
+                    const status = this.value;
+                    window.location.href = `/admin/users?search=${search}&status=${status}&page=1`;
                 });
 
                 // Clear button

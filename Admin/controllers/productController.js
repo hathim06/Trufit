@@ -1,5 +1,6 @@
 const productService = require('../Services/productService');
 const categoryService = require('../Services/categoryService');
+const colorService = require('../Services/colorService');
 
 const loadProductPage = async (req, res) => {
     try {
@@ -25,7 +26,8 @@ const loadProductPage = async (req, res) => {
 const loadAddProduct = async (req, res) => {
     try {
         const categories = await categoryService.getCategoriesService();
-        res.render('admin/add-product', { categories });
+        const colors = await colorService.getAllColorsService();
+        res.render('admin/add-product', { categories, colors });
     } catch (error) {
         console.log(error);
         res.redirect('/admin/products');
@@ -37,7 +39,8 @@ const loadEditProduct = async (req, res) => {
         const product = await productService.getSingleProductService(req.params.id);
         const categories = await categoryService.getCategoriesService();
         const variants = await productService.getVariantsByProductId(req.params.id);
-        res.render('admin/edit-product', { product, categories, variants });
+        const colors = await colorService.getAllColorsService();
+        res.render('admin/edit-product', { product, categories, variants, colors });
     } catch (error) {
         console.log(error);
         res.redirect('/admin/products');

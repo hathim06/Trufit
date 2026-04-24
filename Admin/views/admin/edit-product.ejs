@@ -261,18 +261,7 @@
         box-shadow: 0 0 0 4px #fff, 0 0 0 6px #000;
     }
 
-    .bg-Blue { background-color: #3B82F6; }
-    .bg-Red { background-color: #EF4444; }
-    .bg-Black { background-color: #000000; }
-    .bg-Green { background-color: #10B981; }
-    .bg-White { background-color: #FFFFFF; border: 3px solid #D1D5DB !important; }
-    .bg-Gold { background-color: #F59E0B; }
-    .bg-Yellow { background-color: #FDE047; border: 3px solid #E5E7EB !important; }
-    .bg-Pink { background-color: #F472B6; }
-    .bg-Purple { background-color: #7C3AED; }
-    .bg-Orange { background-color: #F97316; }
-    .bg-Gray { background-color: #6B7280; }
-    .bg-Silver { background-color: #D1D5DB; border: 3px solid #9CA3AF !important; }
+
 </style>
 </head>
 
@@ -346,12 +335,17 @@
                 <!-- Step 2: Color Selection -->
                 <div class="form-group" style="margin-top:40px;">
                     <label style="margin-bottom:20px;display:block;font-weight:800;font-size:14px;letter-spacing:1px;color:#374151;">STEP 2: SELECT COLOR VARIANTS</label>
-                    <div style="background:#fff;padding:30px;border-radius:24px;border:1px solid #E5E7EB;">
-                        <% const allColors=['Blue','Red','Black','Green','White','Gold','Yellow','Pink','Purple','Orange','Gray','Silver'];
-                           allColors.forEach(c => { %>
-                            <input type="checkbox" id="color-<%= c %>" class="color-pill" onchange="toggleColorVariant('<%= c %>')" <%= existingColors.includes(c) ? 'checked' : '' %>>
-                            <label for="color-<%= c %>" class="color-label bg-<%= c %>" title="<%= c %>"></label>
-                        <% }) %>
+                    <div style="background:#fff;padding:30px;border-radius:24px;border:1px solid #E5E7EB;display:flex;flex-wrap:wrap;gap:15px;align-items:center;">
+                        <% if (typeof colors !== 'undefined' && colors.length > 0) { %>
+                            <% colors.forEach(color => { %>
+                                <div style="display:flex;">
+                                    <input type="checkbox" id="color-<%= color.name %>" class="color-pill" onchange="toggleColorVariant('<%= color.name %>')" <%= existingColors.includes(color.name) ? 'checked' : '' %>>
+                                    <label for="color-<%= color.name %>" class="color-label dynamic-swatch" title="<%= color.name %>" data-bg-color="<%= color.hex %>" style="margin:0;"></label>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p style="color: #6B7280; font-size: 14px;">No colors available. Please add colors in Color Management.</p>
+                        <% } %>
                     </div>
                 </div>
 
@@ -395,6 +389,7 @@
     <div id="product-data" 
          data-colors='<%- JSON.stringify(existingColors || []) %>' 
          data-variants='<%- JSON.stringify(variants || []) %>' 
+         data-all-colors='<%- JSON.stringify(colors || []) %>'
          style="display:none;"></div>
 
     <script>
@@ -405,6 +400,10 @@
         const activeSizes = new Map();
 
         const dataEl = document.getElementById('product-data');
+        const allColorsData = JSON.parse(dataEl.getAttribute('data-all-colors') || '[]');
+        const colorMap = {};
+        allColorsData.forEach(c => colorMap[c.name] = c.hex);
+
         const initialData = {
             selectedColors: JSON.parse(dataEl.getAttribute('data-colors') || '[]'),
             variants: JSON.parse(dataEl.getAttribute('data-variants') || '[]')
@@ -548,7 +547,7 @@
                     <div class="variant-card">
                         <div class="variant-header">
                             <div style="display:flex;align-items:center;gap:15px;">
-                                <div class="bg-${color}" style="width:32px;height:32px;border-radius:50%;border:2px solid #E5E7EB;"></div>
+                                <div style="width:32px;height:32px;border-radius:50%;border:2px solid #E5E7EB; background-color: ${colorMap[color] || '#000'};"></div>
                                 <h3 style="margin:0;font-size:16px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">COLOR: ${color}</h3>
                             </div>
                             <span style="font-size:11px;font-weight:700;color:#9CA3AF;">VARIANT #${vNum}</span>
@@ -628,6 +627,13 @@
             }, 'image/jpeg', 0.9);
         }
 
+        function applyDynamicSwatches() {
+            document.querySelectorAll('.dynamic-swatch').forEach(el => {
+                if (el.dataset.bgColor) el.style.backgroundColor = el.dataset.bgColor;
+            });
+        }
+
+        applyDynamicSwatches();
         renderVariants();
         recalculateTotalStock();
     </script>

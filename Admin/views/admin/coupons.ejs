@@ -8,8 +8,16 @@
             <button class="btn btn-primary" onclick="location.href='/admin/add-coupon'">ADD COUPON</button>
         </header>
 
-        <div class="filter-bar">
-            <input type="text" class="search-input" placeholder="Search Coupons..." value="<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>">
+        <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; margin-bottom: 30px;">
+            <div style="position: relative; flex: 1; max-width: 500px;">
+                <input type="text" class="search-input" placeholder="Search Coupons..." value="<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>" style="width: 100%;">
+            </div>
+            <select id="statusFilter" class="search-input" style="max-width: 200px;">
+                <option value="">All Status</option>
+                <option value="Active" <%= typeof status !== 'undefined' && status === 'Active' ? 'selected' : '' %>>Active</option>
+                <option value="Expired" <%= typeof status !== 'undefined' && status === 'Expired' ? 'selected' : '' %>>Expired</option>
+                <option value="Inactive" <%= typeof status !== 'undefined' && status === 'Inactive' ? 'selected' : '' %>>Inactive</option>
+            </select>
         </div>
 
         <div class="table-container">
@@ -100,14 +108,24 @@
         }
 
         const searchInput = document.querySelector('.search-input');
+        const statusFilter = document.getElementById('statusFilter');
+
+        function updateFilters() {
+            const search = searchInput.value;
+            const status = statusFilter.value;
+            location.href = `/admin/coupons?search=${search}&status=${status}`;
+        }
+
         if (searchInput) {
             let debounceTimer;
             searchInput.addEventListener('input', (e) => {
                 clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    location.href = `/admin/coupons?search=${e.target.value}`;
-                }, 500);
+                debounceTimer = setTimeout(updateFilters, 500);
             });
+        }
+
+        if (statusFilter) {
+            statusFilter.addEventListener('change', updateFilters);
         }
     </script>
 </body>

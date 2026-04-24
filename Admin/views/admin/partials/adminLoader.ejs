@@ -1,0 +1,69 @@
+<!-- Admin Global Loader Overlay -->
+<div id="adminLoader" class="loader-overlay" style="display: none;">
+    <div class="loader-content">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+</div>
+
+<style>
+    .loader-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+    }
+
+    .loader-content {
+        text-align: center;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    (function() {
+        const loader = document.getElementById('adminLoader');
+
+        function showLoader() {
+            if (loader) loader.style.display = 'flex';
+        }
+
+        function hideLoader() {
+            if (loader) loader.style.display = 'none';
+        }
+
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && link.getAttribute('href') && !link.getAttribute('href').startsWith('#') && !link.getAttribute('target')) {
+                showLoader();
+            }
+        });
+
+        document.addEventListener('submit', function(e) {
+            if (!e.defaultPrevented) showLoader();
+        });
+
+        window.addEventListener('load', hideLoader);
+        window.addEventListener('pageshow', hideLoader);
+    })();
+</script>

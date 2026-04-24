@@ -2,6 +2,7 @@ const couponModel = require('../../User/models/couponModel');
 
 const getCouponsService = async (queryParams) => {
     const search = queryParams.search || "";
+    const status = queryParams.status || "";
     const page = parseInt(queryParams.page) || 1;
     const limit = 10;
     const skip = (page - 1) * limit;
@@ -14,6 +15,10 @@ const getCouponsService = async (queryParams) => {
         ]
     };
 
+    if (status) {
+        query.status = status;
+    }
+
     const totalCoupons = await couponModel.countDocuments(query);
     const totalPages = Math.ceil(totalCoupons / limit);
 
@@ -25,6 +30,7 @@ const getCouponsService = async (queryParams) => {
     return {
         coupons,
         searchTerm: search,
+        status,
         currentPage: page,
         totalPages,
         totalCoupons,

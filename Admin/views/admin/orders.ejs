@@ -7,6 +7,21 @@
             <h1 class="page-title">ORDER MANAGEMENT</h1>
         </header>
 
+        <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; margin-bottom: 30px;">
+            <div style="position: relative; flex: 1; max-width: 500px;">
+                <input type="text" id="orderSearch" class="search-input" placeholder="Search Order ID..." value="<%= search %>" style="width: 100%;">
+            </div>
+            <select id="statusFilter" class="search-input" style="max-width: 200px;">
+                <option value="">All Status</option>
+                <option value="Placed" <%= status === 'Placed' ? 'selected' : '' %>>Placed</option>
+                <option value="Processing" <%= status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                <option value="Shipped" <%= status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="Delivered" <%= status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                <option value="Cancelled" <%= status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                <option value="Returned" <%= status === 'Returned' ? 'selected' : '' %>>Returned</option>
+            </select>
+        </div>
+
         <div class="table-container">
             <table>
                 <thead>
@@ -62,6 +77,27 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         lucide.createIcons();
+        
+        const orderSearch = document.getElementById('orderSearch');
+        const statusFilter = document.getElementById('statusFilter');
+
+        function updateOrders() {
+            const search = orderSearch.value;
+            const status = statusFilter.value;
+            location.href = `/admin/orders?search=${search}&status=${status}`;
+        }
+
+        if (orderSearch) {
+            let debounceTimer;
+            orderSearch.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(updateOrders, 500);
+            });
+        }
+
+        if (statusFilter) {
+            statusFilter.addEventListener('change', updateOrders);
+        }
 
         async function updateStatus(orderId, newStatus) {
             try {

@@ -1,6 +1,7 @@
 const cartModel = require('../models/cartModel');
 const productModel = require('../models/productModel');
 const variantModel = require('../models/variants');
+const wishlistModel = require('../models/wishlistModel');
 
 const getCartService = async (userId) => {
     return await cartModel.findOne({ userId }).populate("items.productId").populate("items.variantId");
@@ -33,25 +34,35 @@ const addToCartService = async (userId, productId, variantId, quantity = 1) => {
         if (existingItem) currentCartQuantity = existingItem.quantity;
     }
 
+    const MAX_LIMIT = 5;
+    if (currentCartQuantity + quantity > MAX_LIMIT) {
+        throw new Error(`Maximum limit per person is ${MAX_LIMIT} units`);
+    }
+
     if (currentCartQuantity + quantity > stockAvailable) {
          throw new Error(stockAvailable === 0 ? "This item is out of stock" : `Only ${stockAvailable} units available`);
     }
 
     if (!cart) {
         cart = new cartModel({ userId, items: [{ productId, variantId, quantity }] });
-        return await cart.save();
+    } else {
+        const existingItemIndex = cart.items.findIndex(item => 
+            item.productId.toString() === productId.toString() && 
+            (!variantId || (item.variantId && item.variantId.toString() === variantId.toString()))
+        );
+        
+        if (existingItemIndex > -1) {
+            cart.items[existingItemIndex].quantity += quantity;
+        } else {
+            cart.items.push({ productId, variantId, quantity });
+        }
     }
 
-    const existingItemIndex = cart.items.findIndex(item => 
-        item.productId.toString() === productId.toString() && 
-        (!variantId || (item.variantId && item.variantId.toString() === variantId.toString()))
+    // Remove from wishlist if it exists
+    await wishlistModel.findOneAndUpdate(
+        { userId },
+        { $pull: { items: { productId } } }
     );
-    
-    if (existingItemIndex > -1) {
-        cart.items[existingItemIndex].quantity += quantity;
-    } else {
-        cart.items.push({ productId, variantId, quantity });
-    }
 
     return await cart.save();
 };
@@ -71,13 +82,28 @@ const updateCartQuantityService = async (userId, productId, quantity) => {
     const item = cart.items.find(item => item.productId.toString() === productId.toString());
     if (!item) throw new Error("Product not found in cart");
 
-    const product = await productModel.findById(productId);
-    if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
-        throw new Error("This product is currently unavailable");
+    const variantId = item.variantId;
+    let stockAvailable = 0;
+
+    if (variantId) {
+        const variant = await variantModel.findById(variantId);
+        if (!variant || variant.isDeleted) throw new Error("Variant no longer available");
+        stockAvailable = variant.quantity;
+    } else {
+        const product = await productModel.findById(productId);
+        if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
+            throw new Error("This product is currently unavailable");
+        }
+        stockAvailable = product.quantity;
     }
 
-    if (product.quantity !== undefined && product.quantity !== null && quantity > product.quantity) {
-        throw new Error(product.quantity === 0 ? "Product is out of stock" : `Only ${product.quantity} units available in stock`);
+    const MAX_LIMIT = 5;
+    if (quantity > MAX_LIMIT) {
+        throw new Error(`Maximum limit per person is ${MAX_LIMIT} units`);
+    }
+
+    if (quantity > stockAvailable) {
+        throw new Error(stockAvailable === 0 ? "Product is out of stock" : `Only ${stockAvailable} units available in stock`);
     }
 
     item.quantity = quantity;

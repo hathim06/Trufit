@@ -3,6 +3,11 @@ const productService = require('../Services/productService');
 const loadProductDetails = async (req, res) => {
     try {
         const product = await productService.getProductDetailsByIdService(req.params.id);
+        
+        if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
+            return res.redirect('/shop');
+        }
+
         const variants = await productService.getVariantsByProductIdService(req.params.id);
         const relatedProducts = await productService.getRelatedProductsService(req.params.id);
 

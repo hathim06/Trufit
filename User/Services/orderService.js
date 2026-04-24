@@ -2,6 +2,8 @@ const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel');
 const addressModel = require('../models/addressModel');
 const couponModel = require('../models/couponModel');
+const productModel = require('../models/productModel');
+const variantModel = require('../models/variants');
 const cartService = require('./cartService');
 
 const applyCouponService = async (userId, couponCode, cartTotal) => {
@@ -55,22 +57,45 @@ const placeOrderService = async (userId, orderData) => {
     if (!address) throw new Error("Delivery address not found");
 
     let subtotal = 0;
-    const orderItems = cart.items.map(item => {
-        const product = item.productId;
-        const variant = item.variantId;
+    const orderItems = [];
+
+    for (const item of cart.items) {
+        const product = await productModel.findById(item.productId);
+        if (!product || product.isDeleted || product.status !== 'Active') {
+            throw new Error(`Product "${product?.name || 'Unknown'}" is no longer available`);
+        }
+
+        let variant = null;
+        if (item.variantId) {
+            variant = await variantModel.findById(item.variantId);
+            if (!variant || variant.isDeleted) throw new Error(`Selected variant for "${product.name}" is no longer available`);
+            if (variant.quantity < item.quantity) throw new Error(`Only ${variant.quantity} units left for "${product.name}" variant`);
+        } else {
+            if (product.quantity < item.quantity) throw new Error(`Only ${product.quantity} units left for "${product.name}"`);
+        }
+
         const price = variant ? variant.price : product.price;
         const itemTotal = price * item.quantity;
         subtotal += itemTotal;
 
-        return {
+        orderItems.push({
             productId: product._id,
             variantId: variant ? variant._id : null,
             name: product.name,
             quantity: item.quantity,
             price: price,
             totalPrice: itemTotal
-        };
-    });
+        });
+
+        // Decrement stock
+        if (variant) {
+            variant.quantity -= item.quantity;
+            await variant.save();
+        } else {
+            product.quantity -= item.quantity;
+            await product.save();
+        }
+    }
 
     const discountAmount = Math.round((subtotal * (cart.appliedCoupon.discountPercentage || 0)) / 100);
     const grandTotal = subtotal - discountAmount;

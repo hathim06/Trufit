@@ -2,9 +2,9 @@ const orderService = require('../Services/orderService');
 
 const getOrders = async (req, res) => {
     try {
-        const orders = await orderService.getAllOrdersService();
+        const data = await orderService.getAllOrdersService(req.query);
         res.render('admin/orders', {
-            orders,
+            ...data,
             success: req.query.success,
             message: req.query.message
         });
