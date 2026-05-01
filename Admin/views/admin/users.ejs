@@ -208,17 +208,14 @@
                     }
                 }
 
-                let timer;
-
+                let searchTimeout;
                 document.getElementById("searchInput").addEventListener("input", function () {
-                    clearTimeout(timer);
-
+                    clearTimeout(searchTimeout);
                     const value = this.value;
                     const status = document.getElementById("statusFilter").value;
-
-                    timer = setTimeout(() => {
+                    searchTimeout = setTimeout(() => {
                         window.location.href = `/admin/users?search=${value}&status=${status}&page=1`;
-                    }, 500); // 500ms delay
+                    }, 500);
                 });
 
                 document.getElementById("statusFilter").addEventListener("change", function () {

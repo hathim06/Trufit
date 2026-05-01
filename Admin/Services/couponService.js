@@ -4,7 +4,7 @@ const getCouponsService = async (queryParams) => {
     const search = queryParams.search || "";
     const status = queryParams.status || "";
     const page = parseInt(queryParams.page) || 1;
-    const limit = 10;
+    const limit = 5;
     const skip = (page - 1) * limit;
 
     const query = {

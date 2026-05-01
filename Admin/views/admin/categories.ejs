@@ -5,6 +5,26 @@
     <main class="main-content">
         <%- include('./partials/adminHeader', { title: 'CATEGORY MANAGEMENT' }) %>
 
+        <style>
+            .page-link {
+                padding: 8px 16px;
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+                text-decoration: none;
+                color: #374151;
+                background: #FFF;
+                transition: all 0.2s;
+            }
+            .page-link:hover {
+                border-color: #000;
+            }
+            .page-link.active {
+                border-color: #000;
+                color: #FFF;
+                background: #000;
+            }
+        </style>
+
         <% if (typeof success !== 'undefined' && success) { %>
             <div class="alert alert-success" style="background:#D1FAE5;color:#065F46;padding:12px 20px;border-radius:8px;margin-bottom:20px;"><%= success %></div>
         <% } %>
@@ -12,7 +32,22 @@
             <div class="alert alert-error" style="background:#FEE2E2;color:#991B1B;padding:12px 20px;border-radius:8px;margin-bottom:20px;"><%= message %></div>
         <% } %>
 
-        <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+            <form id="searchForm" action="/admin/categories" method="GET" style="display: flex; gap: 10px; flex: 1; max-width: 600px;">
+                <div style="position: relative; flex: 1;">
+                    <input type="text" id="searchInput" name="search" placeholder="Search categories..." value="<%= typeof search !== 'undefined' ? search : '' %>" 
+                        style="width: 100%; padding: 10px 15px; border: 1px solid #E5E7EB; border-radius: 8px; outline: none;">
+                    <% if (typeof search !== 'undefined' && search) { %>
+                        <a href="/admin/categories<%= typeof status !== 'undefined' && status !== 'all' ? '?status=' + status : '' %>" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #9CA3AF; text-decoration: none;">✕</a>
+                    <% } %>
+                </div>
+                <select id="statusFilter" name="status" style="padding: 10px 15px; border: 1px solid #E5E7EB; border-radius: 8px; outline: none; background: #FFF; cursor: pointer;">
+                    <option value="all" <%= typeof status !== 'undefined' && status === 'all' ? 'selected' : '' %>>All Status</option>
+                    <option value="listed" <%= typeof status !== 'undefined' && status === 'listed' ? 'selected' : '' %>>Listed</option>
+                    <option value="unlisted" <%= typeof status !== 'undefined' && status === 'unlisted' ? 'selected' : '' %>>Unlisted</option>
+                </select>
+                <button type="submit" class="btn btn-primary" style="display: none;">FILTER</button>
+            </form>
             <button class="btn btn-primary" onclick="location.href='/admin/add-category'">ADD CATEGORY</button>
         </div>
 
@@ -62,6 +97,33 @@
                 </tbody>
             </table>
         </div>
+
+        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+            <div class="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 30px; align-items: center;">
+                <% 
+                    const statusParam = (typeof status !== 'undefined' && status !== 'all') ? '&status=' + status : '';
+                    const searchParam = (typeof search !== 'undefined' && search) ? '&search=' + search : '';
+                    const fullQuery = searchParam + statusParam;
+                    const commonStyle = 'padding: 8px 16px; border: 1px solid #E5E7EB; border-radius: 8px; text-decoration: none; color: #374151; background: #FFF;';
+                    let paginationHtml = '';
+
+                    if (currentPage > 1) {
+                        paginationHtml += '<a href="/admin/categories?page=' + (currentPage - 1) + fullQuery + '" class="page-link">Previous</a>';
+                    }
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        const isActive = (i === currentPage);
+                        const activeClass = isActive ? ' active' : '';
+                        paginationHtml += '<a href="/admin/categories?page=' + i + fullQuery + '" class="page-link' + activeClass + '">' + i + '</a>';
+                    }
+
+                    if (currentPage < totalPages) {
+                        paginationHtml += '<a href="/admin/categories?page=' + (currentPage + 1) + fullQuery + '" class="page-link">Next</a>';
+                    }
+                %>
+                <%- paginationHtml %>
+            </div>
+        <% } %>
     </main>
 
     <script>
@@ -89,6 +151,26 @@
                 if (data.success) location.reload();
                 else Swal.fire('Error', data.message || 'Failed', 'error');
             }
+        }
+
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const searchForm = document.getElementById('searchForm');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchForm.submit();
+                }, 500);
+            });
+        }
+
+        if (statusFilter) {
+            statusFilter.addEventListener('change', () => {
+                searchForm.submit();
+            });
         }
     </script>
 </body>

@@ -30,7 +30,8 @@ const loadShopPage = async (req, res) => {
             minPrice: req.query.minPrice || '',
             maxPrice: req.query.maxPrice || '',
             size: req.query.size || '',
-            category: req.query.category || ''
+            category: req.query.category || '',
+            search: req.query.search || ''
         };
         const result = await productService.getShopProductsService(filters, page);
         const categories = await productService.getListedCategoriesService();

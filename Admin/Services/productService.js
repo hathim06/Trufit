@@ -10,7 +10,7 @@ const syncProductWithVariants = async (productId) => {
     const uniqueSizes = [...new Set(variants.map(v => v.size))];
     const uniqueColors = [...new Set(variants.map(v => v.color))];
     const totalQuantity = variants.reduce((sum, v) => sum + v.quantity, 0);
-    
+
     await productModel.findByIdAndUpdate(productId, {
         size: uniqueSizes,
         color: uniqueColors,
@@ -58,15 +58,12 @@ const addProductService = async (req) => {
 
     let firstVariantImage = null;
 
-    // ============== BATCH VARIANT CREATION ==============
     if (req.body.variantColor && Array.isArray(req.body.variantColor)) {
-        // First, group images by color index to avoid redundant lookups
         const colorImagesMap = new Map();
-        
-        // Find unique colors and their first appearing index (vNum)
+
         const uniqueColors = [...new Set(req.body.variantColor)];
         uniqueColors.forEach((color, colorIdx) => {
-            const vNum = colorIdx + 1;  // vNum matches the view: 1st unique color = v1, 2nd = v2, etc.
+            const vNum = colorIdx + 1;
             const images = [];
             for (let imgIdx = 1; imgIdx <= 5; imgIdx++) {
                 const fieldName = `v${vNum}_image${imgIdx}`;
@@ -74,7 +71,6 @@ const addProductService = async (req) => {
                     images.push(req.files[fieldName][0].path);
                 }
             }
-            // Fallback for older single image field if present
             if (images.length === 0 && req.files && req.files[`v${vNum}_image`]) {
                 images.push(req.files[`v${vNum}_image`][0].path);
             }
@@ -86,13 +82,12 @@ const addProductService = async (req) => {
             const color = req.body.variantColor[i];
             const size = req.body.variantSize ? req.body.variantSize[i] : 'M';
             const quantity = req.body.variantQuantity ? parseInt(req.body.variantQuantity[i]) : 0;
-            
+
             if (color && color.trim() !== '' && quantity > 0) {
                 const variantImages = colorImagesMap.get(color) || [];
-                
+
                 if (!firstVariantImage && variantImages.length > 0) firstVariantImage = variantImages[0];
 
-                // If no variant images, use product images as fallback
                 const finalImages = variantImages.length > 0 ? variantImages : (imageUrls.length > 0 ? imageUrls : []);
 
                 const newVariant = new variantModel({
@@ -124,7 +119,7 @@ const getProductsService = async (query) => {
     const search = query.search || "";
     const category = query.category || "";
     const page = parseInt(query.page) || 1;
-    const limit = parseInt(query.limit) || 10;
+    const limit = parseInt(query.limit) || 5;
     const skip = (page - 1) * limit;
 
     const filter = {
@@ -150,7 +145,7 @@ const getProductsService = async (query) => {
         search,
         currentPage: page,
         totalPages,
-        totalUsers: totalProducts, // Using totalUsers as label as per controller requirement
+        totalUsers: totalProducts,
         limit
     };
 };
@@ -187,15 +182,14 @@ const updateProductService = async (req) => {
         const submittedColors = req.body.variantColor;
         const submittedSizes = req.body.variantSize || [];
         const submittedQuantities = req.body.variantQuantity || [];
-        
+
         const existingVariants = await variantModel.find({ productId: id, isDeleted: false });
-        
-        // Group new images by color (using unique color order = same order as the view renders them)
+
         const colorImagesMap = new Map();
         const uniqueColors = [...new Set(submittedColors)];
-        
+
         uniqueColors.forEach((color, colorIdx) => {
-            const vNum = colorIdx + 1;  // vNum matches the view: 1st unique color = v1, 2nd = v2, etc.
+            const vNum = colorIdx + 1;
             const newImgs = [];
             for (let imgIdx = 1; imgIdx <= 5; imgIdx++) {
                 const fieldName = `v${vNum}_image${imgIdx}`;
@@ -208,22 +202,20 @@ const updateProductService = async (req) => {
 
         let firstVariantImage = null;
 
-        // Track which variants we processed to delete the rest
         const processedVariantIds = [];
 
         for (let i = 0; i < submittedColors.length; i++) {
             const color = submittedColors[i];
             const size = submittedSizes[i] || 'M';
             const quantity = parseInt(submittedQuantities[i]) || 0;
-            
-            if (quantity <= 0) continue; // Skip sizes with 0 stock
+
+            if (quantity <= 0) continue;
 
             const existing = existingVariants.find(v => v.color === color && v.size === size);
             const newImgs = colorImagesMap.get(color) || [];
-            
+
             let finalImages = [];
             if (existing) {
-                // Merge: new uploaded image slots override existing; keep existing where no new upload
                 const existingImgs = [...existing.image];
                 const colorVNum = uniqueColors.indexOf(color) + 1;
                 for (let imgIdx = 0; imgIdx < 5; imgIdx++) {
@@ -234,7 +226,6 @@ const updateProductService = async (req) => {
                         finalImages[imgIdx] = existingImgs[imgIdx];
                     }
                 }
-                // Filter out empty slots
                 finalImages = finalImages.filter(img => !!img);
             } else {
                 finalImages = colorImagesMap.get(color) || [];
@@ -264,7 +255,6 @@ const updateProductService = async (req) => {
             }
         }
 
-        // Soft delete removed variants
         for (const ev of existingVariants) {
             if (!processedVariantIds.includes(ev._id.toString())) {
                 ev.isDeleted = true;

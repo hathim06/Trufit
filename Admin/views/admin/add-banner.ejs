@@ -189,6 +189,34 @@
         imageInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
+                // --- ADDED VALIDATION ---
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+                const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+                const extension = file.name.split('.').pop().toLowerCase();
+
+                if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(extension)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid File Type',
+                        text: 'Only image files (JPG, JPEG, PNG, WEBP) are allowed!',
+                        confirmButtonColor: '#000'
+                    });
+                    imageInput.value = '';
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'File Too Large',
+                        text: 'Maximum file size is 5MB!',
+                        confirmButtonColor: '#000'
+                    });
+                    imageInput.value = '';
+                    return;
+                }
+                // -------------------------
+
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     cropperImage.src = event.target.result;

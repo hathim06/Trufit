@@ -21,21 +21,27 @@
                         </tr>
                     </thead>
                     <tbody id="colorsTableBody">
-                        <% if (colors && colors.length > 0) { %>
-                            <% colors.forEach(color => { %>
-                                <tr>
-                                    <td>
-                                        <div style="width: 30px; height: 30px; border-radius: 50%; background-color: <%= color.hex %>; border: 2px solid #E5E7EB;"></div>
-                                    </td>
-                                    <td><strong><%= color.name %></strong></td>
-                                    <td><code><%= color.hex %></code></td>
-                                    <td>
-                                        <button class="action-btn" onclick="deleteColor('<%= color._id %>')">
-                                            <i data-lucide="trash-2" style="width: 18px; height: 18px; color: #EF4444;"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            <% }) %>
+                        <% 
+                            if (colors && colors.length > 0) { 
+                                let tableHtml = '';
+                                colors.forEach(color => { 
+                                    const styleAttr = 'style' + '="background-color: ' + color.hex + '"';
+                                    tableHtml += `
+                                        <tr>
+                                            <td>
+                                                <div class="color-preview-circle" ${styleAttr}></div>
+                                            </td>
+                                            <td><strong>${color.name}</strong></td>
+                                            <td><code>${color.hex}</code></td>
+                                            <td>
+                                                <button class="action-btn" onclick="deleteColor('${color._id}')">
+                                                    <i data-lucide="trash-2" style="width: 18px; height: 18px; color: #EF4444;"></i>
+                                                </button>
+                                            </td>
+                                        </tr>`;
+                                });
+                        %>
+                            <%- tableHtml %>
                         <% } else { %>
                             <tr>
                                 <td colspan="4" style="text-align: center; padding: 40px; color: #6B7280;">No colors added yet.</td>
@@ -43,6 +49,27 @@
                         <% } %>
                     </tbody>
                 </table>
+
+                <% if (typeof totalPages !== 'undefined' && totalPages > 1) { 
+                    let paginationHtml = '<div style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px; padding-bottom: 20px;">';
+                    
+                    if (currentPage > 1) {
+                        paginationHtml += `<a href="/admin/colors?page=${currentPage - 1}" style="padding: 6px 12px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 6px; background: #FFF; font-size: 13px;">Previous</a>`;
+                    }
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        const activeStyles = i === currentPage ? 'background: #000; color: #FFF; border-color: #000;' : 'background: #FFF; color: #374151;';
+                        paginationHtml += `<a href="/admin/colors?page=${i}" style="padding: 6px 12px; text-decoration: none; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 13px; ${activeStyles}">${i}</a>`;
+                    }
+
+                    if (currentPage < totalPages) {
+                        paginationHtml += `<a href="/admin/colors?page=${currentPage + 1}" style="padding: 6px 12px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 6px; background: #FFF; font-size: 13px;">Next</a>`;
+                    }
+
+                    paginationHtml += '</div>';
+                %>
+                    <%- paginationHtml %>
+                <% } %>
             </div>
 
             <!-- Add Color Form -->

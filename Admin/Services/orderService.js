@@ -3,6 +3,9 @@ const orderModel = require('../../User/models/orderModel');
 const getAllOrdersService = async (queryParams) => {
     const search = queryParams.search || "";
     const status = queryParams.status || "";
+    const page = parseInt(queryParams.page) || 1;
+    const limit = parseInt(queryParams.limit) || 5;
+    const skip = (page - 1) * limit;
 
     const query = {};
     if (status) query.orderStatus = status;
@@ -10,14 +13,23 @@ const getAllOrdersService = async (queryParams) => {
         query.orderId = { $regex: search, $options: "i" };
     }
 
+    const totalOrders = await orderModel.countDocuments(query);
+    const totalPages = Math.ceil(totalOrders / limit);
+
     const orders = await orderModel.find(query)
         .populate('userId', 'firstName lastName email')
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
 
     return {
         orders,
         search,
-        status
+        status,
+        currentPage: page,
+        totalPages,
+        totalOrders,
+        limit
     };
 };
 

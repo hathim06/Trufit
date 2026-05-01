@@ -417,8 +417,13 @@
         <main class="container">
             <section class="shop-page">
                 <div class="shop-header">
-                    <h1>Shop
-                        <% if (typeof query !== 'undefined' && (query.category || query.size || query.minPrice || query.maxPrice || query.priceSort)) { %>
+                    <h1>
+                        <% if (typeof query !== 'undefined' && query.search) { %>
+                            Search Results for: "<%= query.search %>"
+                        <% } else { %>
+                            Shop
+                        <% } %>
+                        <% if (typeof query !== 'undefined' && (query.category || query.size || query.minPrice || query.maxPrice || query.priceSort || query.search)) { %>
                             <span style="font-size: 14px; font-weight: 400; color: #6B7280; margin-left: 10px;"><a href="/shop" style="color: #EF4444; text-decoration: none; font-size: 13px;">✕ Clear filters</a></span>
                         <% } %>
                     </h1>
@@ -437,6 +442,9 @@
                     <!-- Sidebar Filter Form -->
                     <aside class="sidebar">
                         <form method="GET" action="/shop" id="filterForm">
+                            <% if (typeof query !== 'undefined' && query.search) { %>
+                                <input type="hidden" name="search" value="<%= query.search %>">
+                            <% } %>
 
                         <div class="filter-section">
                             <h3>CATEGORIES</h3>

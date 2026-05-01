@@ -53,6 +53,27 @@
                     <% } %>
                 </tbody>
             </table>
+
+            <% if (typeof totalPages !== 'undefined' && totalPages > 1) { 
+                let paginationHtml = '<div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px; padding-bottom: 20px;">';
+                
+                if (currentPage > 1) {
+                    paginationHtml += `<a href="/admin/banners?page=${currentPage - 1}" style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Previous</a>`;
+                }
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const activeStyles = i === currentPage ? 'background: #000; color: #FFF; border-color: #000;' : 'background: #FFF; color: #374151;';
+                    paginationHtml += `<a href="/admin/banners?page=${i}" style="padding: 8px 16px; text-decoration: none; border: 1px solid #E5E7EB; border-radius: 8px; ${activeStyles}">${i}</a>`;
+                }
+
+                if (currentPage < totalPages) {
+                    paginationHtml += `<a href="/admin/banners?page=${currentPage + 1}" style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Next</a>`;
+                }
+
+                paginationHtml += '</div>';
+            %>
+                <%- paginationHtml %>
+            <% } %>
         </div>
     </main>
 

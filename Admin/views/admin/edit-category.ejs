@@ -29,6 +29,48 @@
         </div>
     </main>
 
-    <script>lucide.createIcons();</script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/zod@3.22.4/lib/index.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        lucide.createIcons();
+
+        const categoryForm = document.querySelector('form');
+        categoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(categoryForm);
+            const data = {
+                name: formData.get('name'),
+                description: formData.get('description')
+            };
+
+            // Zod Schema
+            const { z } = zod;
+            const schema = z.object({
+                name: z.string()
+                    .min(2, "Category name must be at least 2 characters")
+                    .max(50, "Category name must be less than 50 characters")
+                    .trim()
+                    .refine(val => val.length > 0, "Category name is required"),
+                description: z.string().max(200, "Description must be less than 200 characters").optional()
+            });
+
+            try {
+                schema.parse(data);
+                categoryForm.submit(); // If valid, submit normally
+            } catch (error) {
+                if (error instanceof z.ZodError) {
+                    const message = error.errors[0].message;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Validation Error',
+                        text: message,
+                        confirmButtonColor: '#000'
+                    });
+                }
+            }
+        });
+    </script>
 </body>
 </html>

@@ -2,8 +2,23 @@ const wishlistModel = require('../models/wishlistModel');
 const productModel = require('../models/productModel');
 
 const getWishlistService = async (userId) => {
-    const wishlist = await wishlistModel.findOne({ userId }).populate("items.productId");
-    return wishlist ? wishlist.items : [];
+    const wishlist = await wishlistModel.findOne({ userId })
+        .populate({
+            path: 'items.productId',
+            populate: { path: 'categoryId' }
+        });
+
+    if (!wishlist) return [];
+
+    // Filter out items that are deleted, inactive, or belong to unlisted categories
+    const activeItems = wishlist.items.filter(item => {
+        const product = item.productId;
+        if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) return false;
+        if (product.categoryId && !product.categoryId.isListed) return false;
+        return true;
+    });
+
+    return activeItems;
 };
 
 const addToWishlistService = async (userId, productId) => {

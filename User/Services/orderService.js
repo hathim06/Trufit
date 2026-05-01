@@ -127,11 +127,16 @@ const placeOrderService = async (userId, orderData) => {
 };
 
 const getUserOrdersService = async (userId) => {
-    return await orderModel.find({ userId }).sort({ createdAt: -1 });
+    return await orderModel.find({ userId })
+        .populate('items.productId')
+        .populate('items.variantId')
+        .sort({ createdAt: -1 });
 };
 
 const getOrderDetailsService = async (orderId, userId) => {
-    const order = await orderModel.findOne({ _id: orderId, userId });
+    const order = await orderModel.findOne({ _id: orderId, userId })
+        .populate('items.productId')
+        .populate('items.variantId');
     if (!order) throw new Error("Order not found");
     return order;
 };
@@ -144,11 +149,69 @@ const getAvailableCouponsService = async () => {
     }).sort({ expiryDate: 1 });
 };
 
+const cancelOrderService = async (orderId, userId) => {
+    const order = await orderModel.findOne({ _id: orderId, userId });
+    if (!order) throw new Error("Order not found");
+    if (order.orderStatus !== 'Placed' && order.orderStatus !== 'Processing') {
+        throw new Error("Order cannot be cancelled at this stage");
+    }
+
+    order.orderStatus = 'Cancelled';
+    await order.save();
+
+    for (const item of order.items) {
+        if (item.variantId) {
+            const variant = await variantModel.findById(item.variantId);
+            if (variant) {
+                variant.quantity += item.quantity;
+                await variant.save();
+            }
+        } else if (item.productId) {
+            const product = await productModel.findById(item.productId);
+            if (product) {
+                product.quantity += item.quantity;
+                await product.save();
+            }
+        }
+    }
+    return order;
+};
+
+const returnOrderService = async (orderId, userId) => {
+    const order = await orderModel.findOne({ _id: orderId, userId });
+    if (!order) throw new Error("Order not found");
+    if (order.orderStatus !== 'Delivered') {
+        throw new Error("Only delivered orders can be returned");
+    }
+
+    order.orderStatus = 'Returned';
+    await order.save();
+
+    for (const item of order.items) {
+        if (item.variantId) {
+            const variant = await variantModel.findById(item.variantId);
+            if (variant) {
+                variant.quantity += item.quantity;
+                await variant.save();
+            }
+        } else if (item.productId) {
+            const product = await productModel.findById(item.productId);
+            if (product) {
+                product.quantity += item.quantity;
+                await product.save();
+            }
+        }
+    }
+    return order;
+};
+
 module.exports = {
     applyCouponService,
     removeCouponService,
     placeOrderService,
     getUserOrdersService,
     getOrderDetailsService,
-    getAvailableCouponsService
+    getAvailableCouponsService,
+    cancelOrderService,
+    returnOrderService
 };

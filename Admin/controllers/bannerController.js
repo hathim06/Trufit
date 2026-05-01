@@ -2,8 +2,14 @@ const bannerService = require('../Services/bannerService');
 
 const loadBannerPage = async (req, res) => {
     try {
-        const banners = await bannerService.getBannersService();
-        res.render('admin/banners', { banners });
+        const data = await bannerService.getBannersService(req.query);
+        res.render('admin/banners', { 
+            banners: data.banners,
+            currentPage: data.currentPage,
+            totalPages: data.totalPages,
+            totalBanners: data.totalBanners,
+            limit: data.limit
+        });
     } catch (error) {
         console.error('Load Banners Error:', error);
         res.redirect('/admin/dashboard');

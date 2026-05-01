@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const adminAuth = require('../Middlewares/adminAuth');
 const upload = require('../../User/Middlewares/upload');
+const { validateBody } = require('../../User/Middlewares/validationMiddleware');
+const { categorySchema } = require('../../User/utils/schemas');
 
 // Controllers
 const adminController = require('../controllers/adminController');
@@ -31,9 +33,9 @@ router.delete('/users/delete/:id', adminAuth.isAdmin, userController.deleteUser)
 // Category Management
 router.get('/categories', adminAuth.isAdmin, categoryController.getCategories);
 router.get('/add-category', adminAuth.isAdmin, categoryController.loadAddCategory);
-router.post('/add-category', adminAuth.isAdmin, categoryController.addCategory);
+router.post('/add-category', adminAuth.isAdmin, validateBody(categorySchema), categoryController.addCategory);
 router.get('/edit-category/:id', adminAuth.isAdmin, categoryController.loadEditCategory);
-router.post('/edit-category/:id', adminAuth.isAdmin, categoryController.updateCategory);
+router.post('/edit-category/:id', adminAuth.isAdmin, validateBody(categorySchema), categoryController.updateCategory);
 router.patch('/categories/toggle/:id', adminAuth.isAdmin, categoryController.toggleCategoryListing);
 router.delete('/categories/delete/:id', adminAuth.isAdmin, categoryController.deleteCategory);
 

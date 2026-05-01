@@ -99,83 +99,155 @@
         }
 
         /* Table Styles */
-        .orders-table-container {
-            overflow-x: auto;
+        /* Card Styles */
+        .order-card {
+            border: 1px solid #E5E7EB;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            background: #FFF;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
         }
 
-        .orders-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
+        .order-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
-        .orders-table th {
-            padding: 15px;
-            background: #F9FAFB;
-            font-size: 12px;
+        .order-header-row {
+            background: #E5E7EB;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
             font-weight: 700;
+            color: #374151;
             text-transform: uppercase;
-            color: #6B7280;
-            border-bottom: 2px solid #E5E7EB;
         }
 
-        .orders-table td {
-            padding: 20px 15px;
-            border-bottom: 1px solid #E5E7EB;
-            font-size: 14px;
-            vertical-align: middle;
+        .order-header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
 
-        .orders-table tr:hover {
-            background: #F9FAFB;
-        }
-
-        .order-id {
-            font-weight: 700;
+        .invoice-link {
+            display: flex;
+            align-items: center;
+            gap: 5px;
             color: #3B82F6;
             text-decoration: none;
+            transition: color 0.2s;
         }
 
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
+        .invoice-link:hover {
+            color: #2563EB;
+        }
+
+        .order-body {
+            padding: 0;
+        }
+
+        .order-item-row {
+            display: flex;
+            padding: 20px;
+            border-bottom: 1px solid #F3F4F6;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .order-item-row:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
+            width: 90px;
+            height: 90px;
+            background: #F9FAFB;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            flex-shrink: 0;
+            padding: 5px;
+            overflow: hidden;
+        }
+
+        .item-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 5px;
+        }
+
+        .item-meta {
+            font-size: 12px;
+            color: #6B7280;
+            margin-bottom: 15px;
+        }
+
+        .item-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #D1D5DB;
+        }
+
+        .status-dot.Delivered { background: #10B981; }
+        .status-dot.Processing { background: #F59E0B; }
+        .status-dot.Placed { background: #3B82F6; }
+        .status-dot.Shipped { background: #6366F1; }
+        .status-dot.Cancelled { background: #EF4444; }
+        .status-dot.Returned { background: #8B5CF6; }
+
+        .rate-product {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             font-size: 11px;
             font-weight: 700;
+            color: #374151;
             text-transform: uppercase;
         }
 
-        .status-placed { background: #DBEAFE; color: #1E40AF; }
-        .status-processing { background: #FEF3C7; color: #92400E; }
-        .status-shipped { background: #E0E7FF; color: #3730A3; }
-        .status-delivered { background: #D1FAE5; color: #065F46; }
-        .status-cancelled { background: #FEE2E2; color: #991B1B; }
-
-        .btn-view {
-            background: #000;
-            color: #FFF;
-            padding: 8px 16px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 600;
-            transition: var(--transition);
+        .stars {
+            display: flex;
+            gap: 2px;
         }
 
-        .btn-view:hover {
-            background: #333;
+        .stars i {
+            width: 16px;
+            height: 16px;
+            color: #D1D5DB;
+            cursor: pointer;
+            transition: color 0.2s, fill 0.2s;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 0;
-            color: #6B7280;
-        }
-
-        .empty-state i {
-            display: block;
-            margin: 0 auto 20px;
-            opacity: 0.3;
+        .stars i.active, .stars i.hover {
+            color: #F59E0B;
+            fill: #F59E0B;
         }
 
         @media (max-width: 768px) {
@@ -184,6 +256,17 @@
             }
             .profile-main-content {
                 padding: 20px;
+            }
+            .order-header-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .order-item-row {
+                flex-direction: column;
+            }
+            .item-image {
+                margin-bottom: 15px;
             }
         }
     </style>
@@ -200,47 +283,65 @@
                 <div class="profile-main-content">
                     <h1>My Orders</h1>
 
-                    <div class="orders-table-container">
+                    <div class="orders-list">
                         <% if (orders && orders.length > 0) { %>
-                            <table class="orders-table">
-                                <thead>
-                                    <tr>
-                                        <th>Order ID</th>
-                                        <th>Date</th>
-                                        <th>Total</th>
-                                        <th>Payment</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% orders.forEach(order => { %>
-                                        <tr>
-                                            <td>
-                                                <a href="/profile/orders/<%= order._id %>" class="order-id">
-                                                    <%= order.orderId %>
-                                                </a>
-                                            </td>
-                                            <td><%= new Date(order.createdAt).toLocaleDateString('en-GB') %></td>
-                                            <td style="font-weight: 600;">₹<%= order.grandTotal.toLocaleString() %></td>
-                                            <td><%= order.paymentMethod %></td>
-                                            <td>
-                                                <span class="status-badge status-<%= order.orderStatus.toLowerCase() %>">
-                                                    <%= order.orderStatus %>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <a href="/profile/orders/<%= order._id %>" class="btn-view">Details</a>
-                                            </td>
-                                        </tr>
-                                    <% }) %>
-                                </tbody>
-                            </table>
+                            <% orders.forEach(order => { %>
+                                <div class="order-card" onclick="window.location.href='/profile/orders/<%= order._id %>'">
+                                    <div class="order-header-row">
+                                        <div>ORDER ID : <%= order.orderId %></div>
+                                        <div class="order-header-right">
+                                            <span><%= new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() %></span>
+                                            <a href="/profile/orders/<%= order._id %>/invoice" target="_blank" class="invoice-link" onclick="event.stopPropagation();">
+                                                INVOICE <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="order-body">
+                                        <% order.items.forEach(item => { %>
+                                            <div class="order-item-row">
+                                                <div class="item-image">
+                                                    <% 
+                                                        let itemImage = '/public/placeholder.png';
+                                                        if (item.variantId && item.variantId.image && item.variantId.image.length > 0) {
+                                                            itemImage = item.variantId.image[0].replace(/\\/g, '/');
+                                                            if (!itemImage.startsWith('http') && !itemImage.startsWith('/')) itemImage = '/' + itemImage;
+                                                        } else if (item.productId && item.productId.image && item.productId.image.length > 0) {
+                                                            itemImage = item.productId.image[0].replace(/\\/g, '/');
+                                                            if (!itemImage.startsWith('http') && !itemImage.startsWith('/')) itemImage = '/' + itemImage;
+                                                        }
+                                                    %>
+                                                    <img src="<%= itemImage %>" alt="<%= item.name %>">
+                                                </div>
+                                                <div class="item-details">
+                                                    <div class="item-title"><%= item.name %></div>
+                                                    <div class="item-meta">
+                                                        Size : <%= item.variantId ? item.variantId.size : 'N/A' %> | Qty : <%= item.quantity %>
+                                                    </div>
+                                                    <div class="item-status">
+                                                        <div class="status-dot <%= order.orderStatus %>"></div>
+                                                        <span><%= order.orderStatus %></span>
+                                                    </div>
+                                                    <div class="rate-product">
+                                                        RATE THIS PRODUCT
+                                                        <div class="stars">
+                                                            <i data-lucide="star" class="star-icon"></i>
+                                                            <i data-lucide="star" class="star-icon"></i>
+                                                            <i data-lucide="star" class="star-icon"></i>
+                                                            <i data-lucide="star" class="star-icon"></i>
+                                                            <i data-lucide="star" class="star-icon"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <% }) %>
+                                    </div>
+                                </div>
+                            <% }) %>
                         <% } else { %>
                             <div class="empty-state">
-                                <i data-lucide="package-open" style="width: 64px; height: 64px;"></i>
+                                <i data-lucide="package-open" style="width: 64px; height: 64px; margin: 0 auto 20px;"></i>
                                 <p>You haven't placed any orders yet.</p>
-                                <a href="/shop" class="btn-view" style="display: inline-block; margin-top: 20px;">Start Shopping</a>
+                                <a href="/shop" class="btn btn-primary" style="display: inline-block; margin-top: 20px;">Start Shopping</a>
                             </div>
                         <% } %>
                     </div>
@@ -251,8 +352,47 @@
 
     <%- include('partials/footer') %>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         lucide.createIcons();
+
+        // Dynamic Rating Logic
+        document.querySelectorAll('.stars').forEach(starContainer => {
+            const stars = Array.from(starContainer.querySelectorAll('.star-icon'));
+            
+            // Stop propagation on the whole container so clicking stars doesn't open the order
+            starContainer.addEventListener('click', e => e.stopPropagation());
+
+            stars.forEach((star, index) => {
+                star.addEventListener('mouseover', () => {
+                    stars.forEach((s, i) => {
+                        if (i <= index) s.classList.add('hover');
+                        else s.classList.remove('hover');
+                    });
+                });
+                
+                star.addEventListener('mouseout', () => {
+                    stars.forEach(s => s.classList.remove('hover'));
+                });
+                
+                star.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    stars.forEach((s, i) => {
+                        if (i <= index) s.classList.add('active');
+                        else s.classList.remove('active');
+                    });
+                    
+                    Swal.fire({
+                        toast: true,
+                        position: 'bottom-end',
+                        icon: 'success',
+                        title: 'Thank you for your rating!',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                });
+            });
+        });
     </script>
 </body>
 </html>

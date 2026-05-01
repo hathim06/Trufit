@@ -27,7 +27,17 @@ router.get('/address/edit/:id', userAuth.isLoggedIn, userController.loadEditAddr
 router.post('/address/edit/:id', userAuth.isLoggedIn, userController.editAddress);
 router.post('/address/delete/:id', userAuth.isLoggedIn, userController.deleteAddress);
 router.post('/address/default/:id', userAuth.isLoggedIn, userController.setDefaultAddress);
-router.post('/profile/upload-picture', userAuth.isLoggedIn, upload.single('profilePicture'), userController.updateProfilePicture);
+router.post('/profile/upload-picture', userAuth.isLoggedIn, (req, res, next) => {
+    upload.single('profilePicture')(req, res, (err) => {
+        if (err) {
+            if (req.xhr || req.headers.accept?.includes('application/json')) {
+                return res.status(400).json({ success: false, message: err.message });
+            }
+            return res.redirect('/profile?error=' + encodeURIComponent(err.message));
+        }
+        next();
+    });
+}, userController.updateProfilePicture);
 router.get('/address/delete/:id', userAuth.isLoggedIn, userController.deleteAddress);
 router.get('/address/set-default/:id', userAuth.isLoggedIn, userController.setDefaultAddress);
 

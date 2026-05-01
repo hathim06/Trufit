@@ -30,8 +30,26 @@ const addBannerService = async (req) => {
     return await newBanner.save();
 };
 
-const getBannersService = async () => {
-    return await bannerModel.find({ isDeleted: false }).sort({ order: 1, createdAt: -1 });
+const getBannersService = async (query = {}) => {
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const banners = await bannerModel.find({ isDeleted: false })
+        .sort({ order: 1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    const totalBanners = await bannerModel.countDocuments({ isDeleted: false });
+    const totalPages = Math.ceil(totalBanners / limit);
+
+    return {
+        banners,
+        currentPage: page,
+        totalPages,
+        totalBanners,
+        limit
+    };
 };
 
 const getSingleBannerService = async (id) => {

@@ -9,7 +9,12 @@
 
         <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; margin-bottom: 30px;">
             <div style="position: relative; flex: 1; max-width: 500px;">
-                <input type="text" id="orderSearch" class="search-input" placeholder="Search Order ID..." value="<%= search %>" style="width: 100%;">
+                <input type="text" id="orderSearch" class="search-input" placeholder="Search Order ID..." value="<%= search %>" style="width: 100%; padding-right: 36px;">
+                <% if (search) { %>
+                    <button onclick="clearSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9CA3AF; display: block;">✕</button>
+                <% } else { %>
+                    <button onclick="clearSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9CA3AF; display: none;">✕</button>
+                <% } %>
             </div>
             <select id="statusFilter" class="search-input" style="max-width: 200px;">
                 <option value="">All Status</option>
@@ -71,6 +76,27 @@
                     <% } %>
                 </tbody>
             </table>
+
+            <% if (typeof totalPages !== 'undefined' && totalPages > 1) { 
+                let paginationHtml = '<div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px; padding-bottom: 20px;">';
+                
+                if (currentPage > 1) {
+                    paginationHtml += `<a href="/admin/orders?page=${currentPage - 1}&search=${search}&status=${status}" style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Previous</a>`;
+                }
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const activeStyles = i === currentPage ? 'background: #000; color: #FFF; border-color: #000;' : 'background: #FFF; color: #374151;';
+                    paginationHtml += `<a href="/admin/orders?page=${i}&search=${search}&status=${status}" style="padding: 8px 16px; text-decoration: none; border: 1px solid #E5E7EB; border-radius: 8px; ${activeStyles}">${i}</a>`;
+                }
+
+                if (currentPage < totalPages) {
+                    paginationHtml += `<a href="/admin/orders?page=${currentPage + 1}&search=${search}&status=${status}" style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Next</a>`;
+                }
+
+                paginationHtml += '</div>';
+            %>
+                <%- paginationHtml %>
+            <% } %>
         </div>
     </main>
 
@@ -85,6 +111,10 @@
             const search = orderSearch.value;
             const status = statusFilter.value;
             location.href = `/admin/orders?search=${search}&status=${status}`;
+        }
+
+        function clearSearch() {
+            location.href = `/admin/orders?status=${statusFilter.value}`;
         }
 
         if (orderSearch) {

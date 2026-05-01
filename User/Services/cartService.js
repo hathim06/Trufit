@@ -4,7 +4,24 @@ const variantModel = require('../models/variants');
 const wishlistModel = require('../models/wishlistModel');
 
 const getCartService = async (userId) => {
-    return await cartModel.findOne({ userId }).populate("items.productId").populate("items.variantId");
+    const cart = await cartModel.findOne({ userId })
+        .populate({
+            path: 'items.productId',
+            populate: { path: 'categoryId' }
+        })
+        .populate('items.variantId');
+
+    if (cart && cart.items) {
+        // Filter out items that are deleted, inactive, or belong to unlisted categories
+        cart.items = cart.items.filter(item => {
+            const product = item.productId;
+            if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) return false;
+            if (product.categoryId && !product.categoryId.isListed) return false;
+            return true;
+        });
+    }
+
+    return cart;
 };
 
 const addToCartService = async (userId, productId, variantId, quantity = 1) => {
@@ -22,13 +39,13 @@ const addToCartService = async (userId, productId, variantId, quantity = 1) => {
     }
 
     let cart = await cartModel.findOne({ userId });
-    
+
     let stockAvailable = variant ? variant.quantity : product.quantity;
     let currentCartQuantity = 0;
-    
+
     if (cart) {
-        const existingItem = cart.items.find(item => 
-            item.productId.toString() === productId.toString() && 
+        const existingItem = cart.items.find(item =>
+            item.productId.toString() === productId.toString() &&
             (!variantId || (item.variantId && item.variantId.toString() === variantId.toString()))
         );
         if (existingItem) currentCartQuantity = existingItem.quantity;
@@ -40,17 +57,17 @@ const addToCartService = async (userId, productId, variantId, quantity = 1) => {
     }
 
     if (currentCartQuantity + quantity > stockAvailable) {
-         throw new Error(stockAvailable === 0 ? "This item is out of stock" : `Only ${stockAvailable} units available`);
+        throw new Error(stockAvailable === 0 ? "This item is out of stock" : `Only ${stockAvailable} units available`);
     }
 
     if (!cart) {
         cart = new cartModel({ userId, items: [{ productId, variantId, quantity }] });
     } else {
-        const existingItemIndex = cart.items.findIndex(item => 
-            item.productId.toString() === productId.toString() && 
+        const existingItemIndex = cart.items.findIndex(item =>
+            item.productId.toString() === productId.toString() &&
             (!variantId || (item.variantId && item.variantId.toString() === variantId.toString()))
         );
-        
+
         if (existingItemIndex > -1) {
             cart.items[existingItemIndex].quantity += quantity;
         } else {
@@ -58,13 +75,16 @@ const addToCartService = async (userId, productId, variantId, quantity = 1) => {
         }
     }
 
-    // Remove from wishlist if it exists
-    await wishlistModel.findOneAndUpdate(
-        { userId },
-        { $pull: { items: { productId } } }
-    );
+    await cart.save();
 
-    return await cart.save();
+    // Remove from wishlist if already added
+    const wishlist = await wishlistModel.findOne({ userId });
+    if (wishlist) {
+        wishlist.items = wishlist.items.filter(item => item.productId.toString() !== productId.toString());
+        await wishlist.save();
+    }
+
+    return cart;
 };
 
 const removeFromCartService = async (userId, productId) => {

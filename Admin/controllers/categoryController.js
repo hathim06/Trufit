@@ -2,9 +2,19 @@ const categoryService = require('../Services/categoryService');
 
 const getCategories = async (req, res) => {
     try {
-        const categories = await categoryService.getCategoriesService();
+        const search = req.query.search || '';
+        const status = req.query.status || 'all';
+        const page = parseInt(req.query.page) || 1;
+        const limit = 5;
+
+        const { categories, totalPages, currentPage } = await categoryService.getCategoriesService(search, page, limit, status);
+        
         res.render('admin/categories', {
             categories,
+            totalPages,
+            currentPage,
+            search,
+            status,
             success: req.query.success,
             message: req.query.message
         });

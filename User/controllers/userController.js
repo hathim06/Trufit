@@ -228,14 +228,26 @@ const loadEditAddress = async (req, res) => {
 };
 
 const updateProfilePicture = async (req, res) => {
-    if (!req.file) return res.redirect('/profile');
+    try {
+        if (!req.file) {
+            throw new Error("No file uploaded");
+        }
 
-    await userService.updateProfilePictureService({
-        userId: req.session.user,
-        profilePicture: req.file.path
-    });
+        await userService.updateProfilePictureService({
+            userId: req.session.user,
+            profilePicture: req.file.path
+        });
 
-    res.redirect('/profile');
+        if (req.xhr || req.headers.accept?.includes('application/json')) {
+            return res.json({ success: true, message: "Profile picture updated" });
+        }
+        res.redirect('/profile?success=Profile picture updated');
+    } catch (error) {
+        if (req.xhr || req.headers.accept?.includes('application/json')) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
+        res.redirect('/profile?error=' + encodeURIComponent(error.message));
+    }
 };
 
 const deleteProfilePicture = async (req, res) => {

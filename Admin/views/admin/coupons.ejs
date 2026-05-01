@@ -10,7 +10,12 @@
 
         <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; margin-bottom: 30px;">
             <div style="position: relative; flex: 1; max-width: 500px;">
-                <input type="text" class="search-input" placeholder="Search Coupons..." value="<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>" style="width: 100%;">
+                <input type="text" class="search-input" placeholder="Search Coupons..." value="<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>" style="width: 100%; padding-right: 36px;">
+                <% if (typeof searchTerm !== 'undefined' && searchTerm) { %>
+                    <button onclick="clearSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9CA3AF; display: block;">✕</button>
+                <% } else { %>
+                    <button onclick="clearSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9CA3AF; display: none;">✕</button>
+                <% } %>
             </div>
             <select id="statusFilter" class="search-input" style="max-width: 200px;">
                 <option value="">All Status</option>
@@ -58,19 +63,26 @@
             </table>
 
             <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
-                <div style="margin-top: 30px; display: flex; justify-content: center; gap: 10px;">
-                    <% for (var pageNum = 1; pageNum <= totalPages; pageNum++) { %>
-                        <% if (typeof currentPage !== 'undefined' && currentPage == pageNum) { %>
-                            <a href="/admin/coupons?page=<%= pageNum %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>" 
-                               style="text-decoration: none; padding: 5px 15px; border-radius: 4px; background: #000; color: #FFF; font-weight: 700;">
-                                <%= pageNum %>
-                            </a>
-                        <% } else { %>
-                            <a href="/admin/coupons?page=<%= pageNum %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>" 
-                               style="text-decoration: none; padding: 5px 15px; border-radius: 4px; background: #F3F4F6; color: #6B7280;">
-                                <%= pageNum %>
-                            </a>
+                <div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px; padding-bottom: 20px;">
+                    <% if (currentPage > 1) { %>
+                        <a href="/admin/coupons?page=<%= currentPage - 1 %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
+                           style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Previous</a>
+                    <% } %>
+
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                        <% if (i === currentPage) { %>
+                            <span style="padding: 8px 16px; background: #000; color: #FFF; border: 1px solid #000; border-radius: 8px; font-weight: 700;"><%= i %></span>
+                        <% } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) { %>
+                            <a href="/admin/coupons?page=<%= i %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
+                               style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;"><%= i %></a>
+                        <% } else if (i === currentPage - 3 || i === currentPage + 3) { %>
+                            <span style="color: #9CA3AF;">...</span>
                         <% } %>
+                    <% } %>
+
+                    <% if (currentPage < totalPages) { %>
+                        <a href="/admin/coupons?page=<%= currentPage + 1 %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
+                           style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Next</a>
                     <% } %>
                 </div>
             <% } %>
@@ -114,6 +126,10 @@
             const search = searchInput.value;
             const status = statusFilter.value;
             location.href = `/admin/coupons?search=${search}&status=${status}`;
+        }
+
+        function clearSearch() {
+            location.href = `/admin/coupons?status=${statusFilter.value}`;
         }
 
         if (searchInput) {

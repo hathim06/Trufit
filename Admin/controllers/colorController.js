@@ -2,8 +2,12 @@ const colorService = require('../Services/colorService');
 
 const getColorsPage = async (req, res) => {
     try {
-        const colors = await colorService.getAllColorsService();
-        res.render('admin/colors', { colors });
+        const data = await colorService.getAllColorsService(req.query);
+        res.render('admin/colors', { 
+            colors: data.colors,
+            currentPage: data.currentPage,
+            totalPages: data.totalPages
+        });
     } catch (error) {
         res.redirect('/admin/dashboard');
     }

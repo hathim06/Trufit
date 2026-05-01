@@ -91,10 +91,54 @@ const loadCoupons = async (req, res) => {
     }
 };
 
+const cancelOrder = async (req, res) => {
+    try {
+        const userId = req.session.user || req.user?._id;
+        const orderId = req.params.id;
+        await orderService.cancelOrderService(orderId, userId);
+        res.json({ success: true, message: "Order cancelled successfully" });
+    } catch (error) {
+        console.error('Cancel order error:', error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+const returnOrder = async (req, res) => {
+    try {
+        const userId = req.session.user || req.user?._id;
+        const orderId = req.params.id;
+        await orderService.returnOrderService(orderId, userId);
+        res.json({ success: true, message: "Return initiated successfully" });
+    } catch (error) {
+        console.error('Return order error:', error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+const downloadInvoice = async (req, res) => {
+    try {
+        const userId = req.session.user || req.user?._id;
+        const orderId = req.params.id;
+        const order = await orderService.getOrderDetailsService(orderId, userId);
+        
+        if (!order) {
+            return res.status(404).render('users/404');
+        }
+
+        res.render('users/invoice', { order });
+    } catch (error) {
+        console.error('Download invoice error:', error);
+        res.redirect('/profile/orders');
+    }
+};
+
 module.exports = {
     loadCheckout,
     placeOrder,
     loadOrders,
     loadOrderDetails,
-    loadCoupons
+    loadCoupons,
+    cancelOrder,
+    returnOrder,
+    downloadInvoice
 };

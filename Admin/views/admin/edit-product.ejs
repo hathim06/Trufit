@@ -586,6 +586,36 @@
 
         function openCropper(input) {
             if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+
+            // --- ADDED VALIDATION ---
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+            const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            const extension = file.name.split('.').pop().toLowerCase();
+
+            if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(extension)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid File Type',
+                    text: 'Only image files (JPG, JPEG, PNG, WEBP) are allowed!',
+                    confirmButtonColor: '#000'
+                });
+                input.value = '';
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Too Large',
+                    text: 'Maximum file size is 5MB!',
+                    confirmButtonColor: '#000'
+                });
+                input.value = '';
+                return;
+            }
+            // -------------------------
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 currentImageInput = input;
@@ -599,7 +629,7 @@
                     cropper = new Cropper(img, { aspectRatio: 1, viewMode: 2, background: false });
                 }, 100);
             };
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
         }
 
         function closeCropper() {

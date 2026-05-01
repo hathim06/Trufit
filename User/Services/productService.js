@@ -5,7 +5,7 @@ const categoryModel = require('../models/categoryModel');
 
 const getProductDetailsByIdService = async (productId) => {
     const product = await productModel.findById(productId);
-    if (!product || product.isDeleted || product.status !== 'Active') {
+    if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
         throw new Error("Product not found");
     }
     return product;
@@ -24,7 +24,7 @@ const getRelatedProductsService = async (productId) => {
             _id: { $ne: productId },
             categoryId: currentProduct.categoryId,
             isDeleted: false,
-            status: 'Active'
+            status: { $regex: /^active$/i }
         }).limit(4).populate('categoryId');
 
         return relatedProducts;
@@ -38,10 +38,14 @@ const getShopProductsService = async (filters = {}, page = 1) => {
     const itemsPerPage = 9;
     const skip = (page - 1) * itemsPerPage;
     
-    let query = { isDeleted: false, status: 'Active' };
+    let query = { isDeleted: false, status: { $regex: /^active$/i } };
 
     if (filters.category && filters.category.trim() !== '') {
         query.categoryId = filters.category;
+    }
+    
+    if (filters.search && filters.search.trim() !== '') {
+        query.name = { $regex: filters.search.trim(), $options: 'i' };
     }
 
     if (filters.size && filters.size.trim() !== '') {
@@ -93,7 +97,7 @@ const getSearchSuggestionsService = async (searchTerm) => {
     if (!searchTerm || searchTerm.trim() === '') {
         const latestProducts = await productModel.find({
             isDeleted: false,
-            status: 'Active'
+            status: { $regex: /^active$/i }
         })
         .select('name')
         .sort({ createdAt: -1 })
@@ -111,7 +115,7 @@ const getSearchSuggestionsService = async (searchTerm) => {
     const products = await productModel.find({
         name: { $regex: query, $options: 'i' },
         isDeleted: false,
-        status: 'Active'
+        status: { $regex: /^active$/i }
     })
     .select('name')
     .limit(5);
