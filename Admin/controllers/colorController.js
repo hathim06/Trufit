@@ -1,4 +1,4 @@
-const colorService = require('../Services/colorService');
+import colorService from '../Services/colorService.js';
 
 const getColorsPage = async (req, res) => {
     try {
@@ -32,7 +32,7 @@ const deleteColor = async (req, res) => {
     }
 };
 
-module.exports = {
+export default {
     getColorsPage,
     addColor,
     deleteColor

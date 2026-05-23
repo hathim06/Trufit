@@ -1,4 +1,5 @@
-const userService = require('../Services/userService');
+import { MESSAGES } from '../../utils/messages.js';
+import userService from '../Services/userService.js';
 
 const getUsers = async (req, res) => {
     try {
@@ -36,7 +37,7 @@ const unblockUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         await userService.deleteUserService(req.params.id);
-        res.json({ success: true, message: "User deleted successfully" });
+        res.json({ success: true, message: MESSAGES.USER_DELETED });
     } catch {
         res.json({ success: false });
     }
@@ -56,7 +57,7 @@ const viewUser = async (req, res) => {
     }
 }
 
-module.exports = {
+export default {
     getUsers,
     blockUser,
     unblockUser,

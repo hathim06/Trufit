@@ -1,4 +1,6 @@
-const wishlistService = require('../Services/wishlistService');
+import { MESSAGES } from '../../utils/messages.js';
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import wishlistService from '../Services/wishlistService.js';
 
 const loadWishlist = async (req, res) => {
     try {
@@ -13,9 +15,9 @@ const addToWishlist = async (req, res) => {
     try {
         const { productId } = req.body;
         await wishlistService.addToWishlistService(req.session.user, productId);
-        return res.status(200).json({ success: true, message: "Added to wishlist" });
+        return res.status(STATUS_CODES.OK).json({ success: true, message: MESSAGES.WISH_LIST_ADDED });
     } catch (error) {
-        return res.status(400).json({ success: false, message: error.message });
+        return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
@@ -28,8 +30,23 @@ const removeFromWishlist = async (req, res) => {
     }
 };
 
-module.exports = {
+const toggleWishlist = async (req, res) => {
+    try {
+        const { productId } = req.body;
+        const result = await wishlistService.toggleWishlistService(req.session.user, productId);
+        return res.status(STATUS_CODES.OK).json({ 
+            success: true, 
+            added: result.added,
+            message: result.added ? MESSAGES.WISH_LIST_ADDED : MESSAGES.WISH_LIST_REMOVED 
+        });
+    } catch (error) {
+        return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
+    }
+};
+
+export default {
     loadWishlist,
     addToWishlist,
-    removeFromWishlist
+    removeFromWishlist,
+    toggleWishlist
 };

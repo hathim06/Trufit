@@ -262,6 +262,31 @@
     }
 
 
+    .remove-img-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 20px;
+        height: 20px;
+        background: #EF4444;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        font-size: 12px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transition: all 0.2s;
+    }
+
+    .remove-img-btn:hover {
+        transform: scale(1.1);
+        background: #DC2626;
+    }
 </style>
 </head>
 
@@ -313,18 +338,20 @@
                     </div>
                     <div class="form-group">
                         <label>BASE PRICE (MRP)</label>
-                        <input type="number" name="price" value="<%= product.price %>" onchange="calculateDiscount()" style="background:#E5E7EB;border:none;border-radius:12px;">
+                        <input type="number" name="price" value="<%= product.price %>" step="any" onchange="calculateDiscount()" style="background:#E5E7EB;border:none;border-radius:12px;">
                     </div>
                     <div class="form-group">
                         <label>SALE PRICE (OFFER)</label>
-                        <input type="number" name="offerPrice" value="<%= product.offerPrice %>" onchange="calculateDiscount()" style="background:#E5E7EB;border:none;border-radius:12px;">
+                        <input type="number" name="offerPrice" value="<%= product.offerPrice %>" step="any" onchange="calculateDiscount()" style="background:#E5E7EB;border:none;border-radius:12px;">
                     </div>
                 </div>
 
                 <div class="form-grid" style="grid-template-columns: 1fr 1fr; border-top: 1px solid #E5E7EB; padding-top: 25px;">
                     <div class="form-group">
                         <label>AUTO DISCOUNT %</label>
-                        <input type="number" id="discountInput" name="discount" value="<%= product.discount %>" readonly style="background:#F3F4F6;border:none;border-radius:12px;color:#10B981;font-weight:800;font-size:18px;">
+                        <input type="number" id="discountInput" name="discount" value="<%= product.discount %>" 
+                            oninput="calculateOfferPrice()"
+                            style="background:#fff;border:1px solid #D1D5DB;border-radius:12px;color:#10B981;font-weight:800;font-size:18px;">
                     </div>
                     <div class="form-group">
                         <label>TOTAL STOCK <span style="font-size:10px;color:#10B981;font-weight:600;">(auto-calculated)</span></label>
@@ -445,7 +472,19 @@
             const price = parseFloat(document.querySelector('input[name="price"]').value);
             const offer = parseFloat(document.querySelector('input[name="offerPrice"]').value);
             const el = document.getElementById('discountInput');
-            el.value = (price && offer && offer < price) ? Math.round(((price - offer) / price) * 100) : '';
+            if (price && offer && offer < price) {
+                el.value = Math.round(((price - offer) / price) * 100);
+            }
+        }
+
+        function calculateOfferPrice() {
+            const price = parseFloat(document.querySelector('input[name="price"]').value);
+            const discount = parseFloat(document.getElementById('discountInput').value);
+            const offerInput = document.querySelector('input[name="offerPrice"]');
+            if (price && discount >= 0 && discount <= 100) {
+                const offerPrice = price - (price * (discount / 100));
+                offerInput.value = offerPrice.toFixed(2);
+            }
         }
 
         function recalculateTotalStock() {
@@ -458,14 +497,29 @@
             if (stockEl) stockEl.value = total;
         }
 
-        function toggleColorVariant(color) {
+        async function toggleColorVariant(color) {
             const cb = document.getElementById(`color-${color}`);
             if (cb.checked) {
                 if (!selectedColors.includes(color)) selectedColors.push(color);
+                renderVariants();
             } else {
-                selectedColors = selectedColors.filter(c => c !== color);
+                const result = await Swal.fire({
+                    title: 'Remove Color Variant?',
+                    text: "Unchecking this color will remove all associated stock and image data for this variant.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#EF4444',
+                    cancelButtonColor: '#6B7280',
+                    confirmButtonText: 'Yes, remove it!'
+                });
+
+                if (result.isConfirmed) {
+                    selectedColors = selectedColors.filter(c => c !== color);
+                    renderVariants();
+                } else {
+                    cb.checked = true; // Restore checkbox
+                }
             }
-            renderVariants();
         }
 
         function toggleSize(color, size) {
@@ -533,13 +587,17 @@
                     const hasImg = !!slot;
 
                     imagesHTML += `
-                        <div class="image-upload-box ${hasImg ? 'has-image' : ''}" onclick="document.getElementById('${inputId}').click()">
+                        <div class="image-upload-box ${hasImg ? 'has-image' : ''}" onclick="${hasImg ? '' : `document.getElementById('${inputId}').click()`}">
                             <span class="slot-index-badge">${s+1}</span>
-                            ${hasImg ? `<img src="${slot.previewUrl}">` : '<div class="plus-icon">+</div>'}
+                            ${hasImg ? `
+                                <img src="${slot.previewUrl}">
+                                <button type="button" class="remove-img-btn" onclick="removeImage(event, '${color}', ${s})">×</button>
+                            ` : '<div class="plus-icon">+</div>'}
                             <div class="image-type-tag">${slotLabels[s]}</div>
                             <input type="file" name="v${vNum}_image${s+1}" id="${inputId}" 
                                    data-color="${color}" data-slot-index="${s}" style="display:none;" 
                                    accept="image/*" onchange="openCropper(this)">
+                            <input type="hidden" name="v${vNum}_existingImage${s+1}" value="${hasImg && !slot.file ? slot.previewUrl : ''}">
                         </div>`;
                 }
 
@@ -655,6 +713,29 @@
                 closeCropper();
                 renderVariants();
             }, 'image/jpeg', 0.9);
+        }
+
+        async function removeImage(event, color, slotIndex) {
+            event.stopPropagation();
+            
+            const result = await Swal.fire({
+                title: 'Remove Image?',
+                text: "Are you sure you want to remove this image?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, remove it!'
+            });
+
+            if (result.isConfirmed) {
+                const slots = uploadedImages.get(color);
+                if (slots) {
+                    slots[slotIndex] = null;
+                    uploadedImages.set(color, slots);
+                    renderVariants();
+                }
+            }
         }
 
         function applyDynamicSwatches() {

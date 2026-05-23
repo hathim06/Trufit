@@ -1,9 +1,17 @@
-const userService = require('../Services/userService');
-const userModel = require('../models/userModel');
-const addressModel = require('../models/addressModel');
+import { MESSAGES } from '../../utils/messages.js';
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import userService from '../Services/userService.js';
+import userModel from '../models/userModel.js';
+import addressModel from '../models/addressModel.js';
+import cartModel from '../models/cartModel.js';
+import wishlistModel from '../models/wishlistModel.js';
 
 const loadLogin = (req, res) => {
-    res.render('users/login', { message: req.query.message, success: req.query.success });
+    const message = req.query.message || req.session.authMessage;
+    if (req.session.authMessage) {
+        delete req.session.authMessage;
+    }
+    res.render('users/login', { message: message, success: req.query.success });
 };
 
 const loadRegister = (req, res) => {
@@ -67,7 +75,7 @@ const loginUser = async (req, res) => {
         req.session.save((err) => {
             if (err) {
                 console.error("Session Save Error:", err);
-                return res.render('users/login', { message: "Session error, please try again" });
+                return res.render('users/login', { message: MESSAGES.SESSION_ERROR });
             }
             res.redirect('/');
         });
@@ -89,7 +97,7 @@ const forgotPassword = async (req, res) => {
 
         const user = await userModel.findOne({ email });
         if (!user) throw new Error("No user found with this email");
-        if (user.isBlocked) throw new Error("Your account has been blocked by admin");
+        if (user.isBlocked) throw new Error(MESSAGES.USER_BLOCKED);
 
         await userService.generateAndSendOtp(email);
 
@@ -195,7 +203,7 @@ const resendOtp = async (req, res) => {
         if (!email) return res.redirect('/signup');
 
         const user = await userModel.findOne({ email });
-        if (user && user.isBlocked) throw new Error("Your account has been blocked by admin");
+        if (user && user.isBlocked) throw new Error(MESSAGES.USER_BLOCKED);
 
         await userService.generateAndSendOtp(email);
 
@@ -239,12 +247,12 @@ const updateProfilePicture = async (req, res) => {
         });
 
         if (req.xhr || req.headers.accept?.includes('application/json')) {
-            return res.json({ success: true, message: "Profile picture updated" });
+            return res.json({ success: true, message: MESSAGES.PROFILE_PIC_UPDATED });
         }
         res.redirect('/profile?success=Profile picture updated');
     } catch (error) {
         if (req.xhr || req.headers.accept?.includes('application/json')) {
-            return res.status(400).json({ success: false, message: error.message });
+            return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
         }
         res.redirect('/profile?error=' + encodeURIComponent(error.message));
     }
@@ -264,7 +272,7 @@ const changeEmailOtp = async (req, res) => {
 
     const existingUser = await userModel.findOne({ email: newEmail });
     if (existingUser) {
-        return res.status(400).json({ success: false, message: "This email is already registered" });
+        return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: MESSAGES.EMAIL_EXISTS });
     }
 
     await userService.generateAndSendOtp(newEmail);
@@ -312,7 +320,25 @@ const googleAuthCallback = async (req, res) => {
     });
 };
 
-module.exports = {
+const getUserCounts = async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.json({ success: true, cartCount: 0, wishlistCount: 0 });
+        }
+        
+        const cart = await cartModel.findOne({ userId: req.session.user });
+        const wishlist = await wishlistModel.findOne({ userId: req.session.user });
+        
+        const cartCount = cart && cart.items ? cart.items.length : 0;
+        const wishlistCount = wishlist && wishlist.items ? wishlist.items.length : 0;
+        
+        res.json({ success: true, cartCount, wishlistCount });
+    } catch (error) {
+        res.json({ success: false, cartCount: 0, wishlistCount: 0 });
+    }
+};
+
+export default {
     registerUser,
     verifyOtp,
     loginUser,
@@ -340,5 +366,6 @@ module.exports = {
     changeEmailOtp,
     changeEmail,
     updatePassword,
-    googleAuthCallback
+    googleAuthCallback,
+    getUserCounts
 };

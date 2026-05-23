@@ -1,6 +1,7 @@
-const { ZodError } = require('zod');
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import { ZodError  } from 'zod';
 
-const validateBody = (schema) => (req, res, next) => {
+export const validateBody = (schema) => (req, res, next) => {
     try {
         req.body = schema.parse(req.body);
         next();
@@ -17,12 +18,8 @@ const validateBody = (schema) => (req, res, next) => {
                 return res.redirect(`${req.header('Referer') || originalUrl}?message=${encodeURIComponent(message)}`);
             }
             
-            return res.status(400).json({ success: false, message });
+            return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message });
         }
         next(error);
     }
-};
-
-module.exports = {
-    validateBody
 };

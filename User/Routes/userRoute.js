@@ -1,9 +1,10 @@
-const express = require('express');
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import express from 'express';
 const router = express.Router();
-const userAuth = require('../Middlewares/userAuth');
-const userController = require('../controllers/userController');
-const passport = require('../../Config/passport');
-const upload = require('../Middlewares/upload');
+import userAuth from '../Middlewares/userAuth.js';
+import userController from '../controllers/userController.js';
+import passport from '../../Config/passport.js';
+import upload from '../Middlewares/upload.js';
 
 router.get('/signup', userAuth.isLoggedOut, userController.loadRegister);
 router.get('/login', userAuth.isLoggedOut, userController.loadLogin);
@@ -31,7 +32,7 @@ router.post('/profile/upload-picture', userAuth.isLoggedIn, (req, res, next) => 
     upload.single('profilePicture')(req, res, (err) => {
         if (err) {
             if (req.xhr || req.headers.accept?.includes('application/json')) {
-                return res.status(400).json({ success: false, message: err.message });
+                return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: err.message });
             }
             return res.redirect('/profile?error=' + encodeURIComponent(err.message));
         }
@@ -45,4 +46,7 @@ router.get('/address/set-default/:id', userAuth.isLoggedIn, userController.setDe
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), userController.googleAuthCallback);
 
-module.exports = router;
+// API for User Counts (Cart/Wishlist)
+router.get('/api/user/counts', userController.getUserCounts);
+
+export default router;

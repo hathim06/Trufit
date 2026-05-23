@@ -1,0 +1,230 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'inventory' }) %>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">INVENTORY MANAGEMENT</h1>
+        </header>
+
+        <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; margin-bottom: 30px;">
+            <!-- Search -->
+            <div style="position: relative; flex: 1; max-width: 400px;">
+                <input type="text" id="inventorySearch" class="search-input" placeholder="Search Product..." value="<%= search %>" style="width: 100%;">
+            </div>
+
+            <!-- Category Filter -->
+            <select id="categoryFilter" style="padding: 10px; border-radius: 8px; border: 1px solid #E5E7EB;">
+                <option value="">All Categories</option>
+                <% categories.forEach(cat => { %>
+                    <option value="<%= cat._id %>" <%= selectedCategory == cat._id.toString() ? 'selected' : '' %>><%= cat.name %></option>
+                <% }) %>
+            </select>
+
+            <!-- Stock Status Filter -->
+            <select id="stockStatusFilter" style="padding: 10px; border-radius: 8px; border: 1px solid #E5E7EB;">
+                <option value="">All Stock Status</option>
+                <option value="in" <%= selectedStockStatus === 'in' ? 'selected' : '' %>>In Stock (10+)</option>
+                <option value="low" <%= selectedStockStatus === 'low' ? 'selected' : '' %>>Low Stock (<10)</option>
+                <option value="out" <%= selectedStockStatus === 'out' ? 'selected' : '' %>>Out of Stock (0)</option>
+            </select>
+
+            <button class="btn btn-primary" onclick="clearFilters()" style="padding: 10px 20px;">CLEAR</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>PRODUCT</th>
+                        <th>VARIANT / COLOR / SIZE</th>
+                        <th>CURRENT STOCK</th>
+                        <th>UPDATE STOCK</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (products && products.length > 0) { %>
+                        <% products.forEach(product => { %>
+                            <% if (product.variants && product.variants.length > 0) { %>
+                                <% product.variants.forEach((variant, vIdx) => { %>
+                                    <tr>
+                                        <% if (vIdx === 0) { %>
+                                            <td rowspan="<%= product.variants.length %>">
+                                                <div style="display: flex; align-items: center; gap: 10px;">
+                                                    <% if (product.image && product.image.length > 0) { %>
+                                                        <img src="<%= product.image[0] %>" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                                    <% } %>
+                                                    <strong><%= product.name %></strong>
+                                                </div>
+                                            </td>
+                                        <% } %>
+                                        <td>
+                                            <span style="font-size: 12px; font-weight: 600; color: #6B7280;">
+                                                <%= variant.color %> / <%= variant.size %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span id="stock-display-<%= variant._id %>" class="status-badge <%= variant.quantity < 10 ? (variant.quantity === 0 ? 'status-unlisted' : 'status-pending') : 'status-listed' %>">
+                                                <%= variant.quantity %> Units
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <input type="number" id="input-<%= variant._id %>" class="search-input" style="width: 80px; padding: 5px 10px;" value="<%= variant.quantity %>" min="0">
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-primary" style="padding: 5px 15px; font-size: 12px;" onclick="updateInventory('<%= product._id %>', '<%= variant._id %>')">Update</button>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <% if (product.image && product.image.length > 0) { %>
+                                                <img src="<%= product.image[0] %>" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                            <% } %>
+                                            <strong><%= product.name %></strong>
+                                        </div>
+                                    </td>
+                                    <td>Standard</td>
+                                    <td>
+                                        <span id="stock-display-<%= product._id %>" class="status-badge <%= product.quantity < 10 ? (product.quantity === 0 ? 'status-unlisted' : 'status-pending') : 'status-listed' %>">
+                                            <%= product.quantity %> Units
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <input type="number" id="input-<%= product._id %>" class="search-input" style="width: 80px; padding: 5px 10px;" value="<%= product.quantity %>" min="0">
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-primary" style="padding: 5px 15px; font-size: 12px;" onclick="updateInventory('<%= product._id %>', null)">Update</button>
+                                    </td>
+                                </tr>
+                            <% } %>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px; color: #6B7280;">No products found in inventory.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <% 
+                let paginationHtml = '';
+                if (totalPages > 1) {
+                    paginationHtml += '<div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px; padding-bottom: 20px;">';
+                    
+                    if (currentPage > 1) {
+                        paginationHtml += "<a href='javascript:void(0)' onclick='changePage(" + (currentPage - 1) + ")' style='padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;'>Previous</a>";
+                    }
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        let isCurrent = (i === currentPage);
+                        let pageStyle = "padding: 8px 16px; text-decoration: none; border: 1px solid #E5E7EB; border-radius: 8px; " + (isCurrent ? "background: #000; color: #FFF; border-color: #000;" : "background: #FFF; color: #374151;");
+                        paginationHtml += "<a href='javascript:void(0)' onclick='changePage(" + i + ")' style='" + pageStyle + "'>" + i + "</a>";
+                    }
+
+                    if (currentPage < totalPages) {
+                        paginationHtml += "<a href='javascript:void(0)' onclick='changePage(" + (currentPage + 1) + ")' style='padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;'>Next</a>";
+                    }
+                    
+                    paginationHtml += '</div>';
+                }
+            %>
+            <%- paginationHtml %>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        lucide.createIcons();
+
+        // Search and Filter Elements
+        const inventorySearch = document.getElementById('inventorySearch');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const stockStatusFilter = document.getElementById('stockStatusFilter');
+
+        // Trigger Filters
+        function triggerFilters(page = 1) {
+            const search = inventorySearch.value;
+            const category = categoryFilter.value;
+            const stockStatus = stockStatusFilter.value;
+            location.href = `/admin/inventory?page=${page}&search=${search}&category=${category}&stockStatus=${stockStatus}`;
+        }
+
+        // Debouncing for Search
+        let debounceTimer;
+        inventorySearch.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => triggerFilters(1), 600);
+        });
+
+        // Change on Selects
+        categoryFilter.addEventListener('change', () => triggerFilters(1));
+        stockStatusFilter.addEventListener('change', () => triggerFilters(1));
+
+        function changePage(page) {
+            triggerFilters(page);
+        }
+
+        function clearFilters() {
+            location.href = '/admin/inventory';
+        }
+
+        async function updateInventory(productId, variantId) {
+            const inputId = variantId ? `input-${variantId}` : `input-${productId}`;
+            const quantity = document.getElementById(inputId).value;
+
+            if (quantity < 0) {
+                return Swal.fire('Error', 'Quantity cannot be negative', 'error');
+            }
+
+            const result = await Swal.fire({
+                title: 'Update Stock?',
+                text: `Are you sure you want to set the stock to ${quantity}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#000',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, update it!'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await fetch('/admin/inventory/update', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productId, variantId, quantity: parseInt(quantity) })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Stock updated',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                    
+                    const displayId = variantId ? `stock-display-${variantId}` : `stock-display-${productId}`;
+                    const display = document.getElementById(displayId);
+                    display.innerText = quantity + ' Units';
+                    
+                    if (quantity == 0) display.className = 'status-badge status-unlisted';
+                    else if (quantity < 10) display.className = 'status-badge status-pending';
+                    else display.className = 'status-badge status-listed';
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Something went wrong', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

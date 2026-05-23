@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
-const productModel = require('../../User/models/productModel');
-const variantModel = require('../../User/models/variants');
-const cartModel = require('../../User/models/cartModel');
-const wishlistModel = require('../../User/models/wishlistModel');
-const categoryModel = require('../../User/models/categoryModel');
+import mongoose from 'mongoose';
+import productModel from '../../User/models/productModel.js';
+import variantModel from '../../User/models/variants.js';
+import cartModel from '../../User/models/cartModel.js';
+import wishlistModel from '../../User/models/wishlistModel.js';
+import categoryModel from '../../User/models/categoryModel.js';
 
 const syncProductWithVariants = async (productId) => {
     const variants = await variantModel.find({ productId, isDeleted: false, quantity: { $gt: 0 } });
@@ -140,13 +140,19 @@ const getProductsService = async (query) => {
     const totalProducts = await productModel.countDocuments(filter);
     const totalPages = Math.ceil(totalProducts / limit);
 
+    const totalProductsListed=await productModel.countDocuments({isDeleted:false})
+    const totalActiveProducts=await productModel.countDocuments({isDeleted:false,status:'Active'})
+    const totalBlcokedProducts=await productModel.countDocuments({isDeleted:false,status:'Blocked'})       
+
     return {
         products,
         search,
         currentPage: page,
         totalPages,
         totalUsers: totalProducts,
-        limit
+        limit,
+        totalProducts,
+        totalActiveProducts,
     };
 };
 
@@ -220,9 +226,11 @@ const updateProductService = async (req) => {
                 const colorVNum = uniqueColors.indexOf(color) + 1;
                 for (let imgIdx = 0; imgIdx < 5; imgIdx++) {
                     const fieldName = `v${colorVNum}_image${imgIdx + 1}`;
+                    const existingFieldName = `v${colorVNum}_existingImage${imgIdx + 1}`;
+                    
                     if (req.files && req.files[fieldName]) {
                         finalImages[imgIdx] = req.files[fieldName][0].path;
-                    } else if (existingImgs[imgIdx]) {
+                    } else if (req.body[existingFieldName]) {
                         finalImages[imgIdx] = existingImgs[imgIdx];
                     }
                 }
@@ -342,7 +350,7 @@ const unblockProductService = async (id) => {
     return await productModel.findByIdAndUpdate(id, { status: 'Active' }, { new: true });
 };
 
-module.exports = {
+export default {
     addProductService,
     getProductsService,
     getSingleProductService,

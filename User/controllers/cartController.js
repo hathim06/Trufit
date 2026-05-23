@@ -1,4 +1,6 @@
-const cartService = require('../Services/cartService');
+import { MESSAGES } from '../../utils/messages.js';
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import cartService from '../Services/cartService.js';
 
 const loadCart = async (req, res) => {
     try {
@@ -13,18 +15,18 @@ const addToCart = async (req, res) => {
     try {
         const { productId, variantId, quantity = 1 } = req.body;
         await cartService.addToCartService(req.session.user, productId, variantId, quantity);
-        return res.status(200).json({ success: true, message: "Added to cart" });
+        return res.status(STATUS_CODES.OK).json({ success: true, message: MESSAGES.CART_ADDED });
     } catch (error) {
-        return res.status(400).json({ success: false, message: error.message });
+        return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
 const removeFromCart = async (req, res) => {
     try {
         await cartService.removeFromCartService(req.session.user, req.params.id);
-        return res.status(200).json({ success: true, message: "Removed from cart" });
+        return res.status(STATUS_CODES.OK).json({ success: true, message: MESSAGES.CART_REMOVED });
     } catch (error) {
-        return res.status(400).json({ success: false, message: error.message });
+        return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
@@ -36,9 +38,9 @@ const updateCartQuantity = async (req, res) => {
             req.params.id,
             quantity
         );
-        return res.status(200).json({ success: true, message: "Quantity updated" });
+        return res.status(STATUS_CODES.OK).json({ success: true, message: MESSAGES.CART_QUANTITY_UPDATED });
     } catch (error) {
-        return res.status(400).json({ success: false, message: error.message });
+        return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
@@ -51,7 +53,7 @@ const clearCart = async (req, res) => {
     }
 };
 
-module.exports = {
+export default {
     loadCart,
     addToCart,
     removeFromCart,

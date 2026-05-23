@@ -1,16 +1,15 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema({
+    orderId: {
+        type: String,
+        required: true,
+        unique: true
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
-    },
-    orderId: {
-        type: String,
-        required: true,
-        unique: true,
-        default: () => 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase()
     },
     items: [{
         productId: {
@@ -18,11 +17,13 @@ const orderSchema = new mongoose.Schema({
             ref: 'Product',
             required: true
         },
+        name: {
+            type: String
+        },
         variantId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Variant'
         },
-        name: String,
         quantity: {
             type: Number,
             required: true
@@ -30,13 +31,9 @@ const orderSchema = new mongoose.Schema({
         price: {
             type: Number,
             required: true
-        },
-        totalPrice: {
-            type: Number,
-            required: true
         }
     }],
-    deliveryAddress: {
+    shippingAddress: {
         name: String,
         addressLine: String,
         city: String,
@@ -45,25 +42,9 @@ const orderSchema = new mongoose.Schema({
         pincode: String,
         mobile: String
     },
-    subtotal: {
-        type: Number,
-        required: true
-    },
-    discountAmount: {
-        type: Number,
-        default: 0
-    },
-    couponApplied: {
-        code: String,
-        discountPercentage: Number
-    },
-    grandTotal: {
-        type: Number,
-        required: true
-    },
     paymentMethod: {
         type: String,
-        enum: ['COD', 'Online'],
+        enum: ['COD', 'Online', 'Wallet'],
         required: true
     },
     paymentStatus: {
@@ -73,8 +54,23 @@ const orderSchema = new mongoose.Schema({
     },
     orderStatus: {
         type: String,
-        enum: ['Placed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'],
-        default: 'Placed'
+        enum: ['Pending', 'Confirmed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Returned'],
+        default: 'Pending'
+    },
+    subtotal: {
+        type: Number,
+        required: true
+    },
+    discountAmount: {
+        type: Number,
+        default: 0
+    },
+    totalAmount: {
+        type: Number,
+        required: true
+    },
+    returnReason: {
+        type: String
     },
     createdAt: {
         type: Date,
@@ -84,6 +80,6 @@ const orderSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model('Order', orderSchema);
+export default mongoose.model('Order', orderSchema);

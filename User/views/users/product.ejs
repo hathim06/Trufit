@@ -71,14 +71,17 @@
         /* Zoom Preview Container */
         .zoom-preview {
             display: none;
-            position: relative;
+            position: absolute;
+            left: 100%;
+            top: 0;
+            margin-left: 20px;
             width: 400px;
             height: 500px;
             border: 1px solid #E5E7EB;
             border-radius: 8px;
             background: #F8F8F8;
             overflow: hidden;
-            z-index: 11;
+            z-index: 100;
             flex-shrink: 0;
         }
 
@@ -106,6 +109,12 @@
         .wishlist-heart {
             color: #DDD;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wishlist-heart.active {
+            color: #EF4444 !important;
+            fill: #EF4444;
         }
 
         .price-row {
@@ -793,8 +802,8 @@
                         <h1>
                             <span id="productTitle">
                                 <%= product.name %>
-                            </span> <i data-lucide="heart" class="wishlist-heart"
-                                onclick="addToWishlist(event, '<%= product._id %>')"></i>
+                            </span> <i data-lucide="heart" class="wishlist-heart <%= typeof isInWishlist !== 'undefined' && isInWishlist ? 'active' : '' %>"
+                                onclick="toggleWishlist(event, '<%= product._id %>')"></i>
                         </h1>
                         <div class="price-row">
                             <% if (product.offerPrice && product.offerPrice < product.price) { %>
@@ -1504,16 +1513,14 @@
                     }
                 }
 
-                async function addToWishlist(event, productId) {
+                async function toggleWishlist(event, productId) {
                     event.preventDefault();
                     event.stopPropagation();
 
-                    // Find the specific button that was clicked to animate it later
                     const button = event.currentTarget;
 
                     try {
-                        // Replace '/wishlist/add' with your actual backend route if different
-                        const response = await fetch('/wishlist/add', {
+                        const response = await fetch('/wishlist/toggle', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
@@ -1524,28 +1531,39 @@
                         const data = await response.json();
 
                         if (response.ok) {
-                            // Optionally turn the heart Red
-                            button.classList.add('active');
-                            button.style.color = '#EF4444'; // Tailwind Red-500
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Added to Wishlist',
-                                text: 'Product successfully saved for later!',
-                                timer: 1500,
-                                showConfirmButton: false,
-                                toast: true,           // Small popup in the corner
-                                position: 'top-end'    // Top right position
-                            });
+                            if (data.added) {
+                                button.classList.add('active');
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Added to Wishlist',
+                                    text: 'Product successfully saved for later!',
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                    toast: true,
+                                    position: 'top-end'
+                                });
+                            } else {
+                                button.classList.remove('active');
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Removed',
+                                    text: 'Product removed from wishlist',
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                    toast: true,
+                                    position: 'top-end'
+                                });
+                            }
                         } else {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Notice',
-                                text: data.message || 'Please log in to add items'
+                                text: data.message || 'Please log in to manage your wishlist'
                             });
                         }
                     } catch (error) {
                         console.error("Wishlist Error:", error);
+                        Swal.fire('Error', 'Something went wrong!', 'error');
                     }
                 }
 

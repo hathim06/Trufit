@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const passport = require('../../Config/passport');
+import passport from '../../Config/passport.js';
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
@@ -16,4 +16,4 @@ router.get('/google/callback', passport.authenticate('google', {
     }
 );
 
-module.exports = router;
+export default router;

@@ -1,4 +1,5 @@
-const bannerService = require('../Services/bannerService');
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import bannerService from '../Services/bannerService.js';
 
 const loadBannerPage = async (req, res) => {
     try {
@@ -55,7 +56,7 @@ const toggleBannerStatus = async (req, res) => {
         await bannerService.toggleBannerStatusService(req.params.id);
         res.json({ success: true, message: 'Status updated successfully' });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
@@ -64,11 +65,11 @@ const deleteBanner = async (req, res) => {
         await bannerService.deleteBannerService(req.params.id);
         res.json({ success: true, message: 'Banner deleted successfully' });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
-module.exports = {
+export default {
     loadBannerPage,
     loadAddBanner,
     addBanner,

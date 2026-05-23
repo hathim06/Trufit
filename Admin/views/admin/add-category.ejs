@@ -1,76 +1,82 @@
 <%- include('partials/head') %>
-<body>
-    <%- include('partials/sidebar', { activePage: 'categories' }) %>
 
-    <main class="main-content">
-        <%- include('./partials/adminHeader', { title: 'ADD CATEGORY' }) %>
+    <body>
+        <%- include('partials/sidebar', { activePage: 'categories' }) %>
 
-        <div class="table-container" style="max-width: 600px; margin: 0 auto; padding: 40px;">
-            <% if (typeof message !== 'undefined' && message) { %>
-                <div style="background:#FEE2E2;color:#991B1B;padding:12px 20px;border-radius:8px;margin-bottom:20px;"><%= message %></div>
-            <% } %>
+            <main class="main-content">
+                <%- include('./partials/adminHeader', { title: 'ADD CATEGORY' }) %>
 
-            <form action="/admin/add-category" method="POST">
-                <div class="form-group">
-                    <label>Category Name <span style="color:red;">*</span></label>
-                    <input type="text" name="name" placeholder="e.g. Smart Watch" required>
-                </div>
+                    <div class="table-container" style="max-width: 600px; margin: 0 auto; padding: 40px;">
+                        <% if (typeof message !=='undefined' && message) { %>
+                            <div
+                                style="background:#FEE2E2;color:#991B1B;padding:12px 20px;border-radius:8px;margin-bottom:20px;">
+                                <%= message %>
+                            </div>
+                            <% } %>
 
-                <div class="form-group">
-                    <label>Description (optional)</label>
-                    <textarea name="description" rows="3" placeholder="Brief description of this category..." style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; resize:vertical;"></textarea>
-                </div>
+                                <form action="/admin/add-category" method="POST">
+                                    <div class="form-group">
+                                        <label>Category Name <span style="color:red;">*</span></label>
+                                        <input type="text" name="name" placeholder="e.g. Smart Watch" required>
+                                    </div>
 
-                <div style="margin-top: 30px; display: flex; gap: 15px;">
-                    <button type="submit" class="btn btn-primary" style="width: 200px;">ADD CATEGORY</button>
-                    <button type="button" class="btn" onclick="location.href='/admin/categories'" style="background:#F3F4F6; color:#374151; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600;">CANCEL</button>
-                </div>
-            </form>
-        </div>
-    </main>
+                                    <div class="form-group">
+                                        <label>Description (optional)</label>
+                                        <textarea name="description" rows="3"
+                                            placeholder="Brief description of this category..."
+                                            style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; resize:vertical;"></textarea>
+                                    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/zod@3.22.4/lib/index.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        lucide.createIcons();
+                                    <div style="margin-top: 30px; display: flex; gap: 15px;">
+                                        <button type="submit" class="btn btn-primary" style="width: 200px;">ADD
+                                            CATEGORY</button>
+                                        <button type="button" class="btn" onclick="location.href='/admin/categories'"
+                                            style="background:#F3F4F6; color:#374151; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600;">CANCEL</button>
+                                    </div>
+                                </form>
+                    </div>
+            </main>
 
-        const categoryForm = document.querySelector('form');
-        categoryForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(categoryForm);
-            const data = {
-                name: formData.get('name'),
-                description: formData.get('description')
-            };
+            <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+            <script src="https://cdn.jsdelivr.net/npm/zod@3.22.4/lib/index.umd.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            <script>
+                lucide.createIcons();
 
-            // Zod Schema
-            const { z } = zod;
-            const schema = z.object({
-                name: z.string()
-                    .min(2, "Category name must be at least 2 characters")
-                    .max(50, "Category name must be less than 50 characters")
-                    .trim()
-                    .refine(val => val.length > 0, "Category name is required"),
-                description: z.string().max(200, "Description must be less than 200 characters").optional()
-            });
+                const categoryForm = document.querySelector('form');
+                categoryForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
 
-            try {
-                schema.parse(data);
-                categoryForm.submit(); // If valid, submit normally
-            } catch (error) {
-                if (error instanceof z.ZodError) {
-                    const message = error.errors[0].message;
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validation Error',
-                        text: message,
-                        confirmButtonColor: '#000'
+                    const formData = new FormData(categoryForm);
+                    const data = {
+                        name: formData.get('name'),
+                        description: formData.get('description')
+                    };
+
+                    const z = Zod.z;
+                    const schema = z.object({
+                        name: z.string()
+                            .min(2, "Category name must be at least 2 characters")
+                            .max(50, "Category name must be less than 50 characters")
+                            .trim()
+                            .refine(val => val.length > 0, "Category name is required"),
+                        description: z.string().max(200, "Description must be less than 200 characters").optional()
                     });
-                }
-            }
-        });
-    </script>
-</body>
-</html>
+
+                    try {
+                        schema.parse(data);
+                        categoryForm.submit();
+                    } catch (error) {
+                        const message = error.errors ? error.errors[0].message : "Validation error";
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: message,
+                            confirmButtonColor: '#000'
+                        });
+                    }
+                });
+            </script>
+    </body>
+
+    </html>

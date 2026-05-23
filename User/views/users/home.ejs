@@ -537,39 +537,46 @@
             <main>
                 <!-- Hero Slider Section -->
                 <section class="hero-slider">
-                    <% if (banners && banners.length > 0) { %>
-                        <% banners.forEach((banner, index) => { %>
+                    <% if (banners && banners.length> 0) { %>
+                        <% banners.forEach((banner, index)=> { %>
                             <div class="slide <%= index === 0 ? 'active' : '' %>" data-index="<%= index %>">
                                 <div class="slide-bg">
                                     <img src="/<%= banner.image %>" alt="<%= banner.title %>">
                                 </div>
                                 <div class="slide-content">
-                                    <h1><%= banner.title %></h1>
+                                    <h1>
+                                        <%= banner.title %>
+                                    </h1>
                                     <% if (banner.subtitle) { %>
-                                        <p><%= banner.subtitle %></p>
-                                    <% } %>
-                                    <a href="<%= banner.link || '/shop' %>" class="btn btn-primary">SHOP NOW</a>
+                                        <p>
+                                            <%= banner.subtitle %>
+                                        </p>
+                                        <% } %>
+                                            <a href="<%= banner.link || '/shop' %>" class="btn btn-primary">SHOP NOW</a>
                                 </div>
                             </div>
-                        <% }) %>
-                        <div class="slider-nav">
-                            <% banners.forEach((_, index) => { %>
-                                <div class="slider-dot <%= index === 0 ? 'active' : '' %>" data-index="<%= index %>"></div>
                             <% }) %>
-                        </div>
-                    <% } else { %>
-                        <!-- Fallback Static Banner -->
-                        <div class="slide active">
-                            <div class="slide-bg">
-                                <img src="public/apple_smart_3.png" alt="Featured Smartwatch" style="background: #111;">
-                            </div>
-                            <div class="slide-content">
-                                <h1>Discover Most Suitable Watches</h1>
-                                <p>Find the best, reliable, and cheap smart watches here. We focus on product quality.</p>
-                                <a href="/shop" class="btn btn-primary">ORDER NOW</a>
-                            </div>
-                        </div>
-                    <% } %>
+                                <div class="slider-nav">
+                                    <% banners.forEach((_, index)=> { %>
+                                        <div class="slider-dot <%= index === 0 ? 'active' : '' %>"
+                                            data-index="<%= index %>"></div>
+                                        <% }) %>
+                                </div>
+                                <% } else { %>
+                                    <!-- Fallback Static Banner -->
+                                    <div class="slide active">
+                                        <div class="slide-bg">
+                                            <img src="public/apple_smart_3.png" alt="Featured Smartwatch"
+                                                style="background: #111;">
+                                        </div>
+                                        <div class="slide-content">
+                                            <h1>Discover Most Suitable Watches</h1>
+                                            <p>Find the best, reliable, and cheap smart watches here. We focus on
+                                                product quality.</p>
+                                            <a href="/shop" class="btn btn-primary">ORDER NOW</a>
+                                        </div>
+                                    </div>
+                                    <% } %>
                 </section>
 
                 <!-- Categories Section -->
@@ -578,7 +585,7 @@
                         <div class="category-grid">
                             <div class="category-card">
                                 <div class="card-image">
-                                    <img src="public/apple_smart_1.png" alt="Apple Watch">
+                                    <img src="public/apple_smart_2.png" alt="Apple Watch">
                                 </div>
                                 <div class="card-content">
                                     <h3>Apple</h3>
@@ -786,9 +793,9 @@
                     function showSlide(n) {
                         slides.forEach(s => s.classList.remove('active'));
                         dots.forEach(d => d.classList.remove('active'));
-                        
+
                         currentSlide = (n + slides.length) % slides.length;
-                        
+
                         slides[currentSlide].classList.add('active');
                         dots[currentSlide].classList.add('active');
                     }

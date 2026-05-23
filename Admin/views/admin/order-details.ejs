@@ -1,0 +1,147 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'orders' }) %>
+
+    <main class="main-content">
+        <header class="page-header">
+            <div class="header-left">
+                <button class="toggle-btn" onclick="history.back()">
+                    <i data-lucide="arrow-left"></i>
+                </button>
+                <h1 class="page-title">ORDER DETAILS - #<%= order.orderId %></h1>
+            </div>
+            <div class="header-right">
+                <span class="status-badge <%= order.orderStatus === 'Delivered' ? 'status-listed' : (order.orderStatus === 'Cancelled' ? 'status-unlisted' : 'status-pending') %>">
+                    <%= order.orderStatus.toUpperCase() %>
+                </span>
+            </div>
+        </header>
+
+        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 30px;">
+            <!-- Left Column: Items and Info -->
+            <div style="display: flex; flex-direction: column; gap: 30px;">
+                <!-- Items Table -->
+                <div class="table-container">
+                    <h2 style="font-size: 18px; margin-bottom: 20px;">Ordered Items</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>PRODUCT</th>
+                                <th>UNIT PRICE</th>
+                                <th>QTY</th>
+                                <th>TAX (0%)</th>
+                                <th>DISCOUNT</th>
+                                <th>TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% order.items.forEach(item => { %>
+                                <tr>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 15px;">
+                                            <% 
+                                                let itemImage = '/public/placeholder.png';
+                                                if (item.variantId && item.variantId.image && item.variantId.image.length > 0) {
+                                                    itemImage = item.variantId.image[0];
+                                                } else if (item.productId && item.productId.image && item.productId.image.length > 0) {
+                                                    itemImage = item.productId.image[0];
+                                                }
+                                            %>
+                                            <img src="<%= itemImage %>" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                            <div>
+                                                <div style="font-weight: 600;"><%= item.name %></div>
+                                                <div style="font-size: 12px; color: #6B7280;">
+                                                    <%= item.variantId ? `Color: ${item.variantId.color} | Size: ${item.variantId.size}` : 'Standard' %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>₹<%= item.price.toLocaleString() %></td>
+                                    <td><%= item.quantity %></td>
+                                    <td>₹0</td>
+                                    <td>₹0</td>
+                                    <td style="font-weight: 700;">₹<%= (item.price * item.quantity).toLocaleString() %></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="table-container" style="max-width: 400px; align-self: flex-end;">
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Subtotal</span>
+                            <span>₹<%= order.subtotal.toLocaleString() %></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; color: #10B981;">
+                            <span>Discount</span>
+                            <span>-₹<%= order.discountAmount.toLocaleString() %></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 18px; border-top: 1px solid #E5E7EB; margin-top: 10px; padding-top: 10px;">
+                            <span>Grand Total</span>
+                            <span>₹<%= order.totalAmount.toLocaleString() %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: User and Shipping -->
+            <div style="display: flex; flex-direction: column; gap: 30px;">
+                <!-- User Details -->
+                <div class="table-container">
+                    <h2 style="font-size: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="user" style="width: 18px;"></i> CUSTOMER DETAILS
+                    </h2>
+                    <div style="font-size: 14px; line-height: 1.6;">
+                        <strong><%= order.userId ? order.userId.firstName + ' ' + order.userId.lastName : 'Guest User' %></strong><br>
+                        <span style="color: #6B7280;"><%= order.userId ? order.userId.email : 'N/A' %></span><br>
+                        <span style="color: #6B7280;"><%= order.userId ? order.userId.mobile : 'N/A' %></span>
+                    </div>
+                </div>
+
+                <!-- Shipping Address -->
+                <div class="table-container">
+                    <h2 style="font-size: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="map-pin" style="width: 18px;"></i> SHIPPING ADDRESS
+                    </h2>
+                    <div style="font-size: 14px; line-height: 1.6; color: #4B5563;">
+                        <strong><%= order.shippingAddress.name %></strong><br>
+                        <%= order.shippingAddress.addressLine %><br>
+                        <%= order.shippingAddress.city %>, <%= order.shippingAddress.district %><br>
+                        <%= order.shippingAddress.state %> - <%= order.shippingAddress.pincode %><br>
+                        <strong>Mobile: <%= order.shippingAddress.mobile %></strong>
+                    </div>
+                </div>
+
+                <!-- Payment Info -->
+                <div class="table-container">
+                    <h2 style="font-size: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="credit-card" style="width: 18px;"></i> PAYMENT INFO
+                    </h2>
+                    <div style="font-size: 14px;">
+                        <div style="margin-bottom: 5px;">Method: <strong><%= order.paymentMethod %></strong></div>
+                        <div>Status: <span class="status-badge <%= order.paymentStatus === 'Paid' ? 'status-listed' : 'status-unlisted' %>"><%= order.paymentStatus %></span></div>
+                    </div>
+                </div>
+
+                <!-- Return Reason (If applicable) -->
+                <% if (order.orderStatus === 'Returned' && order.returnReason) { %>
+                <div class="table-container" style="border: 1px solid #F59E0B; background: #FFFBEB; margin-top: 20px;">
+                    <h2 style="font-size: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; color: #B45309;">
+                        <i data-lucide="info" style="width: 18px;"></i> RETURN REASON
+                    </h2>
+                    <div style="font-size: 14px; color: #92400E; font-weight: 500; line-height: 1.5;">
+                        "<%= order.returnReason %>"
+                    </div>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

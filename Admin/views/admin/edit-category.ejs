@@ -46,7 +46,7 @@
             };
 
             // Zod Schema
-            const { z } = zod;
+            const z = Zod.z;
             const schema = z.object({
                 name: z.string()
                     .min(2, "Category name must be at least 2 characters")
@@ -60,15 +60,13 @@
                 schema.parse(data);
                 categoryForm.submit(); // If valid, submit normally
             } catch (error) {
-                if (error instanceof z.ZodError) {
-                    const message = error.errors[0].message;
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validation Error',
-                        text: message,
-                        confirmButtonColor: '#000'
-                    });
-                }
+                const message = error.errors ? error.errors[0].message : "Validation error";
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    text: message,
+                    confirmButtonColor: '#000'
+                });
             }
         });
     </script>

@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const variants = require('./variants');
+import mongoose from 'mongoose';
+import variants from './variants.js';
 
 const cartSchema = new mongoose.Schema({
     userId: {
@@ -25,10 +25,6 @@ const cartSchema = new mongoose.Schema({
             }
         }
     ],
-    appliedCoupon: {
-        code: { type: String, default: null },
-        discountPercentage: { type: Number, default: 0 }
-    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -39,4 +35,4 @@ const cartSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Cart', cartSchema);
+export default mongoose.model('Cart', cartSchema);

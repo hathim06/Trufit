@@ -4,6 +4,28 @@
 
     <main class="main-content">
         <%- include('./partials/adminHeader', { title: 'PRODUCT MANAGEMENT' }) %>
+
+         <div class="stats-grid" style="margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Total Products</h3>
+                            <div class="value"><%= totalProducts %></div>
+                        </div>
+                        <div class="stat-icon" style="background: #E8F0FE; color: #1A73E8;">
+                            <i data-lucide="package" style="color: #1A73E8;"></i>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Active Products</h3>
+                            <div class="value"><%= totalActiveProducts %></div>
+                        </div>
+                        <div class="stat-icon" style="background: #E6F4EA; color: #137333;">
+                            <i data-lucide="package-check" style="color: #137333;"></i>
+                        </div>
+                    </div>
+                    </div>
         
         <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
             <button class="btn btn-primary" onclick="location.href='/admin/add-product'">ADD PRODUCTS</button>
@@ -45,7 +67,7 @@
                 <tbody>
                     <% if (typeof products !== 'undefined' && products.length > 0) { %>
                         <% products.forEach(product => { %>
-                            <tr>
+                            <tr id="product-row-<%= product._id %>">
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <% if (product.image && product.image.length > 0) { %>
@@ -58,13 +80,13 @@
                                 <td>₹<%= product.price %></td>
                                 <td><%= product.offer %>%</td>
                                 <td>
-                                    <span class="status-badge <%= product.status === 'Active' ? 'status-listed' : 'status-unlisted' %>">
+                                    <span id="status-badge-<%= product._id %>" class="status-badge <%= product.status === 'Active' ? 'status-listed' : 'status-unlisted' %>">
                                         <%= product.status.toUpperCase() %>
                                     </span>
                                 </td>
                                 <td><%= product.quantity %> left</td>
                                 <td>
-                                    <div class="action-btns">
+                                    <div class="action-btns" id="action-btns-<%= product._id %>">
                                         <button class="action-btn" onclick="location.href='/admin/edit-product/<%= product._id %>'"><i data-lucide="edit-3"></i></button>
                                         <% if (product.status === 'Blocked') { %>
                                             <button class="action-btn" style="background: #10B981;" onclick="confirmUnblock('<%= product._id %>')"><i data-lucide="eye"></i></button>
@@ -137,15 +159,52 @@
         }
 
         function confirmUnblock(id) {
-            updateStatus(id, 'unblock');
+            Swal.fire({
+                title: 'Unblock Product?',
+                text: "The product will become visible to users again.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10B981',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, unblock it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    updateStatus(id, 'unblock');
+                }
+            });
         }
 
         function updateStatus(id, action) {
             fetch(`/admin/${action}-product/${id}`, { method: 'PATCH' })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) location.reload();
-                    else Swal.fire('Error', data.message, 'error');
+                    if (data.success) {
+                        Swal.fire('Updated!', `Product has been ${action}ed.`, 'success');
+                        
+                        const badge = document.getElementById(`status-badge-${id}`);
+                        const btnContainer = document.getElementById(`action-btns-${id}`);
+                        
+                        const isBlocked = action === 'block';
+                        
+                        if (badge) {
+                            badge.className = `status-badge ${isBlocked ? 'status-unlisted' : 'status-listed'}`;
+                            badge.textContent = isBlocked ? 'BLOCKED' : 'ACTIVE';
+                        }
+                        
+                        if (btnContainer) {
+                            btnContainer.innerHTML = `
+                                <button class="action-btn" onclick="location.href='/admin/edit-product/${id}'"><i data-lucide="edit-3"></i></button>
+                                ${isBlocked 
+                                    ? `<button class="action-btn" style="background: #10B981;" onclick="confirmUnblock('${id}')"><i data-lucide="eye"></i></button>`
+                                    : `<button class="action-btn" style="background: #F59E0B;" onclick="confirmBlock('${id}')"><i data-lucide="eye-off"></i></button>`
+                                }
+                                <button class="action-btn" onclick="confirmDelete('${id}')"><i data-lucide="trash-2"></i></button>
+                            `;
+                            lucide.createIcons();
+                        }
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
                 });
         }
 
@@ -163,8 +222,13 @@
                     fetch(`/admin/delete-product/${id}`, { method: 'DELETE' })
                         .then(res => res.json())
                         .then(data => {
-                            if (data.success) location.reload();
-                            else Swal.fire('Error', data.message, 'error');
+                            if (data.success) {
+                                Swal.fire('Deleted!', 'Product has been removed.', 'success');
+                                const row = document.getElementById(`product-row-${id}`);
+                                if (row) row.remove();
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
                         });
                 }
             });

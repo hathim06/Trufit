@@ -258,11 +258,74 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Animation Modal */
+        .animation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .animation-modal.active {
+            display: flex;
+        }
+        .animation-content {
+            text-align: center;
+        }
+        .vehicle-track {
+            width: 300px;
+            height: 2px;
+            background: #EEE;
+            position: relative;
+            margin: 0 auto 30px;
+        }
+        .vehicle {
+            position: absolute;
+            top: -40px;
+            left: -40px;
+            animation: moveVehicle 2s linear infinite;
+        }
+        .vehicle i {
+            width: 40px;
+            height: 40px;
+            color: #ff8a3d;
+            fill: #ff8a3d;
+        }
+        @keyframes moveVehicle {
+            0% { left: -40px; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 300px; opacity: 0; }
+        }
+        .animation-content h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 
 <body>
-<%- include('partials/header') %>
+    <%- include('partials/header') %>
+
+    <!-- Animation Modal -->
+    <div id="animationModal" class="animation-modal">
+        <div class="animation-content">
+            <div class="vehicle-track">
+                <div class="vehicle">
+                    <i data-lucide="truck"></i>
+                </div>
+            </div>
+            <h3>PROCESSING YOUR ORDER...</h3>
+        </div>
+    </div>
 
     <main class="container">
         <!-- Checkout Content -->
@@ -307,16 +370,6 @@
 
                 <!-- Right: Summary Sidebar -->
                 <aside class="checkout-sidebar">
-                    <div class="coupon-section">
-                        <% if (appliedCoupon && appliedCoupon.code) { %>
-                            <div class="coupon-applied-box">
-                                <span><i data-lucide="tag" style="width: 16px; margin-right: 5px;"></i> <%= appliedCoupon.code %> APPLIED</span>
-                                <small><%= appliedCoupon.discountPercentage %>% OFF</small>
-                            </div>
-                        <% } else { %>
-                            <span class="section-label">NO COUPON APPLIED <br><small style="font-weight: 400; color: #6B7280;">Go back to cart to apply coupons</small></span>
-                        <% } %>
-                    </div>
 
                     <div class="order-details">
                         <div class="order-details-title">ORDER SUMMARY</div>
@@ -351,12 +404,6 @@
                             <span>Subtotal</span>
                             <span>₹<%= subtotal.toLocaleString() %></span>
                         </div>
-                        <% if (discountAmount > 0) { %>
-                            <div class="summary-row">
-                                <span>Coupon Discount</span>
-                                <span class="discount-text">-₹<%= discountAmount.toLocaleString() %></span>
-                            </div>
-                        <% } %>
                         <div class="summary-row">
                             <span>Shipping Charges</span>
                             <span class="free-text">Free</span>
@@ -399,9 +446,8 @@
                 return Swal.fire('Error', 'Please select a delivery address', 'error');
             }
 
-            const btn = document.getElementById('placeOrderBtn');
-            btn.disabled = true;
-            btn.innerText = 'PROCESSING...';
+            const modal = document.getElementById('animationModal');
+            modal.classList.add('active');
 
             try {
                 const response = await fetch('/place-order', {
@@ -415,24 +461,17 @@
 
                 const data = await response.json();
 
-                if (data.success) {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: 'Your order has been placed successfully.',
-                        icon: 'success',
-                        confirmButtonText: 'View Orders'
-                    }).then(() => {
-                        window.location.href = '/profile/orders'; // Adjust redirection as needed
-                    });
-                } else {
-                    Swal.fire('Order Failed', data.message || 'Check stock or address.', 'error');
-                    btn.disabled = false;
-                    btn.innerText = 'PLACE ORDER';
-                }
+                // Add a small delay for the animation to look good
+                setTimeout(() => {
+                    if (data.success) {
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        window.location.href = data.redirectUrl || '/order-failed';
+                    }
+                }, 2000);
             } catch (error) {
+                modal.classList.remove('active');
                 Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
-                btn.disabled = false;
-                btn.innerText = 'PLACE ORDER';
             }
         }
     </script>

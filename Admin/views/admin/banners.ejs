@@ -30,7 +30,7 @@
                                 <td><%= banner.order %></td>
                                 <td>
                                     <span class="badge <%= banner.status === 'Active' ? 'badge-success' : 'badge-danger' %>" 
-                                          style="cursor: pointer;" onclick="toggleStatus('<%= banner._id %>')">
+                                          style="cursor: pointer;" onclick="toggleStatus('<%= banner._id %>', '<%= banner.status %>')">
                                         <%= banner.status %>
                                     </span>
                                 </td>
@@ -81,17 +81,33 @@
     <script>
         lucide.createIcons();
 
-        async function toggleStatus(id) {
-            try {
-                const response = await fetch(`/admin/banner-status/${id}`, { method: 'PATCH' });
-                const data = await response.json();
-                if (data.success) {
-                    location.reload();
-                } else {
-                    Swal.fire('Error', data.message, 'error');
+        async function toggleStatus(id, currentStatus) {
+            const action = currentStatus === 'Active' ? 'Deactivate' : 'Activate';
+            
+            const result = await Swal.fire({
+                title: `Confirm ${action}`,
+                text: `Are you sure you want to ${action.toLowerCase()} this banner?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: currentStatus === 'Active' ? '#d33' : '#3085d6',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: `Yes, ${action.toLowerCase()} it!`
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/banner-status/${id}`, { method: 'PATCH' });
+                    const data = await response.json();
+                    if (data.success) {
+                        await Swal.fire('Success', `Banner has been ${action.toLowerCase()}d.`, 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Error', 'Something went wrong.', 'error');
                 }
-            } catch (error) {
-                console.error(error);
             }
         }
 

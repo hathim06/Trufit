@@ -1,4 +1,6 @@
-const productService = require('../Services/productService');
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import productService from '../Services/productService.js';
+import wishlistModel from '../models/wishlistModel.js';
 
 const loadProductDetails = async (req, res) => {
     try {
@@ -11,13 +13,23 @@ const loadProductDetails = async (req, res) => {
         const variants = await productService.getVariantsByProductIdService(req.params.id);
         const relatedProducts = await productService.getRelatedProductsService(req.params.id);
 
+        let isInWishlist = false;
+        if (req.session.user) {
+            const wishlist = await wishlistModel.findOne({ userId: req.session.user });
+            if (wishlist) {
+                isInWishlist = wishlist.items.some(item => item.productId.toString() === req.params.id);
+            }
+        }
+
         res.render('users/product', { 
             product, 
             variants, 
             relatedProducts,
-            userId: req.session.user || null
+            userId: req.session.user || null,
+            isInWishlist
         });
     } catch (error) {
+        console.error("Product Details Error:", error);
         res.redirect('/shop');
     }
 };
@@ -35,13 +47,23 @@ const loadShopPage = async (req, res) => {
         };
         const result = await productService.getShopProductsService(filters, page);
         const categories = await productService.getListedCategoriesService();
+
+        let wishlistProductIds = [];
+        if (req.session.user) {
+            const wishlist = await wishlistModel.findOne({ userId: req.session.user });
+            if (wishlist) {
+                wishlistProductIds = wishlist.items.map(item => item.productId.toString());
+            }
+        }
+
         res.render('users/shop', { 
             products: result.products, 
             query: filters, 
             categories,
             currentPage: result.currentPage,
             totalPages: result.totalPages,
-            totalProducts: result.totalProducts
+            totalProducts: result.totalProducts,
+            wishlistProductIds
         });
     } catch (error) {
         console.error('Shop page error:', error);
@@ -56,11 +78,11 @@ const getSearchSuggestions = async (req, res) => {
         res.json({ success: true, results: suggestions });
     } catch (error) {
         console.error('Search suggestions error:', error);
-        res.status(500).json({ success: false, message: error.message });
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message });
     }
 };
 
-module.exports = {
+export default {
     loadProductDetails,
     loadShopPage,
     getSearchSuggestions

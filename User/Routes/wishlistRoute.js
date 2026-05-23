@@ -1,10 +1,12 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const wishlistController = require('../controllers/wishlistController');
-const userAuth = require('../Middlewares/userAuth');
+import wishlistController from '../controllers/wishlistController.js';
+import userAuth from '../Middlewares/userAuth.js';
 
 router.get('/wishlist', userAuth.isLoggedIn, wishlistController.loadWishlist);
 router.post('/wishlist/add', userAuth.isLoggedIn, wishlistController.addToWishlist);
 router.post('/wishlist/remove/:id', userAuth.isLoggedIn, wishlistController.removeFromWishlist);
 
-module.exports = router;
+router.post('/wishlist/toggle', userAuth.isLoggedIn, wishlistController.toggleWishlist);
+
+export default router;

@@ -1,6 +1,8 @@
-const productService = require('../Services/productService');
-const categoryService = require('../Services/categoryService');
-const colorService = require('../Services/colorService');
+import { MESSAGES } from '../../utils/messages.js';
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import productService from '../Services/productService.js';
+import categoryService from '../Services/categoryService.js';
+import colorService from '../Services/colorService.js';
 
 const loadProductPage = async (req, res) => {
     try {
@@ -14,6 +16,8 @@ const loadProductPage = async (req, res) => {
             currentPage: data.currentPage,
             totalPages: data.totalPages,
             totalUsers: data.totalUsers,
+            totalProducts:data.totalProducts,
+            totalActiveProducts:data.totalActiveProducts,
             limit: data.limit,
             categories: categories
         });
@@ -70,10 +74,10 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
     try {
         await productService.deleteProductService(req.params.id);
-        res.status(200).json({ success: true, message: "Product deleted successfully" });
+        res.status(STATUS_CODES.OK).json({ success: true, message: MESSAGES.PRODUCT_DELETED });
     } catch (error) {
         console.error("Delete Product Error:", error.message);
-        res.status(500).json({ success: false, message: "Failed to delete product" });
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.PRODUCT_DELETE_FAILED });
     }
 };
 
@@ -122,7 +126,7 @@ const blockProduct = async (req, res) => {
         await productService.blockProductService(req.params.id);
         res.json({ success: true, message: "Product blocked successfully" });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
@@ -131,11 +135,11 @@ const unblockProduct = async (req, res) => {
         await productService.unblockProductService(req.params.id);
         res.json({ success: true, message: "Product unblocked successfully" });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
-module.exports = {
+export default {
     loadProductPage,
     loadAddProduct,
     loadEditProduct,

@@ -1,7 +1,8 @@
-const mongoose = require('mongoose');
-const reviewModel = require('../models/reviewModel');
-const productModel = require('../models/productModel');
-const userModel = require('../models/userModel');
+import { MESSAGES } from '../../utils/messages.js';
+import mongoose from 'mongoose';
+import reviewModel from '../models/reviewModel.js';
+import productModel from '../models/productModel.js';
+import userModel from '../models/userModel.js';
 
 const addReviewService = async (productId, userId, reviewData) => {
     if (!mongoose.Types.ObjectId.isValid(productId) || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -9,10 +10,10 @@ const addReviewService = async (productId, userId, reviewData) => {
     }
 
     const user = await userModel.findById(userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
 
     const product = await productModel.findById(productId);
-    if (!product) throw new Error("Product not found");
+    if (!product) throw new Error(MESSAGES.PRODUCT_NOT_FOUND);
 
     const review = new reviewModel({
         productId,
@@ -94,7 +95,7 @@ const deleteReviewService = async (reviewId, userId) => {
     return await reviewModel.findByIdAndDelete(reviewId);
 };
 
-module.exports = {
+export default {
     addReviewService,
     getProductReviewsService,
     updateReviewService,

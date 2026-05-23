@@ -1,4 +1,4 @@
-const Color = require('../../User/models/colorModel');
+import Color from '../../User/models/colorModel.js';
 
 const getAllColorsService = async (query = {}) => {
     const page = parseInt(query.page) || 1;
@@ -41,7 +41,7 @@ const deleteColorService = async (id) => {
     return await Color.findByIdAndDelete(id);
 };
 
-module.exports = {
+export default {
     getAllColorsService,
     addColorService,
     deleteColorService

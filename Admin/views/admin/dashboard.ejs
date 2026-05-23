@@ -47,113 +47,136 @@
             <main class="main-content">
                 <%- include('./partials/adminHeader', { title: 'ADMIN DASHBOARD' }) %>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <h3>Total Revenue</h3>
-                            <div class="value">₹ <%= totalRevenue.toLocaleString() %></div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Total Revenue</h3>
+                                <div class="value">₹ 145,250</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i data-lucide="indian-rupee"></i>
+                            </div>
                         </div>
-                        <div class="stat-icon">
-                            <i data-lucide="indian-rupee"></i>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Orders</h3>
+                                <div class="value">84</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i data-lucide="shopping-cart"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Products</h3>
+                                <div class="value">24</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i data-lucide="package"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>Customers</h3>
+                                <div class="value">42</div>
+                            </div>
+                            <div class="stat-icon">
+                                <i data-lucide="users"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <h3>Orders</h3>
-                            <div class="value"><%= orderCount %></div>
-                        </div>
-                        <div class="stat-icon">
-                            <i data-lucide="shopping-cart"></i>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <h3>Products</h3>
-                            <div class="value"><%= productCount %></div>
-                        </div>
-                        <div class="stat-icon">
-                            <i data-lucide="package"></i>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-info">
-                            <h3>Customers</h3>
-                            <div class="value"><%= customerCount %></div>
-                        </div>
-                        <div class="stat-icon">
-                            <i data-lucide="users"></i>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="table-container" style="margin-top: 30px; margin-bottom: 30px;">
-                    <div class="table-header">
-                        <h2>Revenue Overview</h2>
+                    <div class="table-container" style="margin-top: 30px; margin-bottom: 30px;">
+                        <div class="table-header">
+                            <h2>Revenue Overview</h2>
+                        </div>
+                        <canvas id="revenueOverviewChart" height="100"></canvas>
                     </div>
-                    <canvas id="revenueOverviewChart" height="100"></canvas>
-                </div>
 
-                <div class="table-container">
-                    <div class="table-header">
-                        <h2>Recent Orders</h2>
-                        <a href="/admin/orders" class="btn-view-all">View All</a>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Order ID</th>
-                                <th>Customer</th>
-                                <th>Date</th>
-                                <th>Total</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (recentOrders && recentOrders.length > 0) { %>
-                                <% recentOrders.forEach(order => { %>
-                                    <tr>
-                                        <td>#<%= order.orderId %></td>
-                                        <td><%= order.userId ? order.userId.firstName + ' ' + order.userId.lastName : 'Unknown' %></td>
-                                        <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
-                                        <td>₹<%= order.grandTotal.toLocaleString() %></td>
-                                        <td>
-                                            <span class="status-badge status-<%= order.orderStatus.toLowerCase() %>">
-                                                <%= order.orderStatus %>
-                                            </span>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            <% } else { %>
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2>Recent Orders</h2>
+                            <a href="/admin/orders" class="btn-view-all">View All</a>
+                        </div>
+                        <table>
+                            <thead>
                                 <tr>
-                                    <td colspan="5" style="text-align: center; padding: 20px;">No recent orders.</td>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
                                 </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>#TRU-9843</td>
+                                    <td>Adarsh Sharma</td>
+                                    <td>18/05/2026</td>
+                                    <td>₹14,999</td>
+                                    <td><span class="status-badge status-completed">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>#TRU-9842</td>
+                                    <td>Neha Patel</td>
+                                    <td>17/05/2026</td>
+                                    <td>₹8,499</td>
+                                    <td><span class="status-badge status-pending">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td>#TRU-9841</td>
+                                    <td>Rahul Verma</td>
+                                    <td>16/05/2026</td>
+                                    <td>₹19,999</td>
+                                    <td><span class="status-badge status-completed">Completed</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
             </main>
 
             <script>
                 lucide.createIcons();
 
-                // Revenue Overview Chart
+                // Static Revenue Overview Chart
                 const revenueCtx = document.getElementById('revenueOverviewChart').getContext('2d');
                 new Chart(revenueCtx, {
                     type: 'line',
                     data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        labels: ['12 May', '13 May', '14 May', '15 May', '16 May', '17 May', '18 May'],
                         datasets: [{
-                            label: 'Revenue',
-                            data: [20, 30, 45, 25, 60, 15, 40, 95, 20, 35, 10, 50],
-                            borderColor: '#B4A7FF',
+                            label: 'Daily Revenue (Last 7 Days)',
+                            data: [12000, 19000, 15000, 25000, 22000, 30000, 45000],
+                            borderColor: '#000',
+                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
                             tension: 0.4,
-                            fill: false
+                            fill: true,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#000'
                         }]
                     },
                     options: {
                         responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return '₹ ' + context.parsed.y.toLocaleString();
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function (value) {
+                                        return '₹' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
                     }
                 });
             </script>

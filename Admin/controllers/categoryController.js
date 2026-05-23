@@ -1,4 +1,4 @@
-const categoryService = require('../Services/categoryService');
+import categoryService from '../Services/categoryService.js';
 
 const getCategories = async (req, res) => {
     try {
@@ -73,7 +73,7 @@ const deleteCategory = async (req, res) => {
     }
 };
 
-module.exports = {
+export default {
     getCategories,
     loadAddCategory,
     addCategory,

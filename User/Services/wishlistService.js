@@ -1,5 +1,6 @@
-const wishlistModel = require('../models/wishlistModel');
-const productModel = require('../models/productModel');
+import { MESSAGES } from '../../utils/messages.js';
+import wishlistModel from '../models/wishlistModel.js';
+import productModel from '../models/productModel.js';
 
 const getWishlistService = async (userId) => {
     const wishlist = await wishlistModel.findOne({ userId })
@@ -10,7 +11,6 @@ const getWishlistService = async (userId) => {
 
     if (!wishlist) return [];
 
-    // Filter out items that are deleted, inactive, or belong to unlisted categories
     const activeItems = wishlist.items.filter(item => {
         const product = item.productId;
         if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) return false;
@@ -23,21 +23,21 @@ const getWishlistService = async (userId) => {
 
 const addToWishlistService = async (userId, productId) => {
     const product = await productModel.findById(productId);
-    if (!product) throw new Error("Product not found");
+    if (!product) throw new Error(MESSAGES.PRODUCT_NOT_FOUND);
 
     if (product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
         throw new Error("This product is currently unavailable");
     }
 
     let wishlist = await wishlistModel.findOne({ userId });
-    
+
     if (!wishlist) {
         wishlist = new wishlistModel({ userId, items: [{ productId }] });
         return await wishlist.save();
     }
 
     const itemExists = wishlist.items.some(item => item.productId.toString() === productId.toString());
-    
+
     if (itemExists) {
         throw new Error("Product already in wishlist");
     }
@@ -52,7 +52,7 @@ const removeFromWishlistService = async (userId, productId) => {
 
     const originalLength = wishlist.items.length;
     wishlist.items = wishlist.items.filter(item => item.productId.toString() !== productId.toString());
-    
+
     if (wishlist.items.length === originalLength) {
         throw new Error("Product not found in wishlist");
     }
@@ -60,8 +60,31 @@ const removeFromWishlistService = async (userId, productId) => {
     await wishlist.save();
 };
 
-module.exports = {
+const toggleWishlistService = async (userId, productId) => {
+    let wishlist = await wishlistModel.findOne({ userId });
+
+    if (!wishlist) {
+        wishlist = new wishlistModel({ userId, items: [{ productId }] });
+        await wishlist.save();
+        return { added: true };
+    }
+
+    const itemIndex = wishlist.items.findIndex(item => item.productId.toString() === productId.toString());
+
+    if (itemIndex > -1) {
+        wishlist.items.splice(itemIndex, 1);
+        await wishlist.save();
+        return { added: false };
+    } else {
+        wishlist.items.push({ productId });
+        await wishlist.save();
+        return { added: true };
+    }
+};
+
+export default {
     getWishlistService,
     addToWishlistService,
-    removeFromWishlistService
+    removeFromWishlistService,
+    toggleWishlistService
 };

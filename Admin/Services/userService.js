@@ -1,5 +1,6 @@
-const userModel = require('../../User/models/userModel');
-const addressModel = require('../../User/models/addressModel');
+import { MESSAGES } from '../../utils/messages.js';
+import userModel from '../../User/models/userModel.js';
+import addressModel from '../../User/models/addressModel.js';
 
 const getUsersService = async (queryParams) => {
     const search = queryParams.search || "";
@@ -28,6 +29,10 @@ const getUsersService = async (queryParams) => {
         .skip(skip)
         .limit(limit);
 
+    const totalAllUsers = await userModel.countDocuments({ isAdmin: false });
+    const activeUsersCount = await userModel.countDocuments({ isAdmin: false, isBlocked: false });
+    const blockedUsersCount = await userModel.countDocuments({ isAdmin: false, isBlocked: true });
+
     return {
         users,
         search,
@@ -35,6 +40,9 @@ const getUsersService = async (queryParams) => {
         currentPage: page,
         totalPages,
         totalUsers,
+        totalAllUsers,
+        activeUsersCount,
+        blockedUsersCount,
         limit
     };
 };
@@ -52,20 +60,15 @@ const deleteUserService = async (id) => {
 };
 
 const getUserDetails = async (id) => {
-    try {
-        const user = await userModel.findById(id);
-        if (!user) {
-            throw new Error("User not found");
-        }
-        const addresses = await addressModel.find({ userId: id });
-        return { user, addresses };
+    const user = await userModel.findById(id);
+    if (!user) {
+        throw new Error(MESSAGES.USER_NOT_FOUND);
     }
-    catch (error) {
-        throw error;
-    }
-}
+    const addresses = await addressModel.find({ userId: id });
+    return { user, addresses };
+};
 
-module.exports = {
+export default {
     getUsersService,
     blockUserService,
     unblockUserService,

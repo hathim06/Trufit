@@ -1,217 +1,174 @@
-const orderModel = require('../models/orderModel');
-const cartModel = require('../models/cartModel');
-const addressModel = require('../models/addressModel');
-const couponModel = require('../models/couponModel');
-const productModel = require('../models/productModel');
-const variantModel = require('../models/variants');
-const cartService = require('./cartService');
+import orderModel from '../models/orderModel.js';
+import cartModel from '../models/cartModel.js';
+import variantModel from '../models/variants.js';
+import productModel from '../models/productModel.js';
+import addressModel from '../models/addressModel.js';
+import mongoose from 'mongoose';
 
-const applyCouponService = async (userId, couponCode, cartTotal) => {
-    const coupon = await couponModel.findOne({ 
-        couponCode: couponCode.toUpperCase(), 
-        isDeleted: false, 
-        status: 'Active' 
-    });
-
-    if (!coupon) throw new Error("Invalid or expired coupon code");
-
-    const now = new Date();
-    if (now < new Date(coupon.startDate)) throw new Error("Coupon is not yet active");
-    if (now > new Date(coupon.expiryDate)) throw new Error("Coupon has expired");
-
-    if (cartTotal < coupon.minPurchase) {
-        throw new Error(`Minimum purchase of ₹${coupon.minPurchase} required for this coupon`);
-    }
-
-    const cart = await cartModel.findOne({ userId });
-    if (!cart) throw new Error("Cart not found");
-
-    cart.appliedCoupon = {
-        code: coupon.couponCode,
-        discountPercentage: coupon.discountPercentage
-    };
-
-    await cart.save();
-    return cart.appliedCoupon;
+const generateOrderId = () => {
+    return 'ORD' + Date.now() + Math.floor(Math.random() * 1000);
 };
 
-const removeCouponService = async (userId) => {
-    const cart = await cartModel.findOne({ userId });
-    if (!cart) throw new Error("Cart not found");
+const createOrder = async (userId, addressId, paymentMethod) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    cart.appliedCoupon = {
-        code: null,
-        discountPercentage: 0
-    };
+    try {
 
-    await cart.save();
-};
-
-const placeOrderService = async (userId, orderData) => {
-    const { addressId, paymentMethod } = orderData;
-
-    const cart = await cartService.getCartService(userId);
-    if (!cart || cart.items.length === 0) throw new Error("Cart is empty");
-
-    const address = await addressModel.findById(addressId);
-    if (!address) throw new Error("Delivery address not found");
-
-    let subtotal = 0;
-    const orderItems = [];
-
-    for (const item of cart.items) {
-        const product = await productModel.findById(item.productId);
-        if (!product || product.isDeleted || product.status !== 'Active') {
-            throw new Error(`Product "${product?.name || 'Unknown'}" is no longer available`);
+        const cart = await cartModel.findOne({ userId }).populate('items.productId').populate('items.variantId');
+        if (!cart || cart.items.length === 0) {
+            throw new Error('Cart is empty');
         }
 
-        let variant = null;
-        if (item.variantId) {
-            variant = await variantModel.findById(item.variantId);
-            if (!variant || variant.isDeleted) throw new Error(`Selected variant for "${product.name}" is no longer available`);
-            if (variant.quantity < item.quantity) throw new Error(`Only ${variant.quantity} units left for "${product.name}" variant`);
-        } else {
-            if (product.quantity < item.quantity) throw new Error(`Only ${product.quantity} units left for "${product.name}"`);
+
+        const address = await addressModel.findById(addressId);
+        if (!address) {
+            throw new Error('Address not found');
         }
 
-        const price = variant ? variant.price : product.price;
-        const itemTotal = price * item.quantity;
-        subtotal += itemTotal;
+        let subtotal = 0;
+        const orderItems = [];
 
-        orderItems.push({
-            productId: product._id,
-            variantId: variant ? variant._id : null,
-            name: product.name,
-            quantity: item.quantity,
-            price: price,
-            totalPrice: itemTotal
+        for (const item of cart.items) {
+            const product = item.productId;
+            const variant = item.variantId;
+
+            if (variant) {
+                if (variant.quantity < item.quantity) {
+                    throw new Error(`Insufficient stock for ${product.name} (${variant.color}/${variant.size})`);
+                }
+                subtotal += variant.price * item.quantity;
+                orderItems.push({
+                    productId: product._id,
+                    name: product.name,
+                    variantId: variant._id,
+                    quantity: item.quantity,
+                    price: variant.price
+                });
+            } else {
+                if (product.quantity < item.quantity) {
+                    throw new Error(`Insufficient stock for ${product.name}`);
+                }
+                subtotal += product.price * item.quantity;
+                orderItems.push({
+                    productId: product._id,
+                    name: product.name,
+                    quantity: item.quantity,
+                    price: product.price
+                });
+            }
+        }
+
+        const discountAmount = 0;
+        const totalAmount = subtotal;
+
+        for (const item of cart.items) {
+            if (item.variantId) {
+                await variantModel.findByIdAndUpdate(item.variantId._id, {
+                    $inc: { quantity: -item.quantity }
+                }, { session });
+                await productModel.findByIdAndUpdate(item.productId._id, {
+                    $inc: { quantity: -item.quantity }
+                }, { session });
+            } else {
+                await productModel.findByIdAndUpdate(item.productId._id, {
+                    $inc: { quantity: -item.quantity }
+                }, { session });
+            }
+        }
+
+        const newOrder = new orderModel({
+            orderId: generateOrderId(),
+            userId,
+            items: orderItems,
+            shippingAddress: {
+                name: address.name,
+                addressLine: address.addressLine,
+                city: address.city,
+                district: address.district,
+                state: address.state,
+                pincode: address.pincode,
+                mobile: address.mobile
+            },
+            paymentMethod,
+            paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Paid',
+            orderStatus: 'Pending',
+            subtotal,
+            discountAmount,
+            totalAmount
         });
 
-        // Decrement stock
-        if (variant) {
-            variant.quantity -= item.quantity;
-            await variant.save();
-        } else {
-            product.quantity -= item.quantity;
-            await product.save();
+        await newOrder.save({ session });
+
+        await cartModel.findOneAndDelete({ userId }, { session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return newOrder;
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
+
+const cancelOrder = async (orderId, userId) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const order = await orderModel.findOne({ _id: orderId, userId });
+        if (!order) throw new Error('Order not found');
+
+        if (order.orderStatus === 'Cancelled' || order.orderStatus === 'Delivered') {
+            throw new Error(`Order cannot be cancelled in its current state: ${order.orderStatus}`);
         }
-    }
 
-    const discountAmount = Math.round((subtotal * (cart.appliedCoupon.discountPercentage || 0)) / 100);
-    const grandTotal = subtotal - discountAmount;
 
-    const order = new orderModel({
-        userId,
-        items: orderItems,
-        deliveryAddress: {
-            name: address.name,
-            addressLine: address.addressLine,
-            city: address.city,
-            district: address.district,
-            state: address.state,
-            pincode: address.pincode,
-            mobile: address.mobile
-        },
-        subtotal,
-        discountAmount,
-        couponApplied: cart.appliedCoupon.code ? cart.appliedCoupon : null,
-        grandTotal,
-        paymentMethod,
-        paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Paid'
-    });
-
-    await order.save();
-    await cartService.clearCartService(userId);
-
-    return order;
-};
-
-const getUserOrdersService = async (userId) => {
-    return await orderModel.find({ userId })
-        .populate('items.productId')
-        .populate('items.variantId')
-        .sort({ createdAt: -1 });
-};
-
-const getOrderDetailsService = async (orderId, userId) => {
-    const order = await orderModel.findOne({ _id: orderId, userId })
-        .populate('items.productId')
-        .populate('items.variantId');
-    if (!order) throw new Error("Order not found");
-    return order;
-};
-
-const getAvailableCouponsService = async () => {
-    return await couponModel.find({
-        isDeleted: false,
-        status: 'Active',
-        expiryDate: { $gt: new Date() }
-    }).sort({ expiryDate: 1 });
-};
-
-const cancelOrderService = async (orderId, userId) => {
-    const order = await orderModel.findOne({ _id: orderId, userId });
-    if (!order) throw new Error("Order not found");
-    if (order.orderStatus !== 'Placed' && order.orderStatus !== 'Processing') {
-        throw new Error("Order cannot be cancelled at this stage");
-    }
-
-    order.orderStatus = 'Cancelled';
-    await order.save();
-
-    for (const item of order.items) {
-        if (item.variantId) {
-            const variant = await variantModel.findById(item.variantId);
-            if (variant) {
-                variant.quantity += item.quantity;
-                await variant.save();
-            }
-        } else if (item.productId) {
-            const product = await productModel.findById(item.productId);
-            if (product) {
-                product.quantity += item.quantity;
-                await product.save();
+        for (const item of order.items) {
+            if (item.variantId) {
+                await variantModel.findByIdAndUpdate(item.variantId, {
+                    $inc: { quantity: item.quantity }
+                }, { session });
+                await productModel.findByIdAndUpdate(item.productId, {
+                    $inc: { quantity: item.quantity }
+                }, { session });
+            } else {
+                await productModel.findByIdAndUpdate(item.productId, {
+                    $inc: { quantity: item.quantity }
+                }, { session });
             }
         }
+
+        order.orderStatus = 'Cancelled';
+        await order.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+        return order;
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
     }
-    return order;
 };
 
-const returnOrderService = async (orderId, userId) => {
+const returnOrder = async (orderId, userId, reason) => {
     const order = await orderModel.findOne({ _id: orderId, userId });
-    if (!order) throw new Error("Order not found");
+    if (!order) throw new Error('Order not found');
+
     if (order.orderStatus !== 'Delivered') {
-        throw new Error("Only delivered orders can be returned");
+        throw new Error('Only delivered orders can be returned');
     }
 
     order.orderStatus = 'Returned';
-    await order.save();
-
-    for (const item of order.items) {
-        if (item.variantId) {
-            const variant = await variantModel.findById(item.variantId);
-            if (variant) {
-                variant.quantity += item.quantity;
-                await variant.save();
-            }
-        } else if (item.productId) {
-            const product = await productModel.findById(item.productId);
-            if (product) {
-                product.quantity += item.quantity;
-                await product.save();
-            }
-        }
-    }
-    return order;
+    order.returnReason = reason;
+    return await order.save();
 };
 
-module.exports = {
-    applyCouponService,
-    removeCouponService,
-    placeOrderService,
-    getUserOrdersService,
-    getOrderDetailsService,
-    getAvailableCouponsService,
-    cancelOrderService,
-    returnOrderService
+export default {
+    createOrder,
+    cancelOrder,
+    returnOrder
 };

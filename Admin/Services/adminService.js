@@ -1,7 +1,7 @@
-const userModel = require('../../User/models/userModel');
-const orderModel = require('../../User/models/orderModel');
-const productModel = require('../../User/models/productModel');
-const bcrypt = require('bcrypt');
+import userModel from '../../User/models/userModel.js';
+import productModel from '../../User/models/productModel.js';
+import bcrypt from 'bcrypt';
+import orderModel from '../../User/models/orderModel.js';
 
 const adminLoginService = async (email, password) => {
     const admin = await userModel.findOne({ email, isAdmin: true });
@@ -25,20 +25,39 @@ const getDashboardDataService = async () => {
     const orderCount = await orderModel.countDocuments();
     
     // Calculate total revenue from delivered orders
-    const deliveredOrders = await orderModel.find({ orderStatus: 'Delivered' });
-    const totalRevenue = deliveredOrders.reduce((sum, order) => sum + (order.grandTotal || 0), 0);
+    const revenueData = await orderModel.aggregate([
+        { $match: { orderStatus: 'Delivered' } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    ]);
+    const totalRevenue = revenueData.length > 0 ? revenueData[0].total : 0;
 
     const recentOrders = await orderModel.find()
         .populate('userId', 'firstName lastName')
         .sort({ createdAt: -1 })
         .limit(5);
 
+    // Sales Data for Graph (Last 7 Days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const salesStats = await orderModel.aggregate([
+        { $match: { createdAt: { $gte: sevenDaysAgo }, orderStatus: { $ne: 'Cancelled' } } },
+        { $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            totalSales: { $sum: "$totalAmount" },
+            count: { $sum: 1 }
+        }},
+        { $sort: { "_id": 1 } }
+    ]);
+
     return { 
         customerCount, 
         productCount, 
         orderCount, 
         totalRevenue,
-        recentOrders
+        recentOrders,
+        salesStats,
+        activePage: 'dashboard'
     };
 };
 
@@ -74,7 +93,7 @@ const updateProfileService = async (adminId, body) => {
     return admin;
 }
 
-module.exports = {
+export default {
     adminLoginService,
     getDashboardDataService,
     getAdminProfileService,

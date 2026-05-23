@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
-const bannerModel = require('../../User/models/bannerModel');
-const cloudinary = require('../../Config/cloudinary');
+import mongoose from 'mongoose';
+import bannerModel from '../../User/models/bannerModel.js';
+import cloudinary from '../../Config/cloudinary.js';
 
 const addBannerService = async (req) => {
     const { title, subtitle, link, order, image } = req.body;
-    let imagePath = '';
+    let imagePath;
     
     if (image && image.startsWith('data:image')) {
         // Handle cropped base64 image
@@ -100,7 +100,7 @@ const deleteBannerService = async (id) => {
     return await banner.save();
 };
 
-module.exports = {
+export default {
     addBannerService,
     getBannersService,
     getSingleBannerService,

@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
@@ -32,6 +34,9 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0",
     "nodemon": "^3.1.14"
   }
 }

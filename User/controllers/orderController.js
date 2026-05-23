@@ -1,16 +1,21 @@
-const orderService = require('../Services/orderService');
-const userService = require('../Services/userService');
-const cartService = require('../Services/cartService');
+import { MESSAGES } from '../../utils/messages.js';
+import { STATUS_CODES } from '../../utils/statusCodes.js';
+import orderService from '../Services/orderService.js';
+import cartModel from '../models/cartModel.js';
+import addressModel from '../models/addressModel.js';
+import orderModel from '../models/orderModel.js';
 
 const loadCheckout = async (req, res) => {
     try {
         const userId = req.session.user;
-        const addresses = await userService.getAddressService(userId);
-        const cart = await cartService.getCartService(userId);
 
+        const cart = await cartModel.findOne({ userId }).populate('items.productId').populate('items.variantId');
         if (!cart || cart.items.length === 0) {
             return res.redirect('/cart');
         }
+
+        const addresses = await addressModel.find({ userId });
+
 
         let subtotal = 0;
         cart.items.forEach(item => {
@@ -18,21 +23,20 @@ const loadCheckout = async (req, res) => {
             subtotal += price * item.quantity;
         });
 
-        const discountAmount = Math.round((subtotal * (cart.appliedCoupon.discountPercentage || 0)) / 100);
-        const total = subtotal - discountAmount;
+        const discountAmount = 0;
+        const total = subtotal;
 
         res.render('users/checkout', {
-            user: req.session.user,
-            addresses,
             cartItems: cart.items,
-            appliedCoupon: cart.appliedCoupon,
+            addresses,
             subtotal,
             discountAmount,
-            total
+            total,
+            appliedCoupon: null
         });
     } catch (error) {
-        console.error('Load checkout error:', error);
-        res.redirect('/cart');
+        console.error('Load Checkout Error:', error);
+        res.redirect('/cart?error=' + encodeURIComponent('Failed to load checkout page'));
     }
 };
 
@@ -41,103 +45,125 @@ const placeOrder = async (req, res) => {
         const userId = req.session.user;
         const { addressId, paymentMethod } = req.body;
 
-        const result = await orderService.placeOrderService(userId, { addressId, paymentMethod });
-        res.status(200).json({ success: true, message: "Order placed successfully", orderId: result._id });
+        if (!addressId || !paymentMethod) {
+            return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: MESSAGES.ADDRESS_PAYMENT_REQUIRED });
+        }
+
+        const order = await orderService.createOrder(userId, addressId, paymentMethod);
+
+        res.json({
+            success: true,
+            message: MESSAGES.ORDER_PLACED,
+            redirectUrl: `/order-success/${order._id}`
+        });
     } catch (error) {
-        console.error('Place order error:', error);
-        res.status(400).json({ success: false, message: error.message });
+        console.error('Place Order Error:', error);
+        res.status(STATUS_CODES.BAD_REQUEST).json({
+            success: false,
+            message: error.message,
+            redirectUrl: `/order-failed?message=${encodeURIComponent(error.message)}`
+        });
     }
+};
+
+const loadOrderSuccess = async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const order = await orderModel.findById(orderId);
+        if (!order || order.userId.toString() !== req.session.user.toString()) {
+            return res.redirect('/');
+        }
+        res.render('users/order-success', { order });
+    } catch (error) {
+        res.redirect('/');
+    }
+};
+
+const loadOrderFailed = (req, res) => {
+    res.render('users/order-failed', { message: req.query.message });
 };
 
 const loadOrders = async (req, res) => {
     try {
         const userId = req.session.user;
-        const orders = await orderService.getUserOrdersService(userId);
-        res.render('users/orders', {
-            activePage: 'orders',
-            orders
-        });
+        const orders = await orderModel.find({ userId })
+            .populate('items.productId')
+            .populate('items.variantId')
+            .sort({ createdAt: -1 });
+
+        res.render('users/orders', { orders });
     } catch (error) {
-        console.error('Load orders error:', error);
-        res.redirect('/profile');
+        console.error('Load Orders Error:', error);
+        res.redirect('/');
     }
 };
 
 const loadOrderDetails = async (req, res) => {
     try {
-        const userId = req.session.user;
         const orderId = req.params.id;
-        const order = await orderService.getOrderDetailsService(orderId, userId);
-        res.render('users/order-details', {
-            activePage: 'orders',
-            order
-        });
-    } catch (error) {
-        console.error('Load order details error:', error);
-        res.redirect('/profile/orders');
-    }
-};
+        const order = await orderModel.findById(orderId)
+            .populate('items.productId')
+            .populate('items.variantId');
 
-const loadCoupons = async (req, res) => {
-    try {
-        const coupons = await orderService.getAvailableCouponsService();
-        res.render('users/coupons', {
-            activePage: 'coupons',
-            coupons
-        });
+        if (!order || order.userId.toString() !== req.session.user.toString()) {
+            return res.redirect('/profile/orders');
+        }
+
+        res.render('users/order-details', { order });
     } catch (error) {
-        console.error('Load coupons error:', error);
-        res.redirect('/profile');
+        console.error('Load Order Details Error:', error);
+        res.redirect('/profile/orders');
     }
 };
 
 const cancelOrder = async (req, res) => {
     try {
-        const userId = req.session.user || req.user?._id;
         const orderId = req.params.id;
-        await orderService.cancelOrderService(orderId, userId);
-        res.json({ success: true, message: "Order cancelled successfully" });
+        const userId = req.session.user;
+        await orderService.cancelOrder(orderId, userId);
+        res.json({ success: true, message: MESSAGES.ORDER_CANCELLED });
     } catch (error) {
-        console.error('Cancel order error:', error);
-        res.status(400).json({ success: false, message: error.message });
+        res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
 const returnOrder = async (req, res) => {
     try {
-        const userId = req.session.user || req.user?._id;
         const orderId = req.params.id;
-        await orderService.returnOrderService(orderId, userId);
-        res.json({ success: true, message: "Return initiated successfully" });
+        const userId = req.session.user;
+        const { reason } = req.body;
+        await orderService.returnOrder(orderId, userId, reason);
+        res.json({ success: true, message: MESSAGES.ORDER_RETURNED });
     } catch (error) {
-        console.error('Return order error:', error);
-        res.status(400).json({ success: false, message: error.message });
+        res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 
 const downloadInvoice = async (req, res) => {
     try {
-        const userId = req.session.user || req.user?._id;
         const orderId = req.params.id;
-        const order = await orderService.getOrderDetailsService(orderId, userId);
-        
-        if (!order) {
-            return res.status(404).render('users/404');
+        const order = await orderModel.findById(orderId)
+            .populate('items.productId')
+            .populate('items.variantId');
+
+        if (!order || order.userId.toString() !== req.session.user.toString()) {
+            return res.redirect('/profile/orders');
         }
 
         res.render('users/invoice', { order });
     } catch (error) {
-        console.error('Download invoice error:', error);
+        console.error('Download Invoice Error:', error);
         res.redirect('/profile/orders');
     }
-};
+}
 
-module.exports = {
+export default {
     loadCheckout,
     placeOrder,
+    loadOrderSuccess,
+    loadOrderFailed,
     loadOrders,
     loadOrderDetails,
-    loadCoupons,
     cancelOrder,
     returnOrder,
     downloadInvoice

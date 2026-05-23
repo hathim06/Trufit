@@ -25,11 +25,13 @@
             <div class="header-right">
                 <button class="icon-btn" onclick="location.href='/search'"><i data-lucide="search"></i></button>
                 <button class="icon-btn" onclick="location.href='/profile'"><i data-lucide="user"></i></button>
-                <button class="icon-btn wishlist-btn" onclick="location.href='/wishlist'">
+                <button class="icon-btn wishlist-btn" onclick="location.href='/wishlist'" style="position: relative;">
                     <i data-lucide="heart"></i>
+                    <span id="wishlist-badge" class="badge-count" style="display: none;">0</span>
                 </button>
-                <button class="icon-btn cart-btn" onclick="location.href='/cart'">
+                <button class="icon-btn cart-btn" onclick="location.href='/cart'" style="position: relative;">
                     <i data-lucide="shopping-cart"></i>
+                    <span id="cart-badge" class="badge-count" style="display: none;">0</span>
                 </button>
                 <% if (typeof user !=='undefined' && user) { %>
                     <button class="sign-in-btn" onclick="location.href='/logout'">Logout</button>
@@ -51,6 +53,22 @@
         .search-bar {
             position: relative;
             width: 300px;
+        }
+
+        .badge-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #EF4444;
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .search-suggestions-dropdown {
@@ -290,6 +308,31 @@
         searchInput.addEventListener('focus', function () {
             if (this.value.trim().length > 0 && suggestionsDropdown.innerHTML) {
                 suggestionsDropdown.style.display = 'block';
+            }
+        });
+
+        // Fetch user counts for cart and wishlist badges
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/api/user/counts');
+                const data = await res.json();
+                
+                if (data.success) {
+                    const cartBadge = document.getElementById('cart-badge');
+                    const wishlistBadge = document.getElementById('wishlist-badge');
+                    
+                    if (data.cartCount > 0) {
+                        cartBadge.textContent = data.cartCount;
+                        cartBadge.style.display = 'flex';
+                    }
+                    
+                    if (data.wishlistCount > 0) {
+                        wishlistBadge.textContent = data.wishlistCount;
+                        wishlistBadge.style.display = 'flex';
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching counts:", err);
             }
         });
     </script>

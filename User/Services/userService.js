@@ -1,12 +1,13 @@
-const bcrypt = require('bcrypt');
-const userModel = require('../models/userModel');
-const addressModel = require('../models/addressModel');
-const otpModel = require('../models/otpModel');
-const sendOtpEmail = require('../utils/sendEmail');
+import { MESSAGES } from '../../utils/messages.js';
+import bcrypt from 'bcrypt';
+import userModel from '../models/userModel.js';
+import addressModel from '../models/addressModel.js';
+import otpModel from '../models/otpModel.js';
+import sendOtpEmail from '../utils/sendEmail.js';
 
 const findUserOrThrow = async (userId) => {
     const user = await userModel.findById(userId);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
     return user;
 };
 
@@ -87,7 +88,7 @@ const verifyOtpService = async (email, enteredOtp) => {
 
 const resetPasswordService = async ({ email, otp, password, confirmPassword }) => {
     const user = await userModel.findOne({ email });
-    if (!user) throw new Error("User not found");
+    if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
 
     await verifyOtpService(email, otp);
 
@@ -179,7 +180,7 @@ const updateProfilePictureService = async ({ userId, profilePicture }) => {
     return await user.save();
 };
 
-module.exports = {
+export default {
     registerUserService,
     loginUserService,
     generateAndSendOtp,

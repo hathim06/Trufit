@@ -23,4 +23,4 @@ const adminAuthc = (req, res, next) => {
     next();
 };
 
-module.exports = { isAdmin, isLoggedOut, adminAuthc };
+export default { isAdmin, isLoggedOut, adminAuthc };

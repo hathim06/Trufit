@@ -1,19 +1,19 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const adminAuth = require('../Middlewares/adminAuth');
-const upload = require('../../User/Middlewares/upload');
-const { validateBody } = require('../../User/Middlewares/validationMiddleware');
-const { categorySchema } = require('../../User/utils/schemas');
+import adminAuth from '../Middlewares/adminAuth.js';
+import upload from '../../User/Middlewares/upload.js';
+import { validateBody  } from '../../User/Middlewares/validationMiddleware.js';
+import { categorySchema  } from '../../User/utils/schemas.js';
 
 // Controllers
-const adminController = require('../controllers/adminController');
-const userController = require('../controllers/userController');
-const categoryController = require('../controllers/categoryController');
-const productController = require('../controllers/productController');
-const couponController = require('../controllers/couponController');
-const orderController = require('../controllers/orderController');
-const bannerController = require('../controllers/bannerController');
-const colorController = require('../controllers/colorController');
+import adminController from '../controllers/adminController.js';
+import userController from '../controllers/userController.js';
+import categoryController from '../controllers/categoryController.js';
+import productController from '../controllers/productController.js';
+import orderController from '../controllers/orderController.js';
+import inventoryController from '../controllers/inventoryController.js';
+import bannerController from '../controllers/bannerController.js';
+import colorController from '../controllers/colorController.js';
 
 // Auth & Dashboard
 router.get('/login', adminAuth.isLoggedOut, adminController.showLogin);
@@ -70,18 +70,6 @@ router.post('/variants/add/:productId', adminAuth.isAdmin, upload.array('image',
 router.put('/variants/update/:variantId', adminAuth.isAdmin, upload.array('image', 3), productController.updateVariant);
 router.delete('/variants/delete/:variantId', adminAuth.isAdmin, productController.deleteVariant);
 
-// Coupon Management
-router.get('/coupons', adminAuth.isAdmin, couponController.getCoupons);
-router.get('/add-coupon', adminAuth.isAdmin, couponController.loadAddCoupon);
-router.post('/add-coupon', adminAuth.isAdmin, couponController.addCoupon);
-router.get('/edit-coupon/:id', adminAuth.isAdmin, couponController.loadEditCoupon);
-router.post('/edit-coupon/:id', adminAuth.isAdmin, couponController.updateCoupon);
-router.delete('/coupons/delete/:id', adminAuth.isAdmin, couponController.deleteCoupon);
-
-// Order Management
-router.get('/orders', adminAuth.isAdmin, orderController.getOrders);
-router.patch('/orders/status/:id', adminAuth.isAdmin, orderController.changeOrderStatus);
-
 // Banner Management
 router.get('/banners', adminAuth.isAdmin, bannerController.loadBannerPage);
 router.get('/add-banner', adminAuth.isAdmin, bannerController.loadAddBanner);
@@ -96,4 +84,13 @@ router.get('/colors', adminAuth.isAdmin, colorController.getColorsPage);
 router.post('/colors/add', adminAuth.isAdmin, colorController.addColor);
 router.delete('/colors/delete/:id', adminAuth.isAdmin, colorController.deleteColor);
 
-module.exports = router;
+// Order Management
+router.get('/orders', adminAuth.isAdmin, orderController.getOrders);
+router.get('/orders/:id', adminAuth.isAdmin, orderController.getOrderDetails);
+router.patch('/orders/status/:id', adminAuth.isAdmin, orderController.updateOrderStatus);
+
+// Inventory Management
+router.get('/inventory', adminAuth.isAdmin, inventoryController.getInventory);
+router.patch('/inventory/update', adminAuth.isAdmin, inventoryController.updateStock);
+
+export default router;

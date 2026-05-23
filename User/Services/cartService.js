@@ -1,7 +1,8 @@
-const cartModel = require('../models/cartModel');
-const productModel = require('../models/productModel');
-const variantModel = require('../models/variants');
-const wishlistModel = require('../models/wishlistModel');
+import { MESSAGES } from '../../utils/messages.js';
+import cartModel from '../models/cartModel.js';
+import productModel from '../models/productModel.js';
+import variantModel from '../models/variants.js';
+import wishlistModel from '../models/wishlistModel.js';
 
 const getCartService = async (userId) => {
     const cart = await cartModel.findOne({ userId })
@@ -12,7 +13,6 @@ const getCartService = async (userId) => {
         .populate('items.variantId');
 
     if (cart && cart.items) {
-        // Filter out items that are deleted, inactive, or belong to unlisted categories
         cart.items = cart.items.filter(item => {
             const product = item.productId;
             if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) return false;
@@ -26,7 +26,7 @@ const getCartService = async (userId) => {
 
 const addToCartService = async (userId, productId, variantId, quantity = 1) => {
     const product = await productModel.findById(productId);
-    if (!product) throw new Error("Product not found");
+    if (!product) throw new Error(MESSAGES.PRODUCT_NOT_FOUND);
 
     if (product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
         throw new Error("This product is currently unavailable");
@@ -77,7 +77,6 @@ const addToCartService = async (userId, productId, variantId, quantity = 1) => {
 
     await cart.save();
 
-    // Remove from wishlist if already added
     const wishlist = await wishlistModel.findOne({ userId });
     if (wishlist) {
         wishlist.items = wishlist.items.filter(item => item.productId.toString() !== productId.toString());
@@ -103,7 +102,7 @@ const updateCartQuantityService = async (userId, productId, quantity) => {
     if (!item) throw new Error("Product not found in cart");
 
     const variantId = item.variantId;
-    let stockAvailable = 0;
+    let stockAvailable;
 
     if (variantId) {
         const variant = await variantModel.findById(variantId);
@@ -138,7 +137,7 @@ const clearCartService = async (userId) => {
     }
 };
 
-module.exports = {
+export default {
     getCartService,
     addToCartService,
     removeFromCartService,

@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const productController = require('../controllers/productController');
-const reviewController = require('../controllers/reviewController');
-const userAuth = require('../Middlewares/userAuth');
+import productController from '../controllers/productController.js';
+import reviewController from '../controllers/reviewController.js';
+import userAuth from '../Middlewares/userAuth.js';
 
 router.get('/product/:id', productController.loadProductDetails);
 router.get('/shop', productController.loadShopPage);
@@ -14,4 +14,4 @@ router.get('/review/:productId', reviewController.getProductReviews);
 router.put('/review/:reviewId', userAuth.isLoggedIn, reviewController.updateReview);
 router.delete('/review/:reviewId', userAuth.isLoggedIn, reviewController.deleteReview);
 
-module.exports = router;
+export default router;

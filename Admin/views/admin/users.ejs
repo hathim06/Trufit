@@ -38,6 +38,12 @@
         .btn-delete:hover {
             background: #ef4444;
         }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
     </style>
 
     <body>
@@ -45,6 +51,48 @@
 
             <main class="main-content">
                 <%- include('./partials/adminHeader', { title: 'USER MANAGEMENT' }) %>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid" style="margin-bottom: 30px;">
+                    <!-- <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Total Customers</h3>
+                            <div class="value"><%= totalAllUsers %></div>
+                        </div>
+                        <div class="stat-icon" style="background: #E8F0FE; color: #1A73E8;">
+                            <i data-lucide="users" style="color: #1A73E8;"></i>
+                        </div>
+                    </div> -->
+                    <!-- <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Active Customers</h3>
+                            <div class="value"><%= activeUsersCount %></div>
+                        </div>
+                        <div class="stat-icon" style="background: #E6F4EA; color: #137333;">
+                            <i data-lucide="user-check" style="color: #137333;"></i>
+                        </div>
+                    </div> -->
+                    <!-- <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Blocked Customers</h3>
+                            <div class="value"><%= blockedUsersCount %></div>
+                        </div>
+                        <div class="stat-icon" style="background: #FCE8E6; color: #C5221F;">
+                            <i data-lucide="user-x" style="color: #C5221F;"></i>
+                        </div>
+                    </div> -->
+                    <% if (search || status) { %>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Filtered Results</h3>
+                            <div class="value"><%= totalUsers %></div>
+                        </div>
+                        <div class="stat-icon" style="background: #FEF7E0; color: #B06000;">
+                            <i data-lucide="filter" style="color: #B06000;"></i>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
 
                 <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; margin-bottom: 30px;">
                     <div style="position: relative; flex: 1; max-width: 500px;">
@@ -77,7 +125,7 @@
                         </thead>
                         <tbody>
                             <% users.forEach(user=> { %>
-                                <tr>
+                                <tr id="user-row-<%= user._id %>">
                                     <td>
                                         <%= user._id %>
                                     </td>
@@ -89,7 +137,7 @@
                                         <%= user.email %>
                                     </td>
                                     <td>
-                                        <span
+                                        <span id="status-badge-<%= user._id %>"
                                             class="status-badge <%= user.isBlocked ? 'status-blocked' : 'status-active' %>">
                                             <%= user.isBlocked ? 'Blocked' : 'Active' %>
                                         </span>
@@ -103,7 +151,7 @@
                                             <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
                                         </a>
 
-                                        <button onclick="toggleBlock('<%= user._id %>', '<%= user.isBlocked %>')"
+                                        <button id="block-btn-<%= user._id %>" onclick="toggleBlock('<%= user._id %>', '<%= user.isBlocked %>')"
                                             class="btn-action <%= user.isBlocked ? 'btn-success' : 'btn-danger' %>">
                                             <%= user.isBlocked ? 'UNBLOCK' : 'BLOCK' %>
                                         </button>
@@ -169,15 +217,35 @@
                     });
 
                     if (result.isConfirmed) {
-                        const url = isBlocked ? `/admin/users/unblock/${id}` : `/admin/users/block/${id}`;
-                        const res = await fetch(url, { method: "PATCH" });
-                        const data = await res.json();
+                        try {
+                            const url = isBlocked ? `/admin/users/unblock/${id}` : `/admin/users/block/${id}`;
+                            const res = await fetch(url, { method: "PATCH" });
+                            const data = await res.json();
 
-                        if (data.success) {
-                            await Swal.fire('Updated!', `User has been ${isBlocked ? 'unblocked' : 'blocked'}.`, 'success');
-                            location.reload();
-                        } else {
-                            Swal.fire('Error!', 'Failed to update user status.', 'error');
+                            if (data.success) {
+                                await Swal.fire('Updated!', `User has been ${isBlocked ? 'unblocked' : 'blocked'}.`, 'success');
+                                
+                                // Update DOM dynamically
+                                const newIsBlocked = !isBlocked;
+                                const badge = document.getElementById(`status-badge-${id}`);
+                                const btn = document.getElementById(`block-btn-${id}`);
+                                
+                                if (badge) {
+                                    badge.className = `status-badge ${newIsBlocked ? 'status-blocked' : 'status-active'}`;
+                                    badge.textContent = newIsBlocked ? 'Blocked' : 'Active';
+                                }
+                                
+                                if (btn) {
+                                    btn.className = `btn-action ${newIsBlocked ? 'btn-success' : 'btn-danger'}`;
+                                    btn.textContent = newIsBlocked ? 'UNBLOCK' : 'BLOCK';
+                                    btn.setAttribute('onclick', `toggleBlock('${id}', '${newIsBlocked}')`);
+                                }
+                            } else {
+                                Swal.fire('Error!', 'Failed to update user status.', 'error');
+                            }
+                        } catch (error) {
+                            console.error("Toggle block error:", error);
+                            Swal.fire('Error!', 'Something went wrong. Please try again.', 'error');
                         }
                     }
                 }
@@ -201,7 +269,12 @@
 
                         if (data.success) {
                             await Swal.fire('Deleted!', data.message || 'User has been removed.', 'success');
-                            location.reload();
+                            
+                            // Remove row from DOM
+                            const row = document.getElementById(`user-row-${id}`);
+                            if (row) {
+                                row.remove();
+                            }
                         } else {
                             Swal.fire('Error!', data.message || 'Failed to delete user.', 'error');
                         }

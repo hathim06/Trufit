@@ -1,11 +1,11 @@
-const categoryModel = require('../../User/models/categoryModel');
+import categoryModel from '../../User/models/categoryModel.js';
 
 const getCategoriesService = async (search = '', page = 1, limit = 5, status = 'all') => {
     const query = {};
     if (search) {
         query.name = { $regex: search, $options: 'i' };
     }
-    
+
     if (status === 'listed') query.isListed = true;
     else if (status === 'unlisted') query.isListed = false;
 
@@ -43,16 +43,16 @@ const getCategoryByIdService = async (id) => {
 
 const updateCategoryService = async (id, data) => {
     const newName = data.name.trim();
-    const existing = await categoryModel.findOne({ 
+    const existing = await categoryModel.findOne({
         name: { $regex: new RegExp(`^${newName}$`, 'i') },
         _id: { $ne: id }
     });
-    
+
     if (existing) throw new Error('Another category with this name already exists');
 
     const cat = await categoryModel.findById(id);
     if (!cat) throw new Error('Category not found');
-    
+
     cat.name = newName;
     cat.description = data.description || '';
     return await cat.save();
@@ -69,7 +69,7 @@ const deleteCategoryService = async (id) => {
     await categoryModel.findByIdAndDelete(id);
 };
 
-module.exports = {
+export default {
     getCategoriesService,
     addCategoryService,
     getCategoryByIdService,

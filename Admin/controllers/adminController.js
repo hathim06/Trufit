@@ -1,4 +1,4 @@
-const adminService = require('../Services/adminService');
+import adminService from '../Services/adminService.js';
 
 const showLogin = async (req, res) => {
     res.render('admin/login', { success: req.query.success, message: req.query.message });
@@ -63,7 +63,7 @@ const updateProfile = async (req, res) => {
     }
 };
 
-module.exports = {
+export default {
     showLogin,
     login,
     logout,

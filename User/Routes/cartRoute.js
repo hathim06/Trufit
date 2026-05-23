@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const cartController = require('../controllers/cartController');
-const userAuth = require('../Middlewares/userAuth');
+import cartController from '../controllers/cartController.js';
+import userAuth from '../Middlewares/userAuth.js';
 
 router.get('/cart', userAuth.isLoggedIn, cartController.loadCart);
 router.post('/cart/add', userAuth.isLoggedIn, cartController.addToCart);
@@ -9,4 +9,4 @@ router.post('/cart/remove/:id', userAuth.isLoggedIn, cartController.removeFromCa
 router.post('/cart/update/:id', userAuth.isLoggedIn, cartController.updateCartQuantity);
 router.get('/cart/clear', userAuth.isLoggedIn, cartController.clearCart);
 
-module.exports = router;
+export default router;

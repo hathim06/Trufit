@@ -1,4 +1,4 @@
-const User = require('../models/userModel');
+import User from '../models/userModel.js';
 
 const isLoggedIn = async (req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
@@ -48,7 +48,7 @@ const isUser = async (req, res, next) => {
     return isLoggedIn(req, res, next);
 };
 
-module.exports = {
+export default {
     isLoggedIn,
     isLoggedOut,
     isUser
