@@ -19,7 +19,7 @@ const syncProductWithVariants = async (productId) => {
 };
 
 const addProductService = async (req) => {
-    // Validate categoryId
+   
     if (!req.body.categoryId || req.body.categoryId.trim() === '') {
         throw new Error("Category is required");
     }
@@ -121,11 +121,19 @@ const getProductsService = async (query) => {
     const page = parseInt(query.page) || 1;
     const limit = parseInt(query.limit) || 5;
     const skip = (page - 1) * limit;
+    const status = query.status || "all";
 
     const filter = {
-        isDeleted: false,
         name: { $regex: search, $options: "i" }
     };
+
+    if (status === 'deleted') {
+        filter.isDeleted = true;
+    } else {
+        filter.isDeleted = { $ne: true };
+        if (status === 'active') filter.status = 'Active';
+        if (status === 'blocked') filter.status = 'Blocked';
+    }
 
     if (category && category !== "") {
         filter.categoryId = category;
@@ -140,19 +148,22 @@ const getProductsService = async (query) => {
     const totalProducts = await productModel.countDocuments(filter);
     const totalPages = Math.ceil(totalProducts / limit);
 
-    const totalProductsListed=await productModel.countDocuments({isDeleted:false})
-    const totalActiveProducts=await productModel.countDocuments({isDeleted:false,status:'Active'})
-    const totalBlcokedProducts=await productModel.countDocuments({isDeleted:false,status:'Blocked'})       
+    const totalProductsCount = await productModel.countDocuments({ isDeleted: { $ne: true } });
+    const totalActiveProducts = await productModel.countDocuments({ isDeleted: { $ne: true }, status: 'Active' });
+    const totalBlockedProducts = await productModel.countDocuments({ isDeleted: { $ne: true }, status: 'Blocked' });
+    const totalDeletedProducts = await productModel.countDocuments({ isDeleted: true });
 
     return {
         products,
         search,
+        status,
         currentPage: page,
         totalPages,
-        totalUsers: totalProducts,
         limit,
-        totalProducts,
+        totalProducts: totalProductsCount,
         totalActiveProducts,
+        totalBlockedProducts,
+        totalDeletedProducts
     };
 };
 
@@ -290,6 +301,29 @@ const deleteProductService = async (id) => {
     return await productModel.findByIdAndUpdate(id, { isDeleted: true });
 };
 
+const softDeleteProductService = async (id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new Error("Invalid product ID");
+
+    await cartModel.updateMany({ 'items.productId': id }, { $pull: { items: { productId: id } } });
+    await wishlistModel.updateMany({ 'items.productId': id }, { $pull: { items: { productId: id } } });
+
+    return await productModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
+};
+
+const restoreProductService = async (id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new Error("Invalid product ID");
+    return await productModel.findByIdAndUpdate(id, { isDeleted: false }, { new: true });
+};
+
+const hardDeleteProductService = async (id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new Error("Invalid product ID");
+
+    await cartModel.updateMany({ 'items.productId': id }, { $pull: { items: { productId: id } } });
+    await wishlistModel.updateMany({ 'items.productId': id }, { $pull: { items: { productId: id } } });
+
+    return await productModel.findByIdAndDelete(id);
+};
+
 const getVariantsByProductId = async (productId) => {
     return await variantModel.find({ productId, isDeleted: false });
 };
@@ -356,6 +390,9 @@ export default {
     getSingleProductService,
     updateProductService,
     deleteProductService,
+    softDeleteProductService,
+    restoreProductService,
+    hardDeleteProductService,
     getVariantsByProductId,
     addVariantService,
     updateVariantService,

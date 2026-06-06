@@ -8,8 +8,12 @@
         <div style="display: grid; grid-template-columns: 1fr 350px; gap: 30px; margin-top: 30px;">
             <!-- Colors List -->
             <div class="table-container">
-                <div class="table-header">
+                <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-right: 15px;">
                     <h2>Available Colors</h2>
+                    <select id="statusFilter" class="search-input" style="max-width: 180px; padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 6px; outline: none; background: #FFF; cursor: pointer; font-size: 13px;">
+                        <option value="all" <%= typeof status !== 'undefined' && status === 'all' ? 'selected' : '' %>>All Status</option>
+                        <option value="deleted" <%= typeof status !== 'undefined' && status === 'deleted' ? 'selected' : '' %>>Soft Deleted</option>
+                    </select>
                 </div>
                 <table>
                     <thead>
@@ -21,49 +25,59 @@
                         </tr>
                     </thead>
                     <tbody id="colorsTableBody">
-                        <% 
-                            if (colors && colors.length > 0) { 
-                                let tableHtml = '';
-                                colors.forEach(color => { 
-                                    const styleAttr = 'style' + '="background-color: ' + color.hex + '"';
-                                    tableHtml += `
-                                        <tr>
-                                            <td>
-                                                <div class="color-preview-circle" ${styleAttr}></div>
-                                            </td>
-                                            <td><strong>${color.name}</strong></td>
-                                            <td><code>${color.hex}</code></td>
-                                            <td>
-                                                <button class="action-btn" onclick="deleteColor('${color._id}')">
-                                                    <i data-lucide="trash-2" style="width: 18px; height: 18px; color: #EF4444;"></i>
+                        <% if (colors && colors.length > 0) { %>
+                            <% colors.forEach(color => { %>
+                                <tr id="color-row-<%= color._id %>">
+                                    <td>
+                                        <div class="color-preview-circle" style="background-color: <%= color.hex %>"></div>
+                                    </td>
+                                    <td><strong><%= color.name %></strong></td>
+                                    <td><code><%= color.hex %></code></td>
+                                    <td>
+                                        <div class="action-btns" style="display: flex; gap: 8px; align-items: center;">
+
+                                            <!-- Soft Delete/Restore -->
+                                            <% if (color.isDeleted) { %>
+                                                <button class="action-btn" onclick="restoreColor('<%= color._id %>')" title="Restore Color" style="color: #3B82F6; background: none; border: none; cursor: pointer; padding: 0;">
+                                                    <i data-lucide="rotate-ccw" style="width: 18px; height: 18px;"></i>
                                                 </button>
-                                            </td>
-                                        </tr>`;
-                                });
-                        %>
-                            <%- tableHtml %>
+                                            <% } else { %>
+                                                <button class="action-btn" onclick="softDeleteColor('<%= color._id %>')" title="Soft Delete Color" style="color: #6B7280; background: none; border: none; cursor: pointer; padding: 0;">
+                                                    <i data-lucide="archive" style="width: 18px; height: 18px;"></i>
+                                                </button>
+                                            <% } %>
+
+                                            <!-- Hard Delete -->
+                                            <button class="action-btn" onclick="hardDeleteColor('<%= color._id %>')" title="Permanently Delete Color" style="color: #EF4444; background: none; border: none; cursor: pointer; padding: 0;">
+                                                <i data-lucide="trash-2" style="width: 18px; height: 18px;"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
                         <% } else { %>
                             <tr>
-                                <td colspan="4" style="text-align: center; padding: 40px; color: #6B7280;">No colors added yet.</td>
+                                <td colspan="4" style="text-align: center; padding: 40px; color: #6B7280;">No colors found.</td>
                             </tr>
                         <% } %>
                     </tbody>
                 </table>
 
                 <% if (typeof totalPages !== 'undefined' && totalPages > 1) { 
+                    const statusParam = (typeof status !== 'undefined' && status !== 'all') ? '&status=' + status : '';
                     let paginationHtml = '<div style="margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 10px; padding-bottom: 20px;">';
                     
                     if (currentPage > 1) {
-                        paginationHtml += `<a href="/admin/colors?page=${currentPage - 1}" style="padding: 6px 12px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 6px; background: #FFF; font-size: 13px;">Previous</a>`;
+                        paginationHtml += `<a href="/admin/colors?page=${currentPage - 1}${statusParam}" style="padding: 6px 12px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 6px; background: #FFF; font-size: 13px;">Previous</a>`;
                     }
 
                     for (let i = 1; i <= totalPages; i++) {
                         const activeStyles = i === currentPage ? 'background: #000; color: #FFF; border-color: #000;' : 'background: #FFF; color: #374151;';
-                        paginationHtml += `<a href="/admin/colors?page=${i}" style="padding: 6px 12px; text-decoration: none; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 13px; ${activeStyles}">${i}</a>`;
+                        paginationHtml += `<a href="/admin/colors?page=${i}${statusParam}" style="padding: 6px 12px; text-decoration: none; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 13px; ${activeStyles}">${i}</a>`;
                     }
 
                     if (currentPage < totalPages) {
-                        paginationHtml += `<a href="/admin/colors?page=${currentPage + 1}" style="padding: 6px 12px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 6px; background: #FFF; font-size: 13px;">Next</a>`;
+                        paginationHtml += `<a href="/admin/colors?page=${currentPage + 1}${statusParam}" style="padding: 6px 12px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 6px; background: #FFF; font-size: 13px;">Next</a>`;
                     }
 
                     paginationHtml += '</div>';
@@ -136,23 +150,24 @@
             }
         });
 
-        async function deleteColor(id) {
+
+
+        async function softDeleteColor(id) {
             const result = await Swal.fire({
-                title: 'Are you sure?',
-                text: "This will remove this color from the available options.",
+                title: 'Confirm Soft Delete',
+                text: 'Are you sure you want to soft delete this color? It will be hidden from the active color options.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#000',
-                cancelButtonColor: '#6B7280',
-                confirmButtonText: 'Yes, delete it!'
+                confirmButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, soft delete'
             });
-
             if (result.isConfirmed) {
                 try {
-                    const response = await fetch(`/admin/colors/delete/${id}`, { method: 'DELETE' });
-                    const data = await response.json();
+                    const res = await fetch(`/admin/colors/soft-delete/${id}`, { method: 'PATCH' });
+                    const data = await res.json();
                     if (data.success) {
-                        Swal.fire('Deleted!', data.message, 'success').then(() => location.reload());
+                        await Swal.fire('Soft Deleted!', data.message, 'success');
+                        location.reload();
                     } else {
                         Swal.fire('Error', data.message, 'error');
                     }
@@ -160,6 +175,64 @@
                     Swal.fire('Error', 'Something went wrong', 'error');
                 }
             }
+        }
+
+        async function restoreColor(id) {
+            const result = await Swal.fire({
+                title: 'Confirm Restore',
+                text: 'Are you sure you want to restore this color?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3B82F6',
+                confirmButtonText: 'Yes, restore'
+            });
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/admin/colors/restore/${id}`, { method: 'PATCH' });
+                    const data = await res.json();
+                    if (data.success) {
+                        await Swal.fire('Restored!', data.message, 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Something went wrong', 'error');
+                }
+            }
+        }
+
+        async function hardDeleteColor(id) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "This action will permanently delete this color from the database. It cannot be undone!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, permanently delete!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/admin/colors/hard-delete/${id}`, { method: 'DELETE' });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('Permanently Deleted!', data.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Something went wrong', 'error');
+                }
+            }
+        }
+
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                window.location.href = `/admin/colors?status=${this.value}`;
+            });
         }
     </script>
 </body>

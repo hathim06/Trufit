@@ -648,6 +648,9 @@
                         const data = await response.json();
 
                         if (response.ok) {
+                            if (typeof updateHeaderCounts === 'function') {
+                                updateHeaderCounts();
+                            }
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Added to Cart',
@@ -691,6 +694,9 @@
                         const data = await response.json();
 
                         if (response.ok) {
+                            if (typeof updateHeaderCounts === 'function') {
+                                updateHeaderCounts();
+                            }
                             if (data.added) {
                                 button.classList.add('active');
                                 Swal.fire({

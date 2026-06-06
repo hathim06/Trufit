@@ -5,7 +5,7 @@ import cartService from '../Services/cartService.js';
 const loadCart = async (req, res) => {
     try {
         const cart = await cartService.getCartService(req.session.user);
-        res.render('users/cart', { cart });
+        res.render('users/cart', { cart});
     } catch (error) {
         res.redirect('/login');
     }

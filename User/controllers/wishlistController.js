@@ -24,9 +24,9 @@ const addToWishlist = async (req, res) => {
 const removeFromWishlist = async (req, res) => {
     try {
         await wishlistService.removeFromWishlistService(req.session.user, req.params.id);
-        res.redirect('/wishlist');
+        return res.status(STATUS_CODES.OK).json({ success: true, message: MESSAGES.WISH_LIST_REMOVED });
     } catch (error) {
-        res.redirect('/login');
+        return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
 };
 

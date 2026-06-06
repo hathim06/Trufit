@@ -81,6 +81,7 @@ app.use(express.json());
 app.use(passport.initialize());
 
 app.use('/public', express.static(path.join(__dirname, 'User', 'public')));
+app.use('/watch-assets', express.static(path.join(__dirname, 'User', 'public', 'watch-assets')));
 
 app.set('view engine', 'ejs');
 app.set('views', [
@@ -108,7 +109,7 @@ app.use('/admin', adminRoute);
 app.use((req, res, next) => {
     const publicPaths = ['/', '/login', '/signup', '/auth', '/public', '/verify-otp', '/resend-otp', '/forgot-password', '/reset-password'];
 
-    if (publicPaths.includes(req.path) || req.path.startsWith('/admin') || req.path.startsWith('/public') || req.path.startsWith('/auth')) {
+    if (publicPaths.includes(req.path) || req.path.startsWith('/admin') || req.path.startsWith('/public') || req.path.startsWith('/auth') || req.path.startsWith('/watch-assets')) {
         return next();
     }
 

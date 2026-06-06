@@ -311,8 +311,8 @@
             }
         });
 
-        // Fetch user counts for cart and wishlist badges
-        document.addEventListener('DOMContentLoaded', async () => {
+        // Global function to update cart and wishlist counts dynamically
+        async function updateHeaderCounts() {
             try {
                 const res = await fetch('/api/user/counts');
                 const data = await res.json();
@@ -321,18 +321,29 @@
                     const cartBadge = document.getElementById('cart-badge');
                     const wishlistBadge = document.getElementById('wishlist-badge');
                     
-                    if (data.cartCount > 0) {
-                        cartBadge.textContent = data.cartCount;
-                        cartBadge.style.display = 'flex';
+                    if (cartBadge) {
+                        if (data.cartCount > 0) {
+                            cartBadge.textContent = data.cartCount;
+                            cartBadge.style.display = 'flex';
+                        } else {
+                            cartBadge.style.display = 'none';
+                        }
                     }
                     
-                    if (data.wishlistCount > 0) {
-                        wishlistBadge.textContent = data.wishlistCount;
-                        wishlistBadge.style.display = 'flex';
+                    if (wishlistBadge) {
+                        if (data.wishlistCount > 0) {
+                            wishlistBadge.textContent = data.wishlistCount;
+                            wishlistBadge.style.display = 'flex';
+                        } else {
+                            wishlistBadge.style.display = 'none';
+                        }
                     }
                 }
             } catch (err) {
                 console.error("Error fetching counts:", err);
             }
-        });
+        }
+
+        // Fetch user counts for cart and wishlist badges on load
+        document.addEventListener('DOMContentLoaded', updateHeaderCounts);
     </script>

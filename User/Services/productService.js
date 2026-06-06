@@ -10,7 +10,6 @@ const getProductDetailsByIdService = async (productId) => {
         throw new Error(MESSAGES.PRODUCT_NOT_FOUND);
     }
     
-    // Check if category is listed
     const category = await categoryModel.findById(product.categoryId);
     if (!category || !category.isListed) {
         throw new Error("Product category is unavailable");
@@ -59,7 +58,11 @@ const getShopProductsService = async (filters = {}, page = 1) => {
     };
 
     if (filters.category && filters.category.trim() !== '') {
-        query.categoryId = filters.category;
+        const selectedCategory = await categoryModel.findById(filters.category);
+        if (!selectedCategory || !selectedCategory.isListed) {
+        } else {
+            query.categoryId = filters.category;
+        }
     }
 
     if (filters.search && filters.search.trim() !== '') {

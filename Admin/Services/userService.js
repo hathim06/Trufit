@@ -18,8 +18,13 @@ const getUsersService = async (queryParams) => {
         ]
     };
 
-    if (status === 'active') query.isBlocked = false;
-    if (status === 'blocked') query.isBlocked = true;
+    if (status === 'deleted') {
+        query.isDeleted = true;
+    } else {
+        query.isDeleted = { $ne: true };
+        if (status === 'active') query.isBlocked = false;
+        if (status === 'blocked') query.isBlocked = true;
+    }
 
     const totalUsers = await userModel.countDocuments(query);
     const totalPages = Math.ceil(totalUsers / limit);
@@ -29,9 +34,10 @@ const getUsersService = async (queryParams) => {
         .skip(skip)
         .limit(limit);
 
-    const totalAllUsers = await userModel.countDocuments({ isAdmin: false });
-    const activeUsersCount = await userModel.countDocuments({ isAdmin: false, isBlocked: false });
-    const blockedUsersCount = await userModel.countDocuments({ isAdmin: false, isBlocked: true });
+    const totalAllUsers = await userModel.countDocuments({ isAdmin: false, isDeleted: { $ne: true } });
+    // const activeUsersCount = await userModel.countDocuments({ isAdmin: false, isDeleted: { $ne: true }, isBlocked: false });
+    // const blockedUsersCount = await userModel.countDocuments({ isAdmin: false, isDeleted: { $ne: true }, isBlocked: true });
+    // const deletedUsersCount = await userModel.countDocuments({ isAdmin: false, isDeleted: true });
 
     return {
         users,
@@ -40,10 +46,8 @@ const getUsersService = async (queryParams) => {
         currentPage: page,
         totalPages,
         totalUsers,
-        totalAllUsers,
-        activeUsersCount,
-        blockedUsersCount,
-        limit
+        limit,
+        totalAllUsers
     };
 };
 
@@ -55,7 +59,21 @@ const unblockUserService = async (id) => {
     await userModel.findByIdAndUpdate(id, { isBlocked: false });
 };
 
-const deleteUserService = async (id) => {
+const softDeleteUserService = async (id) => {
+    const user = await userModel.findById(id);
+    if (!user) throw new Error('User not found');
+    user.isDeleted = true;
+    return await user.save();
+};
+
+const restoreUserService = async (id) => {
+    const user = await userModel.findById(id);
+    if (!user) throw new Error('User not found');
+    user.isDeleted = false;
+    return await user.save();
+};
+
+const hardDeleteUserService = async (id) => {
     await userModel.findByIdAndDelete(id);
 };
 
@@ -72,6 +90,8 @@ export default {
     getUsersService,
     blockUserService,
     unblockUserService,
-    deleteUserService,
+    softDeleteUserService,
+    restoreUserService,
+    hardDeleteUserService,
     getUserDetails
 };

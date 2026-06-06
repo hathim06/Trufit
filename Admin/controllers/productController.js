@@ -7,7 +7,7 @@ import colorService from '../Services/colorService.js';
 const loadProductPage = async (req, res) => {
     try {
         const data = await productService.getProductsService(req.query);
-        const { categories } = await categoryService.getCategoriesService();
+        const { categories } = await categoryService.getCategoriesService('', 1, 100, 'all');
 
         res.render('admin/products', {
             products: data.products,
@@ -15,9 +15,11 @@ const loadProductPage = async (req, res) => {
             selectedCategory: req.query.category || '',
             currentPage: data.currentPage,
             totalPages: data.totalPages,
-            totalUsers: data.totalUsers,
-            totalProducts:data.totalProducts,
-            totalActiveProducts:data.totalActiveProducts,
+            totalProducts: data.totalProducts,
+            totalActiveProducts: data.totalActiveProducts,
+            totalBlockedProducts: data.totalBlockedProducts,
+            totalDeletedProducts: data.totalDeletedProducts,
+            status: req.query.status || 'all',
             limit: data.limit,
             categories: categories
         });
@@ -78,6 +80,33 @@ const deleteProduct = async (req, res) => {
     } catch (error) {
         console.error("Delete Product Error:", error.message);
         res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.PRODUCT_DELETE_FAILED });
+    }
+};
+
+const softDeleteProduct = async (req, res) => {
+    try {
+        await productService.softDeleteProductService(req.params.id);
+        res.json({ success: true, message: 'Product soft deleted successfully' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const restoreProduct = async (req, res) => {
+    try {
+        await productService.restoreProductService(req.params.id);
+        res.json({ success: true, message: 'Product restored successfully' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const hardDeleteProduct = async (req, res) => {
+    try {
+        await productService.hardDeleteProductService(req.params.id);
+        res.json({ success: true, message: 'Product permanently deleted' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
     }
 };
 
@@ -146,6 +175,9 @@ export default {
     addProduct,
     updateProduct,
     deleteProduct,
+    softDeleteProduct,
+    restoreProduct,
+    hardDeleteProduct,
     addVariant,
     updateVariant,
     deleteVariant,

@@ -45,6 +45,7 @@
                     <option value="all" <%= typeof status !== 'undefined' && status === 'all' ? 'selected' : '' %>>All Status</option>
                     <option value="listed" <%= typeof status !== 'undefined' && status === 'listed' ? 'selected' : '' %>>Listed</option>
                     <option value="unlisted" <%= typeof status !== 'undefined' && status === 'unlisted' ? 'selected' : '' %>>Unlisted</option>
+                    <option value="deleted" <%= typeof status !== 'undefined' && status === 'deleted' ? 'selected' : '' %>>Soft Deleted</option>
                 </select>
                 <button type="submit" class="btn btn-primary" style="display: none;">FILTER</button>
             </form>
@@ -55,8 +56,8 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 40%;">CATEGORY</th>
-                        <th style="width: 30%;">DESCRIPTION</th>
+                        <th style="width: 30%;">CATEGORY</th>
+                        <th style="width: 25%;">DESCRIPTION</th>
                         <th style="width: 15%;">STATUS</th>
                         <th>ACTION</th>
                     </tr>
@@ -68,19 +69,32 @@
                                 <td><strong><%= cat.name %></strong></td>
                                 <td style="color:#6B7280;font-size:13px;"><%= cat.description || '-' %></td>
                                 <td>
-                                    <span id="status-badge-<%= cat._id %>" class="status-badge" <%- cat.isListed ? 'style="background: #D1FAE5; color: #065F46;"' : 'style="background: #FEE2E2; color: #991B1B;"' %>>
-                                        <%= cat.isListed ? 'ACTIVE' : 'INACTIVE' %>
+                                    <span id="status-badge-<%= cat._id %>" class="status-badge"
+                                        <%- cat.isDeleted ? 'style="background: #F3F4F6; color: #4B5563;"' : (cat.isBlocked ? 'style="background: #FEE2E2; color: #991B1B;"' : (cat.isListed ? 'style="background: #D1FAE5; color: #065F46;"' : 'style="background: #FEF3C7; color: #92400E;"')) %>>
+                                        <%= cat.isDeleted ? 'DELETED' : (cat.isBlocked ? 'BLOCKED' : (cat.isListed ? 'ACTIVE' : 'INACTIVE')) %>
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="action-btns">
-                                        <button class="action-btn" onclick="location.href='/admin/edit-category/<%= cat._id %>'">
+                                    <div class="action-btns" style="display: flex; gap: 8px; align-items: center;">
+                                        <button class="action-btn" onclick="location.href='/admin/edit-category/<%= cat._id %>'" title="Edit Category">
                                             <i data-lucide="edit-3"></i>
                                         </button>
-                                        <button class="action-btn" id="toggle-btn-<%= cat._id %>" onclick="toggleListing('<%= cat._id %>', '<%= cat.isListed %>')" title="<%= cat.isListed ? 'Deactivate' : 'Activate' %>">
+                                        
+                                        <button class="action-btn" id="toggle-btn-<%= cat._id %>" onclick="toggleListing('<%= cat._id %>', '<%= cat.isListed %>')" title="<%= cat.isListed ? 'Deactivate/Unlist' : 'Activate/List' %>">
                                             <i data-lucide="<%= cat.isListed ? 'eye-off' : 'eye' %>"></i>
                                         </button>
-                                        <button class="action-btn" style="color:#EF4444;" onclick="deleteCategory('<%= cat._id %>')">
+
+                                        <% if (cat.isDeleted) { %>
+                                            <button class="action-btn" onclick="restoreCategory('<%= cat._id %>')" title="Restore Category" style="color: #3B82F6;">
+                                                <i data-lucide="rotate-ccw"></i>
+                                            </button>
+                                        <% } else { %>
+                                            <button class="action-btn" onclick="softDeleteCategory('<%= cat._id %>')" title="Soft Delete Category" style="color: #6B7280;">
+                                                <i data-lucide="archive"></i>
+                                            </button>
+                                        <% } %>
+
+                                        <button class="action-btn" style="color:#EF4444;" onclick="hardDeleteCategory('<%= cat._id %>')" title="Permanently Delete">
                                             <i data-lucide="trash-2"></i>
                                         </button>
                                     </div>
@@ -131,11 +145,11 @@
 
         async function toggleListing(id, isListed) {
             isListed = (isListed === 'true' || isListed === true);
-            const action = isListed ? 'Unlist/Block' : 'List/Unblock';
+            const action = isListed ? 'Unlist' : 'List';
             
             const result = await Swal.fire({
                 title: `Confirm Action`,
-                text: `Are you sure you want to ${action} this category?`,
+                text: `Are you sure you want to ${action.toLowerCase()} this category?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: isListed ? '#EF4444' : '#10B981',
@@ -149,47 +163,76 @@
                 
                 if (data.success) {
                     await Swal.fire('Success', `Category has been ${isListed ? 'unlisted' : 'listed'}.`, 'success');
-                    
-                    // DOM Manipulation
-                    const newIsListed = !isListed;
-                    const badge = document.getElementById(`status-badge-${id}`);
-                    const btn = document.getElementById(`toggle-btn-${id}`);
-                    
-                    if (badge) {
-                        badge.style.background = newIsListed ? '#D1FAE5' : '#FEE2E2';
-                        badge.style.color = newIsListed ? '#065F46' : '#991B1B';
-                        badge.textContent = newIsListed ? 'ACTIVE' : 'INACTIVE';
-                    }
-                    if (btn) {
-                        btn.setAttribute('onclick', `toggleListing('${id}', '${newIsListed}')`);
-                        btn.setAttribute('title', newIsListed ? 'Deactivate' : 'Activate');
-                        btn.innerHTML = `<i data-lucide="${newIsListed ? 'eye-off' : 'eye'}"></i>`;
-                        lucide.createIcons();
-                    }
+                    location.reload();
                 } else {
                     Swal.fire('Error', data.message || 'Failed', 'error');
                 }
             }
         }
 
-        async function deleteCategory(id) {
+
+        async function softDeleteCategory(id) {
             const result = await Swal.fire({
-                title: 'Delete Category?',
-                text: 'This action cannot be undone.',
+                title: 'Confirm Soft Delete',
+                text: 'Are you sure you want to soft delete this category? It will be hidden from the active category list.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#EF4444',
-                confirmButtonText: 'Yes, Delete'
+                confirmButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, soft delete'
             });
             if (result.isConfirmed) {
-                const res = await fetch(`/admin/categories/delete/${id}`, { method: 'DELETE' });
+                const res = await fetch(`/admin/categories/soft-delete/${id}`, { method: 'PATCH' });
                 const data = await res.json();
                 if (data.success) {
-                    await Swal.fire('Deleted!', 'Category has been deleted.', 'success');
+                    await Swal.fire('Soft Deleted!', data.message || 'Category has been soft deleted.', 'success');
                     const row = document.getElementById(`category-row-${id}`);
                     if (row) row.remove();
                 } else {
-                    Swal.fire('Error', data.message || 'Failed', 'error');
+                    Swal.fire('Error', data.message || 'Failed to soft delete category.', 'error');
+                }
+            }
+        }
+
+        async function restoreCategory(id) {
+            const result = await Swal.fire({
+                title: 'Confirm Restore',
+                text: 'Are you sure you want to restore this category?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3B82F6',
+                confirmButtonText: 'Yes, restore'
+            });
+            if (result.isConfirmed) {
+                const res = await fetch(`/admin/categories/restore/${id}`, { method: 'PATCH' });
+                const data = await res.json();
+                if (data.success) {
+                    await Swal.fire('Restored!', data.message || 'Category has been restored.', 'success');
+                    const row = document.getElementById(`category-row-${id}`);
+                    if (row) row.remove();
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to restore category.', 'error');
+                }
+            }
+        }
+
+        async function hardDeleteCategory(id) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: 'This action will permanently delete the category and all associated records! It cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Yes, permanently delete'
+            });
+            if (result.isConfirmed) {
+                const res = await fetch(`/admin/categories/hard-delete/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    await Swal.fire('Permanently Deleted!', data.message || 'Category has been deleted.', 'success');
+                    const row = document.getElementById(`category-row-${id}`);
+                    if (row) row.remove();
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to delete category.', 'error');
                 }
             }
         }

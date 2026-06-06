@@ -278,6 +278,9 @@
                 <section class="cart-page">
                     <h1 class="cart-title">YOUR CART</h1>
 
+                    <!-- Error banner from checkout validation -->
+                    <div id="cart-error-banner" style="display:none; background:#FEF2F2; border:1px solid #FECACA; color:#991B1B; padding:14px 20px; border-radius:8px; margin-bottom:20px; font-size:14px; font-weight:500;"></div>
+
                     <table class="cart-table">
                         <thead>
                             <tr>
@@ -361,17 +364,17 @@
                         <div class="cart-footer" style="width: 350px; flex-direction: column; align-items: stretch; gap: 15px; background: #FFF; padding: 25px; border-radius: 12px; border: 1px solid #EEE;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                                 <span style="color: #6B7280;">Subtotal</span>
-                                <span style="font-weight: 600;">₹<%= cartTotal %></span>
+                                <span style="font-weight: 600;" id="cart-subtotal">₹<%= cartTotal %></span>
                             </div>
 
                             <div style="height: 1px; background: #EEE; margin: 10px 0;"></div>
                             
                             <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
                                 <span style="font-size: 18px; font-weight: 700;">Grand Total</span>
-                                <span style="font-size: 18px; font-weight: 700;">₹<%= cartTotal.toLocaleString() %></span>
+                                <span style="font-size: 18px; font-weight: 700;" id="cart-total">₹<%= cartTotal.toLocaleString() %></span>
                             </div>
                             
-                            <a href="/checkout" class="btn-checkout" style="text-align: center; text-decoration: none;">PROCEED TO CHECKOUT</a>
+                            <a href="/checkout" class="btn-checkout" id="checkout-btn" style="text-align: center; text-decoration: none;">PROCEED TO CHECKOUT</a>
                         </div>
                     </div>
                     <% } %>
@@ -425,20 +428,63 @@
                             confirmButtonText: 'Yes, remove it!'
                         });
 
-                        if (result.isConfirmed) {
-                            if (window.TrufitLoader) window.TrufitLoader.show();
-                            try {
-                                const response = await fetch(`/cart/remove/${productId}`, { method: 'POST' });
-                                if (response.ok) {
-                                    location.reload();
-                                } else {
-                                    if (window.TrufitLoader) window.TrufitLoader.hide();
+                        if (!result.isConfirmed) return;
+
+                        try {
+                            const response = await fetch(`/cart/remove/${productId}`, { method: 'POST' });
+                            if (response.ok) {
+                                // Remove the row from the DOM
+                                const row = document.querySelector(`button.remove-item[data-id="${productId}"]`)?.closest('tr');
+                                if (row) {
+                                    row.style.transition = 'opacity 0.3s ease';
+                                    row.style.opacity = '0';
+                                    setTimeout(() => {
+                                        row.remove();
+                                        refreshCartTotals();
+                                    }, 300);
                                 }
-                            } catch (error) {
-                                if (window.TrufitLoader) window.TrufitLoader.hide();
-                                Swal.fire('Error', 'Failed to remove item', 'error');
+                                if (typeof updateHeaderCounts === 'function') updateHeaderCounts();
+                            } else {
+                                Swal.fire('Error', 'Could not remove item', 'error');
                             }
+                        } catch (error) {
+                            Swal.fire('Error', 'Failed to remove item', 'error');
                         }
+                    }
+
+                    function refreshCartTotals() {
+                        const rows = document.querySelectorAll('.cart-table tbody tr:not([style*="opacity: 0"])');
+                        let total = 0;
+                        rows.forEach(row => {
+                            const totalCell = row.querySelector('.total-text');
+                            if (totalCell) {
+                                const val = parseInt(totalCell.textContent.replace(/[^0-9]/g, ''));
+                                if (!isNaN(val)) total += val;
+                            }
+                        });
+
+                        const subtotalEl = document.getElementById('cart-subtotal');
+                        const totalEl = document.getElementById('cart-total');
+                        const summarySection = document.querySelector('.cart-footer')?.parentElement;
+
+                        const activeRows = document.querySelectorAll('.cart-table tbody tr');
+                        const hasItems = Array.from(activeRows).some(r => r.querySelector('.remove-item'));
+
+                        if (!hasItems) {
+                            // Show empty state
+                            document.querySelector('.cart-table tbody').innerHTML = `
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 50px 0;">
+                                        <p style="color: #6B7280; font-size: 18px; margin-bottom: 20px;">Your cart is currently empty.</p>
+                                        <a href="/shop" class="btn btn-checkout">Continue Shopping</a>
+                                    </td>
+                                </tr>`;
+                            if (summarySection) summarySection.style.display = 'none';
+                            return;
+                        }
+
+                        if (subtotalEl) subtotalEl.textContent = '₹' + total.toLocaleString();
+                        if (totalEl) totalEl.textContent = '₹' + total.toLocaleString();
                     }
 
                     // Coupon functions temporarily removed
@@ -454,6 +500,18 @@
 
             <script>
                 lucide.createIcons();
+
+                // Show error from query param (e.g. checkout validation redirect)
+                (function() {
+                    const params = new URLSearchParams(window.location.search);
+                    const err = params.get('error');
+                    const banner = document.getElementById('cart-error-banner');
+                    if (err && banner) {
+                        banner.textContent = err;
+                        banner.style.display = 'block';
+                        setTimeout(() => { banner.style.display = 'none'; }, 6000);
+                    }
+                })();
             </script>
     </body>
 

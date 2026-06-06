@@ -12,6 +12,14 @@ const colorSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
+    isBlocked: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now

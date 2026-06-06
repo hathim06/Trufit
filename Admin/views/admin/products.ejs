@@ -25,7 +25,27 @@
                             <i data-lucide="package-check" style="color: #137333;"></i>
                         </div>
                     </div>
+
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Blocked Products</h3>
+                            <div class="value"><%= typeof totalBlockedProducts !== 'undefined' ? totalBlockedProducts : 0 %></div>
+                        </div>
+                        <div class="stat-icon" style="background: #FCE8E6; color: #C5221F;">
+                            <i data-lucide="shield-alert" style="color: #C5221F;"></i>
+                        </div>
                     </div>
+
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <h3>Soft Deleted</h3>
+                            <div class="value"><%= typeof totalDeletedProducts !== 'undefined' ? totalDeletedProducts : 0 %></div>
+                        </div>
+                        <div class="stat-icon" style="background: #F3F4F6; color: #4B5563;">
+                            <i data-lucide="trash-2" style="color: #4B5563;"></i>
+                        </div>
+                    </div>
+         </div>
         
         <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
             <button class="btn btn-primary" onclick="location.href='/admin/add-product'">ADD PRODUCTS</button>
@@ -41,13 +61,20 @@
                 <% } %>
             </div>
             
-            <select id="categoryFilter" style="padding: 10px; border-radius: 8px; border: 1px solid #E5E7EB;">
+            <select id="categoryFilter" style="padding: 10px; border-radius: 8px; border: 1px solid #E5E7EB; background: #FFF; cursor: pointer;">
                 <option value="">All Categories</option>
                 <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
                     <% categories.forEach(cat => { %>
                         <option value="<%= cat._id %>" <%= (typeof selectedCategory !== 'undefined' && selectedCategory == cat._id.toString()) ? 'selected' : '' %>><%= cat.name %></option>
                     <% }) %>
                 <% } %>
+            </select>
+
+            <select id="statusFilter" style="padding: 10px; border-radius: 8px; border: 1px solid #E5E7EB; background: #FFF; cursor: pointer;">
+                <option value="all" <%= typeof status !== 'undefined' && status === 'all' ? 'selected' : '' %>>All Status</option>
+                <option value="active" <%= typeof status !== 'undefined' && status === 'active' ? 'selected' : '' %>>Active</option>
+                <option value="blocked" <%= typeof status !== 'undefined' && status === 'blocked' ? 'selected' : '' %>>Blocked</option>
+                <option value="deleted" <%= typeof status !== 'undefined' && status === 'deleted' ? 'selected' : '' %>>Soft Deleted</option>
             </select>
         </div>
 
@@ -80,20 +107,41 @@
                                 <td>₹<%= product.price %></td>
                                 <td><%= product.offer %>%</td>
                                 <td>
-                                    <span id="status-badge-<%= product._id %>" class="status-badge <%= product.status === 'Active' ? 'status-listed' : 'status-unlisted' %>">
-                                        <%= product.status.toUpperCase() %>
+                                    <span id="status-badge-<%= product._id %>" class="status-badge <%= product.isDeleted ? 'status-unlisted' : (product.status === 'Active' ? 'status-listed' : 'status-unlisted') %>"
+                                        <% if (product.isDeleted) { %>style="background: #F3F4F6; color: #4B5563;"<% } %>>
+                                        <%= product.isDeleted ? 'DELETED' : product.status.toUpperCase() %>
                                     </span>
                                 </td>
                                 <td><%= product.quantity %> left</td>
                                 <td>
-                                    <div class="action-btns" id="action-btns-<%= product._id %>">
-                                        <button class="action-btn" onclick="location.href='/admin/edit-product/<%= product._id %>'"><i data-lucide="edit-3"></i></button>
-                                        <% if (product.status === 'Blocked') { %>
-                                            <button class="action-btn" style="background: #10B981;" onclick="confirmUnblock('<%= product._id %>')"><i data-lucide="eye"></i></button>
+                                    <div class="action-btns" id="action-btns-<%= product._id %>" style="display: flex; gap: 8px; align-items: center;">
+                                        <% if (product.isDeleted) { %>
+                                            <button class="action-btn" style="background: #3B82F6;" onclick="confirmRestore('<%= product._id %>')" title="Restore Product">
+                                                <i data-lucide="rotate-ccw"></i>
+                                            </button>
                                         <% } else { %>
-                                            <button class="action-btn" style="background: #F59E0B;" onclick="confirmBlock('<%= product._id %>')"><i data-lucide="eye-off"></i></button>
+                                            <button class="action-btn" onclick="location.href='/admin/edit-product/<%= product._id %>'" title="Edit Product">
+                                                <i data-lucide="edit-3"></i>
+                                            </button>
+                                            
+                                            <% if (product.status === 'Blocked') { %>
+                                                <button class="action-btn" style="background: #10B981;" onclick="confirmUnblock('<%= product._id %>')" title="Unblock Product">
+                                                    <i data-lucide="eye"></i>
+                                                </button>
+                                            <% } else { %>
+                                                <button class="action-btn" style="background: #F59E0B;" onclick="confirmBlock('<%= product._id %>')" title="Block Product">
+                                                    <i data-lucide="eye-off"></i>
+                                                </button>
+                                            <% } %>
+
+                                            <button class="action-btn" style="background: #6B7280;" onclick="confirmSoftDelete('<%= product._id %>')" title="Soft Delete Product">
+                                                <i data-lucide="archive"></i>
+                                            </button>
                                         <% } %>
-                                        <button class="action-btn" onclick="confirmDelete('<%= product._id %>')"><i data-lucide="trash-2"></i></button>
+
+                                        <button class="action-btn" style="background: #DC2626;" onclick="confirmHardDelete('<%= product._id %>')" title="Permanently Delete">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -110,7 +158,8 @@
                 let paginationHtml = '<div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px;">';
                 const searchParam = typeof search !== 'undefined' ? `&search=${search}` : '';
                 const categoryParam = typeof selectedCategory !== 'undefined' && selectedCategory ? `&category=${selectedCategory}` : '';
-                const fullQuery = searchParam + categoryParam;
+                const statusParam = typeof status !== 'undefined' && status ? `&status=${status}` : '';
+                const fullQuery = searchParam + categoryParam + statusParam;
 
                 if (currentPage > 1) {
                     paginationHtml += `<a href="/admin/products?page=${currentPage - 1}${fullQuery}" style="padding: 5px 15px; text-decoration: none; color: #000; border: 1px solid #D1D5DB; border-radius: 4px;">&laquo; Previous</a>`;
@@ -179,51 +228,81 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        Swal.fire('Updated!', `Product has been ${action}ed.`, 'success');
-                        
-                        const badge = document.getElementById(`status-badge-${id}`);
-                        const btnContainer = document.getElementById(`action-btns-${id}`);
-                        
-                        const isBlocked = action === 'block';
-                        
-                        if (badge) {
-                            badge.className = `status-badge ${isBlocked ? 'status-unlisted' : 'status-listed'}`;
-                            badge.textContent = isBlocked ? 'BLOCKED' : 'ACTIVE';
-                        }
-                        
-                        if (btnContainer) {
-                            btnContainer.innerHTML = `
-                                <button class="action-btn" onclick="location.href='/admin/edit-product/${id}'"><i data-lucide="edit-3"></i></button>
-                                ${isBlocked 
-                                    ? `<button class="action-btn" style="background: #10B981;" onclick="confirmUnblock('${id}')"><i data-lucide="eye"></i></button>`
-                                    : `<button class="action-btn" style="background: #F59E0B;" onclick="confirmBlock('${id}')"><i data-lucide="eye-off"></i></button>`
-                                }
-                                <button class="action-btn" onclick="confirmDelete('${id}')"><i data-lucide="trash-2"></i></button>
-                            `;
-                            lucide.createIcons();
-                        }
+                        Swal.fire('Updated!', `Product has been ${action}ed.`, 'success').then(() => location.reload());
                     } else {
                         Swal.fire('Error', data.message, 'error');
                     }
                 });
         }
 
-        function confirmDelete(id) {
+        function confirmSoftDelete(id) {
             Swal.fire({
-                title: 'Delete Product?',
-                text: "This action cannot be undone!",
+                title: 'Soft Delete Product?',
+                text: "The product will be hidden from the active store list.",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6B7280',
-                confirmButtonText: 'Yes, delete it!'
+                confirmButtonColor: '#6B7280',
+                cancelButtonColor: '#9CA3AF',
+                confirmButtonText: 'Yes, soft delete'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    fetch(`/admin/delete-product/${id}`, { method: 'DELETE' })
+                    fetch(`/admin/products/soft-delete/${id}`, { method: 'PATCH' })
                         .then(res => res.json())
                         .then(data => {
                             if (data.success) {
-                                Swal.fire('Deleted!', 'Product has been removed.', 'success');
+                                Swal.fire('Soft Deleted!', data.message, 'success');
+                                const row = document.getElementById(`product-row-${id}`);
+                                if (row) row.remove();
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        });
+                }
+            });
+        }
+
+        function confirmRestore(id) {
+            Swal.fire({
+                title: 'Restore Product?',
+                text: "This product will become active again in the store.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3B82F6',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, restore'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/products/restore/${id}`, { method: 'PATCH' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire('Restored!', data.message, 'success');
+                                const row = document.getElementById(`product-row-${id}`);
+                                if (row) row.remove();
+                            } else {
+                                Swal.fire('Error', data.message, 'error');
+                            }
+                        });
+                }
+            });
+        }
+
+        function confirmHardDelete(id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This action will permanently delete this product and all of its variants from the database! It cannot be undone.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#DC2626',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Yes, permanently delete!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/products/hard-delete/${id}`, { method: 'DELETE' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire('Deleted!', 'Product has been permanently removed.', 'success');
                                 const row = document.getElementById(`product-row-${id}`);
                                 if (row) row.remove();
                             } else {
@@ -237,12 +316,14 @@
         // Search & Filter
         const searchInput = document.getElementById('searchInput');
         const categoryFilter = document.getElementById('categoryFilter');
+        const statusFilter = document.getElementById('statusFilter');
         let searchTimeout;
 
         function triggerSearch() {
             const searchVal = searchInput.value;
             const catVal = categoryFilter.value;
-            location.href = `/admin/products?search=${searchVal}&category=${catVal}`;
+            const statusVal = statusFilter.value;
+            location.href = `/admin/products?search=${searchVal}&category=${catVal}&status=${statusVal}`;
         }
 
         searchInput.addEventListener('input', () => {
@@ -251,6 +332,7 @@
         });
 
         categoryFilter.addEventListener('change', triggerSearch);
+        statusFilter.addEventListener('change', triggerSearch);
 
         function clearSearch() {
             location.href = '/admin/products';

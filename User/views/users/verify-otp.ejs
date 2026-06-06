@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <%- include('partials/head') %>
+    <script src="/js/otpTimer.js"></script>
     <style>
         .otp-container {
             display: flex;
@@ -164,38 +165,42 @@
     </main>
 
     <script>
+        //this funtion will move the cursor to next input field when user enter value in current input field
         function moveToNext(current, nextId) {
             if (current.value.length >= 1) {
-                document.getElementById(nextId).focus();
+                document.getElementById(nextId).focus();//focus mean cursor will move to next input field when user enter value in current input field
             }
         }
 
-        // Handle backspace
+        // When user presses backspace in an empty OTP box:Move cursor to previous input.
         document.querySelectorAll('.otp-inputs input').forEach((input, index, inputs) => {
-            input.addEventListener('keydown', (e) => {
+            input.addEventListener('keydown', (e) => {//e means event object.it contain information about key pressed
                 if (e.key === 'Backspace' && !input.value && index > 0) {
                     inputs[index - 1].focus();
                 }
             });
         });
 
-        // OTP Timer Logic
-        let timeLeft = 60;
-        const timerElement = document.getElementById('timer');
-        const timerContainer = document.getElementById('timer-container');
-        const resendLink = document.getElementById('resend-link');
-
-        const countdown = setInterval(() => {
-            timeLeft--;
-            timerElement.textContent = timeLeft;
-
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                timerContainer.style.display = 'none';
-                resendLink.style.display = 'inline';
-                resendLink.classList.remove('disabled');
+        // Initialize reusable OTP Timer
+        document.addEventListener('DOMContentLoaded', function() {
+            // remove old timer if user came from signup
+            if (document.referrer && document.referrer.includes('/signup')) {
+                sessionStorage.removeItem('otpTimerExpiry');
             }
-        }, 1000);
+
+            initializeOtpTimer({
+                timerElementId: 'timer',
+                timerContainerId: 'timer-container',
+                resendButtonId: 'resend-link',
+                duration: 60,
+                storageKey: 'otpTimerExpiry'
+            });
+
+            // Clear timer when resend link is clicked
+            document.getElementById('resend-link').addEventListener('click', () => {
+                sessionStorage.removeItem('otpTimerExpiry');
+            });
+        });
     </script>
 </body>
 </html>

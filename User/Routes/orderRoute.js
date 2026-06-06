@@ -10,7 +10,9 @@ router.get('/order-failed', userAuth.isLoggedIn, orderController.loadOrderFailed
 router.get('/profile/orders', userAuth.isLoggedIn, orderController.loadOrders);
 router.get('/profile/orders/:id', userAuth.isLoggedIn, orderController.loadOrderDetails);
 router.patch('/profile/orders/:id/cancel', userAuth.isLoggedIn, orderController.cancelOrder);
+router.patch('/profile/orders/:id/cancel-item', userAuth.isLoggedIn, orderController.cancelOrderItem);
 router.patch('/profile/orders/:id/return', userAuth.isLoggedIn, orderController.returnOrder);
+router.patch('/profile/orders/:id/return-item', userAuth.isLoggedIn, orderController.returnOrderItem);
 router.get('/profile/orders/:id/invoice', userAuth.isLoggedIn, orderController.downloadInvoice);
 
 export default router;

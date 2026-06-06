@@ -20,11 +20,25 @@ const getOrders = async (req, res) => {
             query.orderStatus = status;
         }
 
-        const orders = await orderModel.find(query)
-            .populate('userId', 'firstName lastName email')
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        const matchStage = { $match: query };
+
+        const pipeline = [
+            matchStage,
+            {
+                $addFields: {
+                    sortPriority: {
+                        $cond: { if: { $eq: ['$orderStatus', 'Pending'] }, then: 0, else: 1 }
+                    }
+                }
+            },
+            { $sort: { sortPriority: 1, createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit }
+        ];
+
+        const orders = await orderModel.aggregate(pipeline);
+
+        await orderModel.populate(orders, { path: 'userId', select: 'firstName lastName email' });
 
         const totalOrders = await orderModel.countDocuments(query);
         const totalPages = Math.ceil(totalOrders / limit);
@@ -47,7 +61,29 @@ const updateOrderStatus = async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
 
-        const order = await orderModel.findByIdAndUpdate(id, { orderStatus: status }, { new: true });
+        const currentOrder = await orderModel.findById(id);
+        if (!currentOrder) {
+            return res.status(STATUS_CODES.NOT_FOUND).json({ success: false, message: 'Order not found' });
+        }
+
+        const updateData = {
+            orderStatus: status,
+            'items.$[elem].status': status
+        };
+
+        if (currentOrder.paymentMethod === 'COD' && status === 'Delivered') {
+            updateData.paymentStatus = 'Paid';
+        }
+
+        const order = await orderModel.findByIdAndUpdate(
+            id,
+            updateData,
+            {
+                new: true,
+                arrayFilters: [{ 'elem.status': { $ne: 'Cancelled' } }]
+            }
+        );
+
         if (!order) {
             return res.status(STATUS_CODES.NOT_FOUND).json({ success: false, message: 'Order not found' });
         }
@@ -78,8 +114,53 @@ const getOrderDetails = async (req, res) => {
     }
 };
 
+const rejectReturn = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        if (!reason || reason.trim() === '') {
+            return res.status(STATUS_CODES.BAD_REQUEST).json({
+                success: false,
+                message: 'Please provide a reason for rejection'
+            });
+        }
+
+        const order = await orderModel.findById(id);
+        if (!order) {
+            return res.status(STATUS_CODES.NOT_FOUND).json({
+                success: false,
+                message: 'Order not found'
+            });
+        }
+
+        if (order.orderStatus !== 'Return Pending') {
+            return res.status(STATUS_CODES.BAD_REQUEST).json({
+                success: false,
+                message: 'Order is not in Return Pending status'
+            });
+        }
+
+        order.orderStatus = 'Delivered';
+        order.returnReason = `Rejected: ${reason}`;
+        await order.save();
+
+        res.json({
+            success: true,
+            message: 'Return rejected successfully. User has been notified.'
+        });
+    } catch (error) {
+        console.error('Admin Reject Return Error:', error);
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: MESSAGES.SERVER_ERROR
+        });
+    }
+};
+
 export default {
     getOrders,
     updateOrderStatus,
-    getOrderDetails
+    getOrderDetails,
+    rejectReturn
 };

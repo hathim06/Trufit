@@ -6,7 +6,8 @@ const getColorsPage = async (req, res) => {
         res.render('admin/colors', { 
             colors: data.colors,
             currentPage: data.currentPage,
-            totalPages: data.totalPages
+            totalPages: data.totalPages,
+            status: req.query.status || 'all'
         });
     } catch (error) {
         res.redirect('/admin/dashboard');
@@ -23,10 +24,46 @@ const addColor = async (req, res) => {
     }
 };
 
-const deleteColor = async (req, res) => {
+const softDeleteColor = async (req, res) => {
     try {
-        await colorService.deleteColorService(req.params.id);
-        res.json({ success: true, message: 'Color deleted successfully' });
+        await colorService.softDeleteColorService(req.params.id);
+        res.json({ success: true, message: 'Color soft deleted successfully' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const restoreColor = async (req, res) => {
+    try {
+        await colorService.restoreColorService(req.params.id);
+        res.json({ success: true, message: 'Color restored successfully' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const hardDeleteColor = async (req, res) => {
+    try {
+        await colorService.hardDeleteColorService(req.params.id);
+        res.json({ success: true, message: 'Color permanently deleted' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const blockColor = async (req, res) => {
+    try {
+        await colorService.blockColorService(req.params.id);
+        res.json({ success: true, message: 'Color blocked successfully' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const unblockColor = async (req, res) => {
+    try {
+        await colorService.unblockColorService(req.params.id);
+        res.json({ success: true, message: 'Color unblocked successfully' });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
@@ -35,5 +72,9 @@ const deleteColor = async (req, res) => {
 export default {
     getColorsPage,
     addColor,
-    deleteColor
+    softDeleteColor,
+    restoreColor,
+    hardDeleteColor,
+    blockColor,
+    unblockColor
 };

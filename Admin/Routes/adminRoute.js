@@ -28,7 +28,9 @@ router.get('/users', adminAuth.isAdmin, userController.getUsers);
 router.get('/users/view/:id', adminAuth.isAdmin, userController.viewUser);
 router.patch('/users/block/:id', adminAuth.isAdmin, userController.blockUser);
 router.patch('/users/unblock/:id', adminAuth.isAdmin, userController.unblockUser);
-router.delete('/users/delete/:id', adminAuth.isAdmin, userController.deleteUser);
+router.patch('/users/soft-delete/:id', adminAuth.isAdmin, userController.softDeleteUser);
+router.patch('/users/restore/:id', adminAuth.isAdmin, userController.restoreUser);
+router.delete('/users/hard-delete/:id', adminAuth.isAdmin, userController.hardDeleteUser);
 
 // Category Management
 router.get('/categories', adminAuth.isAdmin, categoryController.getCategories);
@@ -37,7 +39,11 @@ router.post('/add-category', adminAuth.isAdmin, validateBody(categorySchema), ca
 router.get('/edit-category/:id', adminAuth.isAdmin, categoryController.loadEditCategory);
 router.post('/edit-category/:id', adminAuth.isAdmin, validateBody(categorySchema), categoryController.updateCategory);
 router.patch('/categories/toggle/:id', adminAuth.isAdmin, categoryController.toggleCategoryListing);
-router.delete('/categories/delete/:id', adminAuth.isAdmin, categoryController.deleteCategory);
+router.patch('/categories/soft-delete/:id', adminAuth.isAdmin, categoryController.softDeleteCategory);
+router.patch('/categories/restore/:id', adminAuth.isAdmin, categoryController.restoreCategory);
+router.delete('/categories/hard-delete/:id', adminAuth.isAdmin, categoryController.hardDeleteCategory);
+router.patch('/categories/block/:id', adminAuth.isAdmin, categoryController.blockCategory);
+router.patch('/categories/unblock/:id', adminAuth.isAdmin, categoryController.unblockCategory);
 
 // Product Management
 router.get('/products', adminAuth.isAdmin, productController.loadProductPage);
@@ -62,6 +68,9 @@ router.post('/edit-product/:id', adminAuth.isAdmin, upload.fields([
     { name: 'v5_image1', maxCount: 1 }, { name: 'v5_image2', maxCount: 1 }, { name: 'v5_image3', maxCount: 1 }, { name: 'v5_image4', maxCount: 1 }, { name: 'v5_image5', maxCount: 1 }
 ]), productController.updateProduct);
 router.delete('/delete-product/:id', adminAuth.isAdmin, productController.deleteProduct);
+router.patch('/products/soft-delete/:id', adminAuth.isAdmin, productController.softDeleteProduct);
+router.patch('/products/restore/:id', adminAuth.isAdmin, productController.restoreProduct);
+router.delete('/products/hard-delete/:id', adminAuth.isAdmin, productController.hardDeleteProduct);
 router.patch('/block-product/:id', adminAuth.isAdmin, productController.blockProduct);
 router.patch('/unblock-product/:id', adminAuth.isAdmin, productController.unblockProduct);
 
@@ -82,7 +91,11 @@ router.delete('/delete-banner/:id', adminAuth.isAdmin, bannerController.deleteBa
 // Color Management
 router.get('/colors', adminAuth.isAdmin, colorController.getColorsPage);
 router.post('/colors/add', adminAuth.isAdmin, colorController.addColor);
-router.delete('/colors/delete/:id', adminAuth.isAdmin, colorController.deleteColor);
+router.patch('/colors/soft-delete/:id', adminAuth.isAdmin, colorController.softDeleteColor);
+router.patch('/colors/restore/:id', adminAuth.isAdmin, colorController.restoreColor);
+router.delete('/colors/hard-delete/:id', adminAuth.isAdmin, colorController.hardDeleteColor);
+router.patch('/colors/block/:id', adminAuth.isAdmin, colorController.blockColor);
+router.patch('/colors/unblock/:id', adminAuth.isAdmin, colorController.unblockColor);
 
 // Order Management
 router.get('/orders', adminAuth.isAdmin, orderController.getOrders);

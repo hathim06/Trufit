@@ -64,10 +64,46 @@ const toggleCategoryListing = async (req, res) => {
     }
 };
 
-const deleteCategory = async (req, res) => {
+const softDeleteCategory = async (req, res) => {
     try {
-        await categoryService.deleteCategoryService(req.params.id);
-        res.json({ success: true });
+        await categoryService.softDeleteCategoryService(req.params.id);
+        res.json({ success: true, message: 'Category soft deleted successfully' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const restoreCategory = async (req, res) => {
+    try {
+        await categoryService.restoreCategoryService(req.params.id);
+        res.json({ success: true, message: 'Category restored successfully' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const hardDeleteCategory = async (req, res) => {
+    try {
+        await categoryService.hardDeleteCategoryService(req.params.id);
+        res.json({ success: true, message: 'Category permanently deleted' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const blockCategory = async (req, res) => {
+    try {
+        await categoryService.blockCategoryService(req.params.id);
+        res.json({ success: true, message: 'Category blocked successfully' });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+const unblockCategory = async (req, res) => {
+    try {
+        await categoryService.unblockCategoryService(req.params.id);
+        res.json({ success: true, message: 'Category unblocked successfully' });
     } catch (error) {
         res.json({ success: false, message: error.message });
     }
@@ -80,5 +116,9 @@ export default {
     loadEditCategory,
     updateCategory,
     toggleCategoryListing,
-    deleteCategory
+    softDeleteCategory,
+    restoreCategory,
+    hardDeleteCategory,
+    blockCategory,
+    unblockCategory
 };

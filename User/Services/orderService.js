@@ -3,6 +3,7 @@ import cartModel from '../models/cartModel.js';
 import variantModel from '../models/variants.js';
 import productModel from '../models/productModel.js';
 import addressModel from '../models/addressModel.js';
+import categoryModel from '../models/categoryModel.js';
 import mongoose from 'mongoose';
 
 const generateOrderId = () => {
@@ -20,6 +21,18 @@ const createOrder = async (userId, addressId, paymentMethod) => {
             throw new Error('Cart is empty');
         }
 
+        for (const cartItem of cart.items) {
+            const product = cartItem.productId;
+            
+            if (!product || product.isDeleted || !product.status || product.status.toLowerCase() !== 'active') {
+                throw new Error(`Product "${product?.name || 'Unknown'}" is no longer available`);
+            }
+            
+            const category = await categoryModel.findById(product.categoryId);
+            if (!category || !category.isListed) {
+                throw new Error(`Product "${product.name}" category is no longer available`);
+            }
+        }
 
         const address = await addressModel.findById(addressId);
         if (!address) {
@@ -127,21 +140,80 @@ const cancelOrder = async (orderId, userId) => {
 
 
         for (const item of order.items) {
-            if (item.variantId) {
-                await variantModel.findByIdAndUpdate(item.variantId, {
-                    $inc: { quantity: item.quantity }
-                }, { session });
-                await productModel.findByIdAndUpdate(item.productId, {
-                    $inc: { quantity: item.quantity }
-                }, { session });
-            } else {
-                await productModel.findByIdAndUpdate(item.productId, {
-                    $inc: { quantity: item.quantity }
-                }, { session });
+            if (item.status !== 'Cancelled') {
+                if (item.variantId) {
+                    await variantModel.findByIdAndUpdate(item.variantId, {
+                        $inc: { quantity: item.quantity }
+                    }, { session });
+                    await productModel.findByIdAndUpdate(item.productId, {
+                        $inc: { quantity: item.quantity }
+                    }, { session });
+                } else {
+                    await productModel.findByIdAndUpdate(item.productId, {
+                        $inc: { quantity: item.quantity }
+                    }, { session });
+                }
+                item.status = 'Cancelled';
             }
         }
 
         order.orderStatus = 'Cancelled';
+        await order.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+        return order;
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+};
+
+const cancelOrderItem = async (orderId, itemId, userId, reason = '') => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const order = await orderModel.findOne({ _id: orderId, userId });
+        if (!order) throw new Error('Order not found');
+
+        if (order.orderStatus === 'Cancelled' || order.orderStatus === 'Delivered') {
+            throw new Error(`Order cannot be cancelled in its current state: ${order.orderStatus}`);
+        }
+
+        const item = order.items.find(i => i._id.toString() === itemId.toString());
+        if (!item) throw new Error('Item not found in order');
+
+        if (item.status === 'Cancelled') {
+            throw new Error('Item is already cancelled');
+        }
+
+        if (item.variantId) {
+            await variantModel.findByIdAndUpdate(item.variantId, {
+                $inc: { quantity: item.quantity }
+            }, { session });
+            await productModel.findByIdAndUpdate(item.productId, {
+                $inc: { quantity: item.quantity }
+            }, { session });
+        } else {
+            await productModel.findByIdAndUpdate(item.productId, {
+                $inc: { quantity: item.quantity }
+            }, { session });
+        }
+
+        item.status = 'Cancelled';
+        item.cancellationReason = reason;
+
+        const itemTotal = item.price * item.quantity;
+        order.subtotal = Math.max(0, order.subtotal - itemTotal);
+        order.totalAmount = Math.max(0, order.totalAmount - itemTotal);
+
+        const allCancelled = order.items.every(i => i.status === 'Cancelled');
+        if (allCancelled) {
+            order.orderStatus = 'Cancelled';
+        }
+
         await order.save({ session });
 
         await session.commitTransaction();
@@ -162,13 +234,36 @@ const returnOrder = async (orderId, userId, reason) => {
         throw new Error('Only delivered orders can be returned');
     }
 
-    order.orderStatus = 'Returned';
+    order.orderStatus = 'Return Pending';
     order.returnReason = reason;
+    return await order.save();
+};
+
+const returnOrderItem = async (orderId, itemId, userId, reason) => {
+    const order = await orderModel.findOne({ _id: orderId, userId });
+    if (!order) throw new Error('Order not found');
+
+    if (order.orderStatus !== 'Delivered') {
+        throw new Error('Only delivered orders can have items returned');
+    }
+
+    const item = order.items.find(i => i._id.toString() === itemId.toString());
+    if (!item) throw new Error('Item not found in order');
+
+    if (item.status === 'Cancelled') throw new Error('Cancelled items cannot be returned');
+    if (item.status === 'Return Pending' || item.status === 'Returned') {
+        throw new Error('Item is already pending return or returned');
+    }
+
+    item.status = 'Return Pending';
+    item.cancellationReason = reason;
     return await order.save();
 };
 
 export default {
     createOrder,
     cancelOrder,
-    returnOrder
+    cancelOrderItem,
+    returnOrder,
+    returnOrderItem
 };

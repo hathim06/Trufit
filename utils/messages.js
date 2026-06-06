@@ -29,5 +29,9 @@ export const MESSAGES = {
     PRODUCT_DELETED: 'Product deleted successfully',
     PRODUCT_DELETE_FAILED: 'Failed to delete product',
     USER_DELETED: 'User deleted successfully',
-    ADDRESS_PAYMENT_REQUIRED: 'Address and Payment method are required'
+    ADDRESS_PAYMENT_REQUIRED: 'Address and Payment method are required',
+    RETURN_REJECTED: 'Your return request has been rejected',
+    RETURN_APPROVED: 'Your return request has been approved',
+    PRODUCT_UNAVAILABLE: 'Product is no longer available',
+    CATEGORY_UNAVAILABLE: 'Product category is no longer available'
 };

@@ -146,6 +146,8 @@
                         <div class="profile-main-content">
                             <h1>ADD ADDRESS</h1>
                     <form action="/address/add" method="POST" class="form-grid">
+                        <!-- Hidden redirect parameter -->
+                        <input type="hidden" name="redirect" value="<%= typeof redirect !== 'undefined' && redirect ? redirect : '/address' %>">
                         <div class="form-group full-width">
                             <label>Full Name <span>*</span></label>
                             <span id="name-error" class="error-message"></span>
@@ -187,8 +189,9 @@
                             <label for="isDefault" style="margin: 0;">Set as Default Address</label>
                         </div>
 
-                        <div class="submit-btn-container">
+                        <div class="submit-btn-container" style="display: flex; gap: 15px; justify-content: center;">
                             <button type="submit" class="submit-btn">ADD ADDRESS</button>
+                            <button type="button" class="submit-btn" style="background: #6B7280;" onclick="history.back()">CANCEL</button>
                         </div>
                     </form>
                         </div> <!-- profile-main-content -->

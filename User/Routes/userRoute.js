@@ -18,6 +18,7 @@ router.post('/reset-password', userController.resetPassword);
 router.get('/verify-otp', userAuth.isLoggedOut, userController.loadOtpPage);
 router.post('/verify-otp', userAuth.isLoggedOut, userController.verifyOtp);
 router.get('/resend-otp', userController.resendOtp);
+router.get('/resend-reset-otp', userController.resendResetOtp);
 router.get('/profile', userAuth.isLoggedIn, userController.loadProfile);
 router.get('/edit-profile', userAuth.isLoggedIn, userController.loadEditProfile);
 router.post('/edit-profile', userAuth.isLoggedIn, userController.editProfile);

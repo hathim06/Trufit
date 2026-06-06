@@ -3,116 +3,460 @@
 
 <%- include('partials/head') %>
     <style>
-        /* 4. Hero Section */
-        /* Dynamic Hero Slider */
-        .hero-slider {
+        /* =============================================
+           3-SCENE SCROLL-DRIVEN HERO ANIMATION
+           ============================================= */
+
+        /* Tall scroll container — 3 scenes × ~267vh each */
+        .watch-scroll-section {
             position: relative;
-            width: 100%;
-            height: 600px;
+            height: 900vh;
+            background: transparent;
+            /* Break out of any parent padding/max-width */
+            width: 100vw;
+            margin-left: calc(-50vw + 50%);
+        }
+
+        /* Sticky viewport that stays pinned while user scrolls */
+        .watch-sticky-wrap {
+            position: sticky;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            min-height: 600px;
             overflow: hidden;
             background: #000;
-        }
-
-        .slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 1s ease-in-out, visibility 1s;
             display: flex;
             align-items: center;
+            justify-content: center;
         }
 
-        .slide.active {
-            opacity: 1;
-            visibility: visible;
+        /* Animated scene background (colour tint shifts per scene) */
+        .scene-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            transition: background 1.2s ease;
+            background: radial-gradient(ellipse at 50% 60%, #0a1628 0%, #04080f 55%, #000 100%);
         }
 
-        .slide-bg {
+        /* Ambient glow behind the watch */
+        .watch-glow {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .watch-glow::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(30,100,255,0.18) 0%, rgba(0,200,255,0.08) 40%, transparent 70%);
+            animation: glowPulse 4s ease-in-out infinite;
+            border-radius: 50%;
+        }
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.6; transform: translate(-50%,-50%) scale(1); }
+            50%       { opacity: 1;   transform: translate(-50%,-50%) scale(1.12); }
+        }
+
+        /* Floating particles */
+        .watch-particles {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(100,180,255,0.5);
+            animation: floatParticle linear infinite;
+        }
+        @keyframes floatParticle {
+            0%   { transform: translateY(110vh) scale(0.5); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 0.6; }
+            100% { transform: translateY(-15vh) scale(1.1); opacity: 0; }
+        }
+
+        /* Ambient glow ring */
+        .watch-glow {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .watch-glow::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 70vw; height: 70vw;
+            max-width: 800px; max-height: 800px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(30,100,255,0.2) 0%, rgba(0,200,255,0.07) 45%, transparent 70%);
+            animation: glowPulse 4s ease-in-out infinite;
+        }
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.5; transform: translate(-50%,-50%) scale(1); }
+            50%       { opacity: 1;   transform: translate(-50%,-50%) scale(1.1); }
+        }
+
+        /* ── PRODUCT IMAGE LAYER ── */
+        .product-stage {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Canvas rendering the watch frames — true full viewport */
+        .scene-canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            display: block;
+            will-change: transform;
+            filter: drop-shadow(0 30px 80px rgba(20,100,255,0.28)) drop-shadow(0 0 60px rgba(0,200,255,0.13));
         }
 
-        .slide-bg img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: brightness(0.7);
-        }
-
-        .slide-content {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            color: #fff;
-        }
-
-        .slide-content h1 {
-            font-size: 64px;
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 20px;
-            transform: translateY(30px);
-            opacity: 0;
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
-        }
-
-        .slide-content p {
-            font-size: 20px;
-            color: #D1D5DB;
-            margin-bottom: 40px;
-            max-width: 600px;
-            transform: translateY(30px);
-            opacity: 0;
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.5s;
-        }
-
-        .slide-content .btn {
-            transform: translateY(30px);
-            opacity: 0;
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.7s;
-        }
-
-        .slide.active .slide-content h1,
-        .slide.active .slide-content p,
-        .slide.active .slide-content .btn {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .slider-nav {
+        /* ── TEXT PANELS ── */
+        /* Each panel is absolutely positioned; JS drives opacity + translateY directly */
+        .text-panel {
             position: absolute;
-            bottom: 30px;
+            z-index: 5;
+            left: 5%;
+            bottom: 12%;
+            max-width: 420px;
+            opacity: 0;
+            transform: translateY(40px);
+            will-change: transform, opacity;
+            pointer-events: none;
+        }
+        .text-panel .tp-eyebrow {
+            font-size: 10px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(100,180,255,0.85);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .text-panel h2 {
+            font-size: clamp(26px, 4.5vw, 58px);
+            font-weight: 800;
+            line-height: 1.08;
+            margin-bottom: 14px;
+            background: linear-gradient(135deg, #fff 0%, #cce2ff 55%, #7ab8ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .text-panel .tp-desc {
+            font-size: 15px;
+            color: rgba(200,225,255,0.65);
+            line-height: 1.75;
+            margin-bottom: 28px;
+            -webkit-text-fill-color: rgba(200,225,255,0.65);
+        }
+        .tp-cta {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .tp-btn-primary {
+            display: inline-block;
+            padding: 13px 30px;
+            background: linear-gradient(135deg, #1a6bff, #0097ff);
+            color: #fff;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            box-shadow: 0 8px 28px rgba(26,107,255,0.45);
+            transition: transform 0.22s, box-shadow 0.22s;
+        }
+        .tp-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(26,107,255,0.65); color:#fff; }
+        .tp-btn-outline {
+            display: inline-block;
+            padding: 13px 30px;
+            border: 1.5px solid rgba(255,255,255,0.22);
+            color: rgba(255,255,255,0.85);
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.04);
+            transition: all 0.22s;
+        }
+        .tp-btn-outline:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.45); color:#fff; transform:translateY(-3px); }
+
+        /* ── SPEC BADGES (right side) ── */
+        .hero-specs-wrap {
+            position: absolute;
+            z-index: 5;
+            right: 5%;
+            bottom: 12%;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            align-items: flex-end;
+            opacity: 0;
+            transform: translateY(30px);
+            will-change: transform, opacity;
+        }
+        .spec-badge {
+            background: rgba(255,255,255,0.055);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-radius: 14px;
+            padding: 11px 20px;
+            text-align: right;
+            min-width: 140px;
+        }
+        .spec-badge .spec-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+        .spec-badge .spec-lbl {
+            font-size: 10px;
+            color: rgba(160,200,255,0.7);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        /* ── SCENE DOT INDICATORS ── */
+        .scene-dots {
+            position: absolute;
+            z-index: 6;
+            right: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .scene-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            transition: all 0.4s ease;
+            cursor: default;
+        }
+        .scene-dot.active {
+            background: #fff;
+            height: 22px;
+            border-radius: 4px;
+        }
+
+        /* ── SCROLL PROGRESS BAR ── */
+        .scroll-progress-bar {
+            position: absolute;
+            bottom: 0; left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #1a6bff, #00d4ff);
+            z-index: 10;
+            width: 0%;
+            transition: width 0.04s linear;
+        }
+
+        /* ── SCROLL HINT ── */
+        .scroll-hint {
+            position: absolute;
+            bottom: 26px;
+            left: 50%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: rgba(255,255,255,0.35);
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            animation: bounceDown 2s ease-in-out infinite;
+            transition: opacity 0.5s;
+        }
+        .scroll-hint svg { width: 18px; height: 18px; stroke: rgba(255,255,255,0.35); }
+        @keyframes bounceDown {
+            0%,100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* ── SCENE TITLE TICKER (top-centre) ── */
+        .scene-label {
+            position: absolute;
+            top: 28px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 3;
-            display: flex;
-            gap: 15px;
+            z-index: 6;
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            white-space: nowrap;
+            transition: opacity 0.5s;
         }
 
-        .slider-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-            transition: all 0.3s;
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            .text-panel { left: 4%; max-width: 360px; bottom: 10%; }
+            .hero-specs-wrap { display: none; }
+        }
+        @media (max-width: 600px) {
+            .text-panel { left: 4%; right: 4%; max-width: 100%; bottom: 8%; }
+            .text-panel h2 { font-size: 32px; }
         }
 
-        .slider-dot.active {
-            background: #fff;
-            width: 30px;
-            border-radius: 10px;
+        /* =============================================
+           SCROLL-TRIGGERED SECTION ANIMATIONS
+           ============================================= */
+
+        /* Base invisible state — elements start hidden & shifted down */
+        .anim-fade-up {
+            opacity: 0;
+            transform: translateY(48px);
+            transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1),
+                        transform 0.7s cubic-bezier(0.22,1,0.36,1);
+        }
+        .anim-fade-up.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Slide in from left */
+        .anim-slide-left {
+            opacity: 0;
+            transform: translateX(-56px);
+            transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1),
+                        transform 0.7s cubic-bezier(0.22,1,0.36,1);
+        }
+        .anim-slide-left.is-visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Slide in from right */
+        .anim-slide-right {
+            opacity: 0;
+            transform: translateX(56px);
+            transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1),
+                        transform 0.7s cubic-bezier(0.22,1,0.36,1);
+        }
+        .anim-slide-right.is-visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Scale pop-in */
+        .anim-scale-in {
+            opacity: 0;
+            transform: scale(0.82);
+            transition: opacity 0.65s cubic-bezier(0.34,1.56,0.64,1),
+                        transform 0.65s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .anim-scale-in.is-visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Stagger delays via nth-child (up to 8 children) */
+        .stagger-children > *:nth-child(1) { transition-delay: 0.00s; }
+        .stagger-children > *:nth-child(2) { transition-delay: 0.10s; }
+        .stagger-children > *:nth-child(3) { transition-delay: 0.20s; }
+        .stagger-children > *:nth-child(4) { transition-delay: 0.30s; }
+        .stagger-children > *:nth-child(5) { transition-delay: 0.40s; }
+        .stagger-children > *:nth-child(6) { transition-delay: 0.50s; }
+        .stagger-children > *:nth-child(7) { transition-delay: 0.60s; }
+        .stagger-children > *:nth-child(8) { transition-delay: 0.70s; }
+
+        /* Section title reveal — underline sweep */
+        .section-title-reveal {
+            position: relative;
+            display: inline-block;
+        }
+        .section-title-reveal::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: -4px;
+            width: 0; height: 3px;
+            background: linear-gradient(90deg, #1a6bff, #00d4ff);
+            border-radius: 2px;
+            transition: width 0.8s cubic-bezier(0.22,1,0.36,1) 0.35s;
+        }
+        .section-title-reveal.is-visible::after {
+            width: 100%;
+        }
+
+        /* Category card hover enhanced */
+        .category-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .category-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26,107,255,0.06) 0%, rgba(0,212,255,0.04) 100%);
+            opacity: 0;
+            transition: opacity 0.35s ease;
+            border-radius: inherit;
+        }
+        .category-card:hover::before { opacity: 1; }
+
+        /* Product card shimmer line on hover */
+        .product-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .product-card::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -75%;
+            width: 50%;
+            height: 200%;
+            background: linear-gradient(120deg,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.18) 50%,
+                rgba(255,255,255,0) 100%);
+            transform: skewX(-20deg);
+            transition: left 0.55s ease;
+            pointer-events: none;
+        }
+        .product-card:hover::after { left: 130%; }
+
+        /* Service icon spin on hover */
+        .service-icon {
+            transition: background 0.3s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .service-item:hover .service-icon {
+            background: linear-gradient(135deg, #1a6bff22, #00d4ff22);
+            transform: rotate(8deg) scale(1.12);
+        }
+
+        /* Testimonial card subtle lift on hover */
+        .testimonial-card {
+            transition: transform 0.35s cubic-bezier(0.22,1,0.36,1),
+                        box-shadow 0.35s ease;
+        }
+        .testimonial-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 48px rgba(0,0,0,0.09);
         }
 
         /* 5. Categories Section */
@@ -129,12 +473,13 @@
             display: flex;
             align-items: center;
             gap: 20px;
-            transition: var(--transition);
+            transition: transform 0.35s cubic-bezier(0.22,1,0.36,1),
+                        box-shadow 0.35s ease;
         }
 
         .category-card:hover {
             transform: translateY(-10px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 12px 36px rgba(26,107,255,0.1);
         }
 
         .category-card .card-image {
@@ -535,55 +880,110 @@
         <%- include('partials/header') %>
 
             <main>
-                <!-- Hero Slider Section -->
-                <section class="hero-slider">
-                    <% if (banners && banners.length> 0) { %>
-                        <% banners.forEach((banner, index)=> { %>
-                            <div class="slide <%= index === 0 ? 'active' : '' %>" data-index="<%= index %>">
-                                <div class="slide-bg">
-                                    <img src="/<%= banner.image %>" alt="<%= banner.title %>">
-                                </div>
-                                <div class="slide-content">
-                                    <h1>
-                                        <%= banner.title %>
-                                    </h1>
-                                    <% if (banner.subtitle) { %>
-                                        <p>
-                                            <%= banner.subtitle %>
-                                        </p>
-                                        <% } %>
-                                            <a href="<%= banner.link || '/shop' %>" class="btn btn-primary">SHOP NOW</a>
-                                </div>
+                <!-- =============================================
+                     3-SCENE SCROLL-DRIVEN HERO ANIMATION
+                     ============================================= -->
+                <section class="watch-scroll-section" id="watchScrollSection">
+                    <div class="watch-sticky-wrap" id="watchStickyWrap">
+
+                        <!-- Animated background tint -->
+                        <div class="scene-bg" id="sceneBg"></div>
+
+                        <!-- Ambient glow ring -->
+                        <div class="watch-glow"></div>
+
+                        <!-- Floating particles -->
+                        <div class="watch-particles" id="watchParticles"></div>
+
+                        <!-- Scene label (top centre) -->
+                        <div class="scene-label" id="sceneLabel">Trufit · Rugged Series</div>
+
+                        <!-- ════════════════════════════════════
+                             PRODUCT STAGE — HTML5 canvas rendering
+                             ════════════════════════════════════ -->
+                        <div class="product-stage">
+                            <canvas id="watchCanvas" class="scene-canvas"></canvas>
+                        </div>
+
+                        <!-- ════════════════════════════════════
+                             TEXT PANELS — one per scene
+                             ════════════════════════════════════ -->
+
+                        <!-- Panel 1: Rugged / Military -->
+                        <div class="text-panel" id="textPanel1">
+                            <p class="tp-eyebrow">Trufit · Rugged Series</p>
+                            <h2>Built for the<br>Bold &amp; Fearless</h2>
+                            <p class="tp-desc">Military-grade toughness meets luxury design.<br>The ultimate rugged smartwatch experience.</p>
+                            <div class="tp-cta">
+                                <a href="/shop" class="tp-btn-primary" id="heroShopBtn">Shop Now</a>
+                                <a href="/shop" class="tp-btn-outline">Explore Collection</a>
                             </div>
-                            <% }) %>
-                                <div class="slider-nav">
-                                    <% banners.forEach((_, index)=> { %>
-                                        <div class="slider-dot <%= index === 0 ? 'active' : '' %>"
-                                            data-index="<%= index %>"></div>
-                                        <% }) %>
-                                </div>
-                                <% } else { %>
-                                    <!-- Fallback Static Banner -->
-                                    <div class="slide active">
-                                        <div class="slide-bg">
-                                            <img src="public/apple_smart_3.png" alt="Featured Smartwatch"
-                                                style="background: #111;">
-                                        </div>
-                                        <div class="slide-content">
-                                            <h1>Discover Most Suitable Watches</h1>
-                                            <p>Find the best, reliable, and cheap smart watches here. We focus on
-                                                product quality.</p>
-                                            <a href="/shop" class="btn btn-primary">ORDER NOW</a>
-                                        </div>
-                                    </div>
-                                    <% } %>
+                        </div>
+
+                        <!-- Panel 2: Premium / Apple -->
+                        <div class="text-panel" id="textPanel2">
+                            <p class="tp-eyebrow">Trufit · Premium Series</p>
+                            <h2>Precision Meets<br>Elegance</h2>
+                            <p class="tp-desc">Ultra-thin profile. Advanced health sensors.<br>The perfect fusion of style and technology.</p>
+                            <div class="tp-cta">
+                                <a href="/shop" class="tp-btn-primary">Discover More</a>
+                                <a href="/shop" class="tp-btn-outline">View Specs</a>
+                            </div>
+                        </div>
+
+                        <!-- Panel 3: Fitness / Performance -->
+                        <div class="text-panel" id="textPanel3">
+                            <p class="tp-eyebrow">Trufit · Fitness Pro</p>
+                            <h2>Track Every<br>Achievement</h2>
+                            <p class="tp-desc">Advanced biometric tracking for peak athletes.<br>Heart rate, SpO₂, GPS and beyond.</p>
+                            <div class="tp-cta">
+                                <a href="/shop" class="tp-btn-primary">Shop Fitness</a>
+                                <a href="/shop" class="tp-btn-outline">Compare All</a>
+                            </div>
+                        </div>
+
+                        <!-- Spec badges (per scene, right side) -->
+                        <div class="hero-specs-wrap" id="heroSpecsWrap">
+                            <div class="spec-badge" id="specA">
+                                <div class="spec-val" id="specAVal">100M</div>
+                                <div class="spec-lbl" id="specALbl">Water Resistant</div>
+                            </div>
+                            <div class="spec-badge" id="specB">
+                                <div class="spec-val" id="specBVal">14d</div>
+                                <div class="spec-lbl" id="specBLbl">Battery Life</div>
+                            </div>
+                            <div class="spec-badge" id="specC">
+                                <div class="spec-val" id="specCVal">MIL</div>
+                                <div class="spec-lbl" id="specCLbl">Grade 810H</div>
+                            </div>
+                        </div>
+
+                        <!-- Scene dot indicators -->
+                        <div class="scene-dots">
+                            <div class="scene-dot active" id="dot0"></div>
+                            <div class="scene-dot" id="dot1"></div>
+                            <div class="scene-dot" id="dot2"></div>
+                        </div>
+
+                        <!-- Scroll progress bar -->
+                        <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+
+                        <!-- Scroll hint -->
+                        <div class="scroll-hint" id="scrollHint">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                            SCROLL
+                        </div>
+
+                    </div>
                 </section>
 
                 <!-- Categories Section -->
                 <section class="categories section-spacing">
                     <div class="container">
-                        <div class="category-grid">
-                            <div class="category-card">
+                        <div class="category-grid stagger-children" id="categoryGrid">
+                            <div class="category-card anim-slide-left">
                                 <div class="card-image">
                                     <img src="public/apple_smart_2.png" alt="Apple Watch">
                                 </div>
@@ -592,7 +992,7 @@
                                     <p>Apple is one of the most famous smart watches providing company.</p>
                                 </div>
                             </div>
-                            <div class="category-card">
+                            <div class="category-card anim-fade-up">
                                 <div class="card-image">
                                     <img src="public/apple_smart_2.png" alt="Xiaomi Watch">
                                 </div>
@@ -601,7 +1001,7 @@
                                     <p>Xiaomi smart watches are produced by MI company.</p>
                                 </div>
                             </div>
-                            <div class="category-card">
+                            <div class="category-card anim-slide-right">
                                 <div class="card-image">
                                     <img src="public/fitbit_max_1.png" alt="FitBit Watch">
                                 </div>
@@ -617,14 +1017,14 @@
                 <!-- Product Section -->
                 <section class="products section-spacing">
                     <div class="container">
-                        <div class="section-title">
+                        <div class="section-title anim-fade-up" id="productSectionTitle">
                             <p>Find your favourite smart watch.</p>
-                            <h2>Our Latest Products</h2>
+                            <h2 class="section-title-reveal" id="productTitleReveal">Our Latest Products</h2>
                         </div>
-                        <div class="product-grid">
+                        <div class="product-grid stagger-children" id="productGrid">
                             <% if (products && products.length> 0) { %>
                                 <% products.forEach(product=> { %>
-                                    <div class="product-card">
+                                    <div class="product-card anim-scale-in">
                                         <a href="/product/<%= product._id %>"
                                             style="text-decoration: none; color: inherit;">
                                             <div class="product-image">
@@ -675,7 +1075,7 @@
                                             <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                                                 <p>No products featured on the home page yet.</p>
                                             </div>
-                                            <% } %>
+                                        <% } %>
                         </div>
                         <div class="view-more">
                             <a href="/shop" class="btn btn-primary-outline">View More</a>
@@ -686,19 +1086,18 @@
                 <!-- Testimonials Section -->
                 <section class="testimonials section-spacing">
                     <div class="container">
-                        <div class="section-title">
+                        <div class="section-title anim-fade-up" id="testimonialSectionTitle">
                             <p>Here are our some of the best clients.</p>
-                            <h2>What People Say About Us</h2>
+                            <h2 class="section-title-reveal" id="testimonialTitleReveal">What People Say About Us</h2>
                         </div>
-                        <div class="testimonial-grid">
-                            <div class="testimonial-card">
+                        <div class="testimonial-grid stagger-children" id="testimonialGrid">
+                            <div class="testimonial-card anim-slide-left">
                                 <div class="user-img">
                                     <img src="public/avatar1.png" alt="Hamza Faizi">
                                 </div>
                                 <div class="testimonial-content">
                                     <h3>Hamza Faizi</h3>
-                                    <p>Don’t waste time, just order! This is the best website to purchase smart watches.
-                                    </p>
+                                    <p>Don't waste time, just order! This is the best website to purchase smart watches.</p>
                                     <div class="rating">
                                         <i data-lucide="star" class="filled"></i>
                                         <i data-lucide="star" class="filled"></i>
@@ -708,16 +1107,13 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="testimonial-card">
+                            <div class="testimonial-card anim-slide-right">
                                 <div class="user-img">
                                     <img src="public/avatar2.png" alt="Hafiz Huzaifa">
                                 </div>
                                 <div class="testimonial-content">
                                     <h3>Hafiz Huzaifa</h3>
-                                    <p>I’ve been purchasing smart watches of Trufit for a long time. All the products
-                                        are
-                                        good
-                                        quality.</p>
+                                    <p>I've been purchasing smart watches of Trufit for a long time. All the products are good quality.</p>
                                     <div class="rating">
                                         <i data-lucide="star" class="filled"></i>
                                         <i data-lucide="star" class="filled"></i>
@@ -740,34 +1136,34 @@
                 <!-- Services Section -->
                 <section class="services section-spacing">
                     <div class="container">
-                        <div class="services-title">
+                        <div class="services-title anim-fade-up" id="servicesSectionTitle">
                             <div class="line"></div>
                             <h2>OUR SERVICE</h2>
                             <div class="line"></div>
                         </div>
-                        <div class="services-grid">
-                            <div class="service-item">
+                        <div class="services-grid stagger-children" id="servicesGrid">
+                            <div class="service-item anim-scale-in">
                                 <div class="service-icon">
                                     <i data-lucide="percent"></i>
                                 </div>
                                 <h3>5 % OFF</h3>
                                 <p>5 % OFF on Pre-paid orders</p>
                             </div>
-                            <div class="service-item">
+                            <div class="service-item anim-scale-in">
                                 <div class="service-icon">
                                     <i data-lucide="truck"></i>
                                 </div>
                                 <h3>SHIPPING WITHIN 48 HOURS</h3>
                                 <p>Your order will be shipped within 48 hours from the time since order is placed</p>
                             </div>
-                            <div class="service-item">
+                            <div class="service-item anim-scale-in">
                                 <div class="service-icon">
                                     <i data-lucide="shield-check"></i>
                                 </div>
                                 <h3>Quality Assurance</h3>
                                 <p>Crafted with quality and care in India, from raw materials to the final product.</p>
                             </div>
-                            <div class="service-item">
+                            <div class="service-item anim-scale-in">
                                 <div class="service-icon">
                                     <i data-lucide="clock"></i>
                                 </div>
@@ -784,41 +1180,423 @@
                 <script>
                     lucide.createIcons();
 
-                    // Hero Slider Logic
-                    const slides = document.querySelectorAll('.slide');
-                    const dots = document.querySelectorAll('.slider-dot');
-                    let currentSlide = 0;
-                    let slideInterval;
+                    /* ╔═══════════════════════════════════════════╗
+                       ║  3-SCENE SCROLL-DRIVEN HERO ANIMATION     ║
+                       ║  Scene 1: 186 PNG frames (watch1)         ║
+                       ║  Scene 2: 192 PNG frames (watch2)         ║
+                       ║  Scene 3: 192 PNG frames (watch3)         ║
+                       ╚═══════════════════════════════════════════╝ */
+                    (function () {
+                        'use strict';
 
-                    function showSlide(n) {
-                        slides.forEach(s => s.classList.remove('active'));
-                        dots.forEach(d => d.classList.remove('active'));
+                        // ── DOM refs ──────────────────────────────────
+                        const section   = document.getElementById('watchScrollSection');
+                        const canvas    = document.getElementById('watchCanvas');
+                        const panel1    = document.getElementById('textPanel1');
+                        const panel2    = document.getElementById('textPanel2');
+                        const panel3    = document.getElementById('textPanel3');
+                        const specsWrap = document.getElementById('heroSpecsWrap');
+                        const specAVal  = document.getElementById('specAVal');
+                        const specALbl  = document.getElementById('specALbl');
+                        const specBVal  = document.getElementById('specBVal');
+                        const specBLbl  = document.getElementById('specBLbl');
+                        const specCVal  = document.getElementById('specCVal');
+                        const specCLbl  = document.getElementById('specCLbl');
+                        const progBar   = document.getElementById('scrollProgressBar');
+                        const hint      = document.getElementById('scrollHint');
+                        const sceneBg   = document.getElementById('sceneBg');
+                        const sceneLabel = document.getElementById('sceneLabel');
+                        const dots      = [document.getElementById('dot0'),
+                                           document.getElementById('dot1'),
+                                           document.getElementById('dot2')];
 
-                        currentSlide = (n + slides.length) % slides.length;
+                        // ── Config ───────────────────────────────────
+                        // Scene scroll boundaries (0–1)
+                        const S1_END = 0.38;   // Scene 1 occupies 0 → 38%
+                        const S2_END = 0.70;   // Scene 2 occupies 38% → 70%
+                        // Scene 3: 70% → 100%
 
-                        slides[currentSlide].classList.add('active');
-                        dots[currentSlide].classList.add('active');
-                    }
+                        const SPECS = [
+                            { a:['100M','Water Resist'], b:['14d','Battery Life'],  c:['MIL','Grade 810H'] },
+                            { a:['50M', 'Water Resist'], b:['18h','Battery Life'],  c:['ECG','+ Blood O₂'] },
+                            { a:['5ATM','Water Resist'], b:['7d', 'Battery Life'],  c:['GPS','Multi-Band']  }
+                        ];
+                        const LABELS = [
+                            'Trufit · Rugged Series',
+                            'Trufit · Premium Series',
+                            'Trufit · Fitness Pro'
+                        ];
+                        const BG_COLORS = [
+                            'radial-gradient(ellipse at 50% 60%, #0a1628 0%, #04080f 55%, #000 100%)',
+                            'radial-gradient(ellipse at 40% 55%, #13082a 0%, #060411 55%, #000 100%)',
+                            'radial-gradient(ellipse at 60% 50%, #031a10 0%, #030b08 55%, #000 100%)'
+                        ];
 
-                    function nextSlide() {
-                        showSlide(currentSlide + 1);
-                    }
+                        const scenesConfig = [
+                            {
+                                path: '/public/banner/watch1/ezgif-frame-',
+                                total: 186,
+                                images: []
+                            },
+                            {
+                                path: '/public/banner/watch2/ezgif-frame-',
+                                total: 192,
+                                images: []
+                            },
+                            {
+                                path: '/public/banner/watch3/ezgif-frame-',
+                                total: 192,
+                                images: []
+                            }
+                        ];
 
-                    function startSlider() {
-                        if (slides.length > 1) {
-                            slideInterval = setInterval(nextSlide, 5000);
-                        }
-                    }
-
-                    dots.forEach((dot, index) => {
-                        dot.addEventListener('click', () => {
-                            clearInterval(slideInterval);
-                            showSlide(index);
-                            startSlider();
+                        // Initialize image objects for all scenes
+                        scenesConfig.forEach(scene => {
+                            for (let i = 1; i <= scene.total; i++) {
+                                const img = new Image();
+                                scene.images.push(img);
+                            }
                         });
-                    });
 
-                    startSlider();
+                        function getFrameUrl(sceneIdx, frameNum) {
+                            const config = scenesConfig[sceneIdx];
+                            return config.path + String(frameNum).padStart(3, '0') + '.png';
+                        }
+
+                        // ── Progressive Loading ──────────────────────
+                        // Phase 1: Load first frame of each scene immediately
+                        scenesConfig.forEach((scene, sceneIdx) => {
+                            const img = scene.images[0];
+                            img.onload = () => {
+                                if (sceneIdx === 0) {
+                                    renderActiveFrame();
+                                }
+                            };
+                            img.src = getFrameUrl(sceneIdx, 1);
+                        });
+
+                        // Phase 2 & 3 loading triggered after page loads
+                        window.addEventListener('load', () => {
+                            setTimeout(() => {
+                                loadKeyframes();
+                            }, 200);
+                        });
+
+                        // Load every 5th frame for low-res preview scroll coverage
+                        function loadKeyframes() {
+                            let loadedCount = 0;
+                            let totalKeyframes = 0;
+                            
+                            scenesConfig.forEach((scene, sceneIdx) => {
+                                for (let i = 1; i <= scene.total; i += 5) {
+                                    if (i === 1) continue; // Already loaded in Phase 1
+                                    totalKeyframes++;
+                                    const img = scene.images[i - 1];
+                                    img.onload = () => {
+                                        loadedCount++;
+                                        if (loadedCount === totalKeyframes) {
+                                            // Keyframes loaded, start loading remaining frames
+                                            loadRemainingFrames();
+                                        }
+                                    };
+                                    img.src = getFrameUrl(sceneIdx, i);
+                                }
+                            });
+                            
+                            if (totalKeyframes === 0) {
+                                loadRemainingFrames();
+                            }
+                        }
+
+                        // Load all remaining frames
+                        function loadRemainingFrames() {
+                            scenesConfig.forEach((scene, sceneIdx) => {
+                                for (let i = 1; i <= scene.total; i++) {
+                                    const img = scene.images[i - 1];
+                                    if (!img.src) {
+                                        img.src = getFrameUrl(sceneIdx, i);
+                                    }
+                                }
+                            });
+                        }
+
+                        // ── State ────────────────────────────────────
+                        let curPct = 0; // Current scroll percent (lerped)
+                        let tgtPct = 0; // Target scroll percent (raw)
+                        let rafId = null;
+                        let lastScene = -1;
+                        let sectionTop = 0;
+                        let sectionHeight = 0;
+
+                        function updateDimensions() {
+                            const rect = section.getBoundingClientRect();
+                            sectionTop = rect.top + window.scrollY;
+                            sectionHeight = section.offsetHeight;
+                        }
+
+                        // ── Helpers ──────────────────────────────────
+                        function lerp(a, b, t) { return a + (b - a) * t; }
+                        function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+                        function range(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+                        function updateTextPanelDirect(panel, sp) {
+                            let opacity = 0;
+                            let translateY = 50; // start 50px below
+
+                            if (sp < 0.15) {
+                                // Entering
+                                const t = range(sp, 0.0, 0.15);
+                                opacity = t;
+                                translateY = lerp(50, 0, t);
+                            } else if (sp <= 0.80) {
+                                // Active
+                                opacity = 1;
+                                translateY = 0;
+                            } else if (sp < 0.95) {
+                                // Exiting
+                                const t = range(sp, 0.80, 0.95);
+                                opacity = 1 - t;
+                                translateY = lerp(0, -50, t);
+                            } else {
+                                // Fully exited
+                                opacity = 0;
+                                translateY = -50;
+                            }
+
+                            panel.style.opacity = opacity;
+                            panel.style.transform = `translateY(${translateY}px)`;
+                            panel.style.pointerEvents = opacity > 0.1 ? 'all' : 'none';
+                        }
+
+                        function drawFrame(img) {
+                            if (!img) return;
+                            const ctx = canvas.getContext('2d');
+                            const cw = canvas.width;
+                            const ch = canvas.height;
+
+                            // Reset transform so we draw in physical pixel coordinates
+                            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+                            ctx.clearRect(0, 0, cw, ch);
+
+                            const iw = img.naturalWidth || img.width;
+                            const ih = img.naturalHeight || img.height;
+                            if (!iw || !ih) return;
+
+                            const aspect = iw / ih;
+                            let dw = cw;
+                            let dh = ch;
+                            let dx = 0;
+                            let dy = 0;
+
+                            // Cover aspect ratio scaling (Full Width & Height, cropped to fit)
+                            if (cw / ch > aspect) {
+                                dw = cw;
+                                dh = cw / aspect;
+                                dy = (ch - dh) / 2;
+                            } else {
+                                dw = ch * aspect;
+                                dh = ch;
+                                dx = (cw - dw) / 2;
+                            }
+
+                            ctx.drawImage(img, dx, dy, dw, dh);
+                        }
+
+                        function renderActiveFrame() {
+                            let sceneIdx = 0;
+                            let localPct = 0;
+
+                            if (curPct <= S1_END) {
+                                sceneIdx = 0;
+                                localPct = range(curPct, 0, S1_END);
+                            } else if (curPct <= S2_END) {
+                                sceneIdx = 1;
+                                localPct = range(curPct, S1_END, S2_END);
+                            } else {
+                                sceneIdx = 2;
+                                localPct = range(curPct, S2_END, 1.0);
+                            }
+
+                            // ── Render watch frame on canvas ───────────
+                            const scene = scenesConfig[sceneIdx];
+                            const totalFrames = scene.total;
+                            const targetIdx = clamp(Math.round(localPct * (totalFrames - 1)), 0, totalFrames - 1);
+
+                            let img = scene.images[targetIdx];
+                            if (!img.complete || img.naturalWidth === 0) {
+                                let found = false;
+                                for (let offset = 1; offset < totalFrames; offset++) {
+                                    const prevIdx = targetIdx - offset;
+                                    const nextIdx = targetIdx + offset;
+
+                                    if (prevIdx >= 0 && scene.images[prevIdx].complete && scene.images[prevIdx].naturalWidth > 0) {
+                                        img = scene.images[prevIdx];
+                                        found = true;
+                                        break;
+                                    }
+                                    if (nextIdx < totalFrames && scene.images[nextIdx].complete && scene.images[nextIdx].naturalWidth > 0) {
+                                        img = scene.images[nextIdx];
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    img = scene.images[0];
+                                }
+                            }
+
+                            drawFrame(img);
+
+                            // ── Update active text panel ───────────────
+                            updateTextPanelDirect(panel1, sceneIdx === 0 ? localPct : (sceneIdx < 0 ? 0 : 1));
+                            updateTextPanelDirect(panel2, sceneIdx === 1 ? localPct : (sceneIdx < 1 ? 0 : 1));
+                            updateTextPanelDirect(panel3, sceneIdx === 2 ? localPct : (sceneIdx < 2 ? 0 : 1));
+
+                            // ── Update specs and details ───────────────
+                            updateTextPanelDirect(specsWrap, localPct);
+
+                            // ── Update scene indicators and background ──
+                            if (lastScene !== sceneIdx) {
+                                lastScene = sceneIdx;
+                                dots.forEach((d, i) => d.classList.toggle('active', i === sceneIdx));
+                                applySpecs(sceneIdx);
+                                sceneBg.style.background = BG_COLORS[sceneIdx];
+                                sceneLabel.textContent = LABELS[sceneIdx];
+                            }
+                        }
+
+                        function applySpecs(sceneIdx) {
+                            const s = SPECS[sceneIdx];
+                            specAVal.textContent = s.a[0]; specALbl.textContent = s.a[1];
+                            specBVal.textContent = s.b[0]; specBLbl.textContent = s.b[1];
+                            specCVal.textContent = s.c[0]; specCLbl.textContent = s.c[1];
+                        }
+
+                        // ── Canvas Resizer ───────────────────────────
+                        function resizeCanvas() {
+                            const dpr = window.devicePixelRatio || 1;
+                            const w   = window.innerWidth;
+                            const h   = window.innerHeight;
+                            canvas.style.width  = w + 'px';
+                            canvas.style.height = h + 'px';
+                            canvas.width  = w * dpr;
+                            canvas.height = h * dpr;
+                            
+                            updateDimensions();
+                            
+                            renderActiveFrame();
+                        }
+
+                        // ── Scroll handler ───────────────────────────
+                        function onScroll() {
+                            const vH     = window.innerHeight;
+                            const pct    = clamp((window.scrollY - sectionTop) / (sectionHeight - vH), 0, 1);
+
+                            // Progress bar
+                            progBar.style.width = (pct * 100) + '%';
+
+                            // Scroll hint
+                            hint.style.opacity = pct > 0.025 ? '0' : '1';
+
+                            tgtPct = pct;
+                            if (!rafId) {
+                                rafId = requestAnimationFrame(animateLoop);
+                            }
+                        }
+
+                        // ── Inertia/Lerp Animation Loop ──────────────
+                        function animateLoop() {
+                            const diff = tgtPct - curPct;
+                            if (Math.abs(diff) > 0.0002) {
+                                curPct = lerp(curPct, tgtPct, 0.07); // smooth damping (0.07 for high-end inertia feel)
+                                renderActiveFrame();
+                                rafId = requestAnimationFrame(animateLoop);
+                            } else {
+                                curPct = tgtPct;
+                                renderActiveFrame();
+                                rafId = null;
+                            }
+                        }
+
+                        window.addEventListener('scroll', onScroll, { passive: true });
+                        window.addEventListener('resize', resizeCanvas);
+
+                        // Initial setup
+                        resizeCanvas();
+                        onScroll();
+
+                    })();
+
+                    /* ── FLOATING PARTICLES ──────────────────────── */
+                    (function () {
+                        const c = document.getElementById('watchParticles');
+                        if (!c) return;
+                        for (let i = 0; i < 32; i++) {
+                            const p = document.createElement('div');
+                            p.className = 'particle';
+                            const sz = Math.random() * 4 + 1.5;
+                            p.style.cssText = [
+                                'width:'  + sz + 'px',
+                                'height:' + sz + 'px',
+                                'left:'   + (Math.random() * 100) + '%',
+                                'animation-duration:' + (Math.random() * 14 + 9) + 's',
+                                'animation-delay:'    + (Math.random() * 14) + 's',
+                                'opacity:' + (Math.random() * 0.5 + 0.15),
+                                'background:rgba(' + (100 + Math.round(Math.random()*60)) + ',' +
+                                                     (170 + Math.round(Math.random()*50)) + ',255,0.5)'
+                            ].join(';');
+                            c.appendChild(p);
+                        }
+                    })();
+
+                    /* ╔═══════════════════════════════════════════════════════╗
+                       ║  SCROLL-TRIGGERED SECTION ANIMATIONS                  ║
+                       ║  Uses IntersectionObserver to fire CSS class toggles   ║
+                       ╚═══════════════════════════════════════════════════════╝ */
+                    (function () {
+                        'use strict';
+
+                        // Selectors: any element that should animate on scroll
+                        const animSelectors = [
+                            '.anim-fade-up',
+                            '.anim-slide-left',
+                            '.anim-slide-right',
+                            '.anim-scale-in',
+                            '.section-title-reveal'
+                        ];
+
+                        const allAnimEls = document.querySelectorAll(animSelectors.join(','));
+
+                        if (!allAnimEls.length) return;
+
+                        const observer = new IntersectionObserver(
+                            (entries) => {
+                                entries.forEach(entry => {
+                                    if (entry.isIntersecting) {
+                                        entry.target.classList.add('is-visible');
+                                        // Stop observing once revealed (one-shot)
+                                        observer.unobserve(entry.target);
+                                    }
+                                });
+                            },
+                            {
+                                root: null,          // viewport
+                                threshold: 0.12,     // 12% of the element must be visible
+                                rootMargin: '0px 0px -40px 0px'  // trigger 40px before bottom of viewport
+                            }
+                        );
+
+                        allAnimEls.forEach(el => observer.observe(el));
+
+                        // Also observe section-title-reveal elements separately with a lower threshold
+                        document.querySelectorAll('.section-title-reveal').forEach(el => {
+                            // Already observed above but ensure they get picked up
+                            if (!el.classList.contains('is-visible')) {
+                                observer.observe(el);
+                            }
+                        });
+                    })();
 
                     // 1. ADD TO CART FUNCTION
                     async function addToCart(event, productId) {

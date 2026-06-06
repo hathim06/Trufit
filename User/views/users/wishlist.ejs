@@ -219,15 +219,13 @@
                                 </div>
                             </div>
                             <div class="item-actions">
-                                <form action="/wishlist/remove/<%= item.productId._id %>" method="POST" style="margin: 0;">
-                                    <button type="submit" class="btn btn-remove">Remove</button>
-                                </form>
+                                <button class="btn btn-remove" onclick="removeFromWishlist(event, '<%= item.productId._id %>')">Remove</button>
                                 <button class="btn btn-add" onclick="addToCart(event, '<%= item.productId._id %>')">Add to cart</button>
                             </div>
                         </div>
                     <% }); %>
                 <% } else { %>
-                    <div style="padding: 50px 0; text-align: center; color: #6B7280;">
+                    <div id="empty-wishlist" style="padding: 50px 0; text-align: center; color: #6B7280;">
                         <p style="font-size: 18px;">Your wishlist is currently empty.</p>
                         <a href="/shop" class="btn" style="background:#000; color:#fff; display:inline-block; margin-top:20px;">Explore Products</a>
                     </div>
@@ -238,11 +236,68 @@
 
     <%- include('partials/footer') %>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         lucide.createIcons();
 
+        function showEmptyStateIfNeeded() {
+            const list = document.querySelector('.wishlist-list');
+            const items = list.querySelectorAll('.wishlist-item');
+            if (items.length === 0) {
+                list.innerHTML = `
+                    <div id="empty-wishlist" style="padding: 50px 0; text-align: center; color: #6B7280;">
+                        <p style="font-size: 18px;">Your wishlist is currently empty.</p>
+                        <a href="/shop" class="btn" style="background:#000; color:#fff; display:inline-block; margin-top:20px;">Explore Products</a>
+                    </div>`;
+            }
+        }
+
+        async function removeFromWishlist(event, productId) {
+            event.preventDefault();
+            const btn = event.currentTarget;
+            const itemRow = btn.closest('.wishlist-item');
+
+            const result = await Swal.fire({
+                title: 'Remove from Wishlist?',
+                text: 'Are you sure you want to remove this item?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Yes, remove it!'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await fetch(`/wishlist/remove/${productId}`, { method: 'POST' });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    itemRow.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    itemRow.style.opacity = '0';
+                    itemRow.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                        itemRow.remove();
+                        showEmptyStateIfNeeded();
+                        if (typeof updateHeaderCounts === 'function') updateHeaderCounts();
+                    }, 300);
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to remove item', 'error');
+                }
+            } catch (error) {
+                console.error('Remove Wishlist Error:', error);
+                Swal.fire('Error', 'Something went wrong!', 'error');
+            }
+        }
+
         async function addToCart(event, productId) {
             event.preventDefault();
+            const btn = event.currentTarget;
+            const itemRow = btn.closest('.wishlist-item');
+
+            btn.disabled = true;
+            btn.textContent = 'Adding...';
+
             try {
                 const response = await fetch('/cart/add', {
                     method: 'POST',
@@ -252,20 +307,37 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.success) {
+                    // Server removes item from wishlist when added to cart — remove row from DOM
+                    itemRow.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    itemRow.style.opacity = '0';
+                    itemRow.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                        itemRow.remove();
+                        showEmptyStateIfNeeded();
+                        if (typeof updateHeaderCounts === 'function') updateHeaderCounts();
+                    }, 300);
+
                     Swal.fire({
-                        icon: 'success', title: 'Added to Cart',
-                        text: 'Product successfully added to your cart!',
-                        timer: 1500, showConfirmButton: false
+                        icon: 'success',
+                        title: 'Added to Cart!',
+                        text: 'Product successfully added to your cart.',
+                        timer: 1500,
+                        showConfirmButton: false
                     });
                 } else {
+                    btn.disabled = false;
+                    btn.textContent = 'Add to cart';
                     Swal.fire({
-                        icon: 'error', title: 'Oops...',
+                        icon: 'error',
+                        title: 'Oops...',
                         text: data.message || 'Error adding to cart'
                     });
                 }
             } catch (error) {
-                console.error("Cart Error:", error);
+                btn.disabled = false;
+                btn.textContent = 'Add to cart';
+                console.error('Cart Error:', error);
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Something went wrong!' });
             }
         }

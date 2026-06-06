@@ -2,12 +2,18 @@ import categoryModel from '../../User/models/categoryModel.js';
 
 const getCategoriesService = async (search = '', page = 1, limit = 5, status = 'all') => {
     const query = {};
+    if (status === 'deleted') {
+        query.isDeleted = true;
+    } else {
+        query.isDeleted = { $ne: true };
+        if (status === 'listed') query.isListed = true;
+        else if (status === 'unlisted') query.isListed = false;
+        else if (status === 'blocked') query.isBlocked = true;
+    }
+
     if (search) {
         query.name = { $regex: search, $options: 'i' };
     }
-
-    if (status === 'listed') query.isListed = true;
-    else if (status === 'unlisted') query.isListed = false;
 
     const totalCategories = await categoryModel.countDocuments(query);
     const totalPages = Math.ceil(totalCategories / limit);
@@ -65,8 +71,36 @@ const toggleCategoryListingService = async (id) => {
     return await cat.save();
 };
 
-const deleteCategoryService = async (id) => {
+const softDeleteCategoryService = async (id) => {
+    const cat = await categoryModel.findById(id);
+    if (!cat) throw new Error('Category not found');
+    cat.isDeleted = true;
+    return await cat.save();
+};
+
+const restoreCategoryService = async (id) => {
+    const cat = await categoryModel.findById(id);
+    if (!cat) throw new Error('Category not found');
+    cat.isDeleted = false;
+    return await cat.save();
+};
+
+const hardDeleteCategoryService = async (id) => {
     await categoryModel.findByIdAndDelete(id);
+};
+
+const blockCategoryService = async (id) => {
+    const cat = await categoryModel.findById(id);
+    if (!cat) throw new Error('Category not found');
+    cat.isBlocked = true;
+    return await cat.save();
+};
+
+const unblockCategoryService = async (id) => {
+    const cat = await categoryModel.findById(id);
+    if (!cat) throw new Error('Category not found');
+    cat.isBlocked = false;
+    return await cat.save();
 };
 
 export default {
@@ -75,5 +109,9 @@ export default {
     getCategoryByIdService,
     updateCategoryService,
     toggleCategoryListingService,
-    deleteCategoryService
+    softDeleteCategoryService,
+    restoreCategoryService,
+    hardDeleteCategoryService,
+    blockCategoryService,
+    unblockCategoryService
 };

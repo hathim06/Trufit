@@ -4,11 +4,20 @@ const getAllColorsService = async (query = {}) => {
     const page = parseInt(query.page) || 1;
     const limit = parseInt(query.limit) || 5;
     const skip = (page - 1) * limit;
+    const status = query.status || 'all';
 
-    const totalColors = await Color.countDocuments();
+    const filter = {};
+    if (status === 'deleted') {
+        filter.isDeleted = true;
+    } else {
+        filter.isDeleted = { $ne: true };
+        if (status === 'blocked') filter.isBlocked = true;
+    }
+
+    const totalColors = await Color.countDocuments(filter);
     const totalPages = Math.ceil(totalColors / limit);
 
-    const colors = await Color.find()
+    const colors = await Color.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -37,12 +46,44 @@ const addColorService = async (name, hex) => {
     return await Color.create({ name, hex });
 };
 
-const deleteColorService = async (id) => {
+const softDeleteColorService = async (id) => {
+    const color = await Color.findById(id);
+    if (!color) throw new Error('Color not found');
+    color.isDeleted = true;
+    return await color.save();
+};
+
+const restoreColorService = async (id) => {
+    const color = await Color.findById(id);
+    if (!color) throw new Error('Color not found');
+    color.isDeleted = false;
+    return await color.save();
+};
+
+const hardDeleteColorService = async (id) => {
     return await Color.findByIdAndDelete(id);
+};
+
+const blockColorService = async (id) => {
+    const color = await Color.findById(id);
+    if (!color) throw new Error('Color not found');
+    color.isBlocked = true;
+    return await color.save();
+};
+
+const unblockColorService = async (id) => {
+    const color = await Color.findById(id);
+    if (!color) throw new Error('Color not found');
+    color.isBlocked = false;
+    return await color.save();
 };
 
 export default {
     getAllColorsService,
     addColorService,
-    deleteColorService
+    softDeleteColorService,
+    restoreColorService,
+    hardDeleteColorService,
+    blockColorService,
+    unblockColorService
 };

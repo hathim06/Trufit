@@ -239,6 +239,10 @@
             background: #8B5CF6;
         }
 
+        .status-dot.Return-Pending {
+            background: #F59E0B;
+        }
+
         .rate-product {
             display: flex;
             align-items: center;
@@ -359,22 +363,32 @@
                                                                         : 'N/A' %> | Qty : <%= item.quantity %>
                                                                 </div>
                                                                 <div class="item-status">
-                                                                    <div class="status-dot <%= order.orderStatus %>">
+                                                                    <% const itemStatus = item.status === 'Cancelled' ? 'Cancelled' : order.orderStatus; %>
+                                                                    <div class="status-dot <%= itemStatus.replace(/\s+/g, '-') %>">
                                                                     </div>
-                                                                    <span>
-                                                                        <%= order.orderStatus %>
-                                                                    </span>
-
-                                                                    <% if (order.orderStatus==='Placed' ||
+                                                                    <% if (itemStatus === 'Cancelled') { %>
+                                                                        <span style="color:#EF4444;">
+                                                                            <%= itemStatus %>
+                                                                        </span>
+                                                                    <% } else if (itemStatus === 'Return Pending') { %>
+                                                                        <span style="color:#F59E0B;">
+                                                                            <%= itemStatus %>
+                                                                        </span>
+                                                                    <% } else { %>
+                                                                        <span>
+                                                                            <%= itemStatus %>
+                                                                        </span>
+                                                                    <% } %>
+                                                                    <% if (item.status !== 'Cancelled' && (order.orderStatus==='Placed' ||
                                                                         order.orderStatus==='Processing' ||
                                                                         order.orderStatus==='Pending' ||
-                                                                        order.orderStatus==='Confirmed' ) { %>
-                                                                        <button class="invoice-link"
-                                                                            onclick="cancelOrder(event, '<%= order._id %>')"
-                                                                            style="background: #FEE2E2; color: #DC2626; border: none; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-left: 15px; cursor: pointer;">
-                                                                            CANCEL ORDER
+                                                                        order.orderStatus==='Confirmed')) { %>
+                                                                        <button
+                                                                            onclick="cancelItem(event, '<%= order._id %>', '<%= item._id %>')"
+                                                                            style="background: #FEE2E2; color: #DC2626; border: none; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-left: 10px; cursor: pointer;">
+                                                                            CANCEL PRODUCT
                                                                         </button>
-                                                                        <% } %>
+                                                                    <% } %>
                                                                 </div>
                                                                 <div class="rate-product">
                                                                     RATE THIS PRODUCT
@@ -390,6 +404,14 @@
                                                         </div>
                                                         <% }) %>
                                                 </div>
+                                                <% if (order.orderStatus==='Placed' || order.orderStatus==='Processing' || order.orderStatus==='Pending' || order.orderStatus==='Confirmed') { %>
+                                                <div style="padding: 12px 20px; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end;">
+                                                    <button onclick="cancelOrder(event, '<%= order._id %>')"
+                                                        style="background: #1F2937; color: #FFF; border: none; padding: 8px 20px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; letter-spacing: 0.5px;">
+                                                        Cancel Entire Order
+                                                    </button>
+                                                </div>
+                                                <% } %>
                                             </div>
                                             <% }) %>
                                                 <% } else { %>
@@ -452,13 +474,46 @@
                         });
                     });
 
-                    // Cancel Order Logic
+                    // Cancel Entire Order Logic
                     async function cancelOrder(event, orderId) {
                         event.stopPropagation();
 
                         const result = await Swal.fire({
-                            title: 'Cancel Order?',
-                            text: "Are you sure you want to cancel this order?",
+                            title: 'Cancel Entire Order?',
+                            text: "This will cancel all active items in this order.",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#EF4444',
+                            cancelButtonColor: '#6B7280',
+                            confirmButtonText: 'Yes, Cancel Order!'
+                        });
+
+                        if (result.isConfirmed) {
+                            try {
+                                const response = await fetch(`/profile/orders/${orderId}/cancel`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' }
+                                });
+                                const data = await response.json();
+                                if (data.success) {
+                                    await Swal.fire('Cancelled!', data.message, 'success');
+                                    location.reload();
+                                } else {
+                                    Swal.fire('Error', data.message, 'error');
+                                }
+                            } catch (error) {
+                                Swal.fire('Error', 'Something went wrong', 'error');
+                            }
+                        }
+                    }
+
+                    // Cancel Individual Product Logic
+                    async function cancelItem(event, orderId, itemId) {
+                        event.stopPropagation();
+
+                        const result = await Swal.fire({
+                            title: 'Cancel Product?',
+                            text: "Are you sure you want to cancel this product?",
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonColor: '#EF4444',
@@ -468,9 +523,10 @@
 
                         if (result.isConfirmed) {
                             try {
-                                const response = await fetch(`/profile/orders/${orderId}/cancel`, {
+                                const response = await fetch(`/profile/orders/${orderId}/cancel-item`, {
                                     method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' }
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ itemId })
                                 });
                                 const data = await response.json();
                                 if (data.success) {

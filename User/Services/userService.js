@@ -30,18 +30,11 @@ const generateAndSendOtp = async (email) => {
 };
 
 const registerUserService = async (data) => {
-    const { firstName, lastName, email, password, confirmPassword, referalCode } = data;
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
-
-    if (!firstName?.trim()) throw new Error("First name is required");
-    if (!lastName?.trim()) throw new Error("Last name is required");
-    if (!emailRegex.test(email)) throw new Error("Invalid email");
-    if (!passwordRegex.test(password)) throw new Error("Weak password");
-    if (password !== confirmPassword) throw new Error("Passwords do not match");
+    const { firstName, lastName, email, password, referalCode } = data;
 
     const normalizedEmail = email.trim().toLowerCase();
+    
+    // Check if email already exists
     const existingUser = await userModel.findOne({ email: normalizedEmail });
     if (existingUser) {
         if (existingUser.isBlocked) throw new Error("Account blocked");

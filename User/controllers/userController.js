@@ -5,6 +5,7 @@ import userModel from '../models/userModel.js';
 import addressModel from '../models/addressModel.js';
 import cartModel from '../models/cartModel.js';
 import wishlistModel from '../models/wishlistModel.js';
+import categoryModel from '../models/categoryModel.js';
 
 const loadLogin = (req, res) => {
     const message = req.query.message || req.session.authMessage;
@@ -29,6 +30,14 @@ const loadResetPassword = (req, res) => {
 const registerUser = async (req, res) => {
     try {
         const email = req.body.email.trim().toLowerCase();
+        const { firstName, lastName, password, confirmPassword } = req.body;
+
+        // Validate password before proceeding
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
+        if (!firstName?.trim()) throw new Error("First name is required");
+        if (!lastName?.trim()) throw new Error("Last name is required");
+        if (!passwordRegex.test(password)) throw new Error("Weak password - Must contain at least one uppercase, one lowercase, one digit, one special character (@$!%*?&), and be 6+ characters");
+        if (password !== confirmPassword) throw new Error("Passwords do not match");
 
         const existingUser = await userModel.findOne({ email });
         if (existingUser && existingUser.isBlocked) {
@@ -128,6 +137,23 @@ const resetPassword = async (req, res) => {
     }
 };
 
+const resendResetOtp = async (req, res) => {
+    try {
+        const email = req.session.resetEmail;
+        if (!email) return res.redirect('/forgot-password');
+
+        const user = await userModel.findOne({ email });
+        if (!user) throw new Error("User not found");
+        if (user.isBlocked) throw new Error(MESSAGES.USER_BLOCKED);
+
+        await userService.generateAndSendOtp(email);
+
+        res.redirect('/reset-password?success=OTP sent again');
+    } catch (error) {
+        res.redirect('/reset-password?error=' + error.message);
+    }
+};
+
 const loadProfile = async (req, res) => {
     try {
         const user = await userModel.findById(req.session.user);
@@ -155,9 +181,12 @@ const addAddress = async (req, res) => {
             address: req.body
         });
 
-        res.redirect('/address');
+        // Check if redirecting from checkout
+        const redirectTo = req.body.redirect || req.query.redirect || '/address';
+        res.redirect(redirectTo);
     } catch (error) {
-        res.redirect('/address?error=' + error.message);
+        const redirectTo = req.body.redirect || req.query.redirect || '/address';
+        res.redirect(redirectTo + '?error=' + encodeURIComponent(error.message));
     }
 };
 
@@ -227,7 +256,8 @@ const editProfile = async (req, res) => {
 };
 
 const loadAddAddress = (req, res) => {
-    res.render('users/add-address');
+    const redirect = req.query.redirect || '/address';
+    res.render('users/add-address', { redirect });
 };
 
 const loadEditAddress = async (req, res) => {
@@ -325,15 +355,34 @@ const getUserCounts = async (req, res) => {
         if (!req.session.user) {
             return res.json({ success: true, cartCount: 0, wishlistCount: 0 });
         }
-        
-        const cart = await cartModel.findOne({ userId: req.session.user });
-        const wishlist = await wishlistModel.findOne({ userId: req.session.user });
-        
-        const cartCount = cart && cart.items ? cart.items.length : 0;
-        const wishlistCount = wishlist && wishlist.items ? wishlist.items.length : 0;
-        
+
+        const [cart, wishlist] = await Promise.all([
+            cartModel.findOne({ userId: req.session.user }).populate({
+                path: 'items.productId',
+                select: 'status isDeleted categoryId',
+                populate: { path: 'categoryId', select: 'isListed' }
+            }),
+            wishlistModel.findOne({ userId: req.session.user }).populate({
+                path: 'items.productId',
+                select: 'status isDeleted categoryId',
+                populate: { path: 'categoryId', select: 'isListed' }
+            })
+        ]);
+
+        const isValidProduct = (product) =>
+            product &&
+            !product.isDeleted &&
+            product.status &&
+            product.status.toLowerCase() === 'active' &&
+            product.categoryId &&
+            product.categoryId.isListed;
+
+        const cartCount = cart ? cart.items.filter(item => isValidProduct(item.productId)).length : 0;
+        const wishlistCount = wishlist ? wishlist.items.filter(item => isValidProduct(item.productId)).length : 0;
+
         res.json({ success: true, cartCount, wishlistCount });
     } catch (error) {
+        console.error('getUserCounts error:', error);
         res.json({ success: false, cartCount: 0, wishlistCount: 0 });
     }
 };
@@ -345,6 +394,7 @@ export default {
     logoutUser,
     forgotPassword,
     resetPassword,
+    resendResetOtp,
     loadProfile,
     loadAddress,
     addAddress,

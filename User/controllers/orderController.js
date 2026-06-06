@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { MESSAGES } from '../../utils/messages.js';
 import { STATUS_CODES } from '../../utils/statusCodes.js';
 import orderService from '../Services/orderService.js';
@@ -9,13 +10,36 @@ const loadCheckout = async (req, res) => {
     try {
         const userId = req.session.user;
 
-        const cart = await cartModel.findOne({ userId }).populate('items.productId').populate('items.variantId');
+        const cart = await cartModel.findOne({ userId })
+            .populate({
+                path: 'items.productId',
+                populate: { path: 'categoryId', select: 'isListed name' }
+            })
+            .populate('items.variantId');
+
         if (!cart || cart.items.length === 0) {
             return res.redirect('/cart');
         }
 
-        const addresses = await addressModel.find({ userId });
+        const invalidItems = cart.items.filter(item => {
+            const product = item.productId;
+            if (!product) return true;
+            if (product.isDeleted) return true;
+            if (!product.status || product.status.toLowerCase() !== 'active') return true;
+            if (product.categoryId && !product.categoryId.isListed) return true;
+            return false;
+        });
 
+        if (invalidItems.length > 0) {
+            const names = invalidItems
+                .map(i => i.productId?.name || 'Unknown product')
+                .join(', ');
+            return res.redirect(
+                '/cart?error=' + encodeURIComponent(`Some items in your cart are no longer available: ${names}. Please remove them before checkout.`)
+            );
+        }
+
+        const addresses = await addressModel.find({ userId });
 
         let subtotal = 0;
         cart.items.forEach(item => {
@@ -86,10 +110,30 @@ const loadOrderFailed = (req, res) => {
 const loadOrders = async (req, res) => {
     try {
         const userId = req.session.user;
+
+        // const matchStage = { $match: { userId: new mongoose.Types.ObjectId(userId) } };
+        // const pipeLine = [
+        //     matchStage,
+        //     {
+        //         $addFields: {
+        //             sortPriority: {
+        //                 $cond: { if: { $eq: ["$orderStatus", "Cancelled"] }, then: 0, else: 1 }
+        //             }
+        //         }
+        //     },
+        //     { $sort: { sortPriority: 1, createdAt: -1 } },
+        // ];
+
+        // const orders = await orderModel.aggregate(pipeLine);
+        // await orderModel.populate(orders, [
+        //     { path: 'items.productId' },
+        //     { path: 'items.variantId' }
+        // ]);
+
         const orders = await orderModel.find({ userId })
+            .sort({ createdAt: -1 })
             .populate('items.productId')
-            .populate('items.variantId')
-            .sort({ createdAt: -1 });
+            .populate('items.variantId');
 
         res.render('users/orders', { orders });
     } catch (error) {
@@ -127,6 +171,18 @@ const cancelOrder = async (req, res) => {
     }
 };
 
+const cancelOrderItem = async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const { itemId, reason } = req.body;
+        const userId = req.session.user;
+        await orderService.cancelOrderItem(orderId, itemId, userId, reason);
+        res.json({ success: true, message: "Product cancelled successfully" });
+    } catch (error) {
+        res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
+    }
+};
+
 const returnOrder = async (req, res) => {
     try {
         const orderId = req.params.id;
@@ -134,6 +190,18 @@ const returnOrder = async (req, res) => {
         const { reason } = req.body;
         await orderService.returnOrder(orderId, userId, reason);
         res.json({ success: true, message: MESSAGES.ORDER_RETURNED });
+    } catch (error) {
+        res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
+    }
+};
+
+const returnOrderItem = async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        const userId = req.session.user;
+        const { itemId, reason } = req.body;
+        await orderService.returnOrderItem(orderId, itemId, userId, reason);
+        res.json({ success: true, message: 'Return request submitted for this item.' });
     } catch (error) {
         res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: error.message });
     }
@@ -165,6 +233,8 @@ export default {
     loadOrders,
     loadOrderDetails,
     cancelOrder,
+    cancelOrderItem,
     returnOrder,
+    returnOrderItem,
     downloadInvoice
 };

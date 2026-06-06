@@ -8,10 +8,11 @@ const getUsers = async (req, res) => {
         res.render('admin/users', {
             ...data,
             success: req.query.success,
-            message: req.query.message
+            message: req.query.message,
         });
 
     } catch (error) {
+        console.error("Error in getUsers:", error);
         res.redirect('/admin/login');
     }
 };
@@ -34,9 +35,27 @@ const unblockUser = async (req, res) => {
     }
 };
 
-const deleteUser = async (req, res) => {
+const softDeleteUser = async (req, res) => {
     try {
-        await userService.deleteUserService(req.params.id);
+        await userService.softDeleteUserService(req.params.id);
+        res.json({ success: true, message: 'User soft deleted successfully' });
+    } catch {
+        res.json({ success: false });
+    }
+};
+
+const restoreUser = async (req, res) => {
+    try {
+        await userService.restoreUserService(req.params.id);
+        res.json({ success: true, message: 'User restored successfully' });
+    } catch {
+        res.json({ success: false });
+    }
+};
+
+const hardDeleteUser = async (req, res) => {
+    try {
+        await userService.hardDeleteUserService(req.params.id);
         res.json({ success: true, message: MESSAGES.USER_DELETED });
     } catch {
         res.json({ success: false });
@@ -61,6 +80,8 @@ export default {
     getUsers,
     blockUser,
     unblockUser,
-    deleteUser,
+    softDeleteUser,
+    restoreUser,
+    hardDeleteUser,
     viewUser
 };
