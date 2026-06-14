@@ -89,15 +89,15 @@
                                     </td>
                                     <td>Standard</td>
                                     <td>
-                                        <span id="stock-display-<%= product._id %>" class="status-badge <%= product.quantity < 10 ? (product.quantity === 0 ? 'status-unlisted' : 'status-pending') : 'status-listed' %>">
-                                            <%= product.quantity %> Units
+                                        <span class="status-badge status-unlisted">
+                                            N/A (Requires variants)
                                         </span>
                                     </td>
                                     <td>
-                                        <input type="number" id="input-<%= product._id %>" class="search-input" style="width: 80px; padding: 5px 10px;" value="<%= product.quantity %>" min="0">
+                                        <input type="number" disabled class="search-input" style="width: 80px; padding: 5px 10px; cursor: not-allowed;" value="0">
                                     </td>
                                     <td>
-                                        <button class="btn btn-primary" style="padding: 5px 15px; font-size: 12px;" onclick="updateInventory('<%= product._id %>', null)">Update</button>
+                                        <button class="btn btn-primary" style="padding: 5px 15px; font-size: 12px; opacity: 0.5; cursor: not-allowed;" disabled>Update</button>
                                     </td>
                                 </tr>
                             <% } %>

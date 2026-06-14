@@ -14,7 +14,9 @@ import orderController from '../controllers/orderController.js';
 import inventoryController from '../controllers/inventoryController.js';
 import bannerController from '../controllers/bannerController.js';
 import colorController from '../controllers/colorController.js';
-
+import * as couponController from '../controllers/couponController.js';
+import * as offerController from '../controllers/offerController.js';
+import * as reportController from '../controllers/reportController.js';
 // Auth & Dashboard
 router.get('/login', adminAuth.isLoggedOut, adminController.showLogin);
 router.post('/login', adminAuth.isLoggedOut, adminController.login);
@@ -101,9 +103,34 @@ router.patch('/colors/unblock/:id', adminAuth.isAdmin, colorController.unblockCo
 router.get('/orders', adminAuth.isAdmin, orderController.getOrders);
 router.get('/orders/:id', adminAuth.isAdmin, orderController.getOrderDetails);
 router.patch('/orders/status/:id', adminAuth.isAdmin, orderController.updateOrderStatus);
+router.patch('/orders/cancel-item/:id', adminAuth.isAdmin, orderController.cancelOrderItem);
+router.post('/orders/verify-return', adminAuth.isAdmin, orderController.verifyReturnRequest);
 
 // Inventory Management
 router.get('/inventory', adminAuth.isAdmin, inventoryController.getInventory);
 router.patch('/inventory/update', adminAuth.isAdmin, inventoryController.updateStock);
 
-export default router;
+// Coupon Management
+router.get('/coupons', adminAuth.isAdmin, couponController.getCoupons);
+router.get('/add-coupon', adminAuth.isAdmin, couponController.loadAddCoupon);
+router.post('/add-coupon', adminAuth.isAdmin, couponController.addCoupon);
+router.get('/edit-coupon/:id', adminAuth.isAdmin, couponController.loadEditCoupon);
+router.post('/edit-coupon/:id', adminAuth.isAdmin, couponController.updateCoupon);
+router.delete('/delete-coupon/:id', adminAuth.isAdmin, couponController.deleteCoupon);
+router.patch('/coupon-status/:id', adminAuth.isAdmin, couponController.toggleStatus);
+
+// Offer Management
+router.get('/offers', adminAuth.isAdmin, offerController.getOffers);
+router.get('/add-offer', adminAuth.isAdmin, offerController.loadAddOffer);
+router.post('/add-offer', adminAuth.isAdmin, offerController.addOffer);
+router.get('/edit-offer/:id', adminAuth.isAdmin, offerController.loadEditOffer);
+router.post('/edit-offer/:id', adminAuth.isAdmin, offerController.updateOffer);
+router.delete('/delete-offer/:id', adminAuth.isAdmin, offerController.deleteOffer);
+
+// Sales Reports
+router.get('/report', adminAuth.isAdmin, (req, res) => res.redirect('/admin/sales-report'));
+router.get('/sales-report', adminAuth.isAdmin, reportController.getSalesReport);
+router.get('/sales-report/download/excel', adminAuth.isAdmin, reportController.downloadExcelReport);
+router.get('/sales-report/download/pdf', adminAuth.isAdmin, reportController.downloadPdfReport);
+
+export default router;

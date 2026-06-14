@@ -129,19 +129,23 @@ app.use('/auth', authRoutes);
 // Home Page
 app.get('/', async (req, res) => {
     try {
-        const activeCategories = await categoryModel.find({ isListed: true }).select('_id');
+        const activeCategories = await categoryModel.find({ 
+            isListed: { $ne: false }, 
+            isDeleted: { $ne: true }, 
+            isBlocked: { $ne: true } 
+        }).select('_id name');
         const activeCategoryIds = activeCategories.map(cat => cat._id);
 
         let products = await productModel.find({
             showOnHomepage: true,
-            isDeleted: false,
+            isDeleted: { $ne: true },
             status: 'Active',
             categoryId: { $in: activeCategoryIds }
         }).sort({ createdAt: -1 }).limit(3);
 
         if (products.length === 0) {
             products = await productModel.find({
-                isDeleted: false,
+                isDeleted: { $ne: true },
                 status: 'Active',
                 categoryId: { $in: activeCategoryIds }
             }).sort({ createdAt: -1 }).limit(3);
@@ -155,14 +159,16 @@ app.get('/', async (req, res) => {
         res.render('users/home', {
             user: req.session.user,
             products: products,
-            banners: banners
+            banners: banners,
+            categories: activeCategories
         });
     } catch (error) {
         console.log("Home Page Load Error:", error);
         res.render('users/home', {
             user: req.session.user,
             products: [],
-            banners: []
+            banners: [],
+            categories: []
         });
     }
 });

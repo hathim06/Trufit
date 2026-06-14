@@ -147,6 +147,16 @@
                 font-size: 12px;
             }
         }
+
+        .tx-credit {
+            color: #10B981;
+            font-weight: 600;
+        }
+
+        .tx-debit {
+            color: #EF4444;
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -166,17 +176,17 @@
                 <div class="balance-header">
                     <i data-lucide="wallet"></i>
                     <span>BALANCE OVERVIEW</span>
-                    <i data-lucide="refresh-cw" class="refresh-btn"></i>
+                    <i data-lucide="refresh-cw" class="refresh-btn" onclick="location.reload()"></i>
                 </div>
                 <div class="balance-content">
                     <i data-lucide="indian-rupee"></i>
-                    <span>500.00</span>
+                    <span><%= typeof user !== 'undefined' && user.walletBalance !== undefined ? user.walletBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00' %></span>
                 </div>
             </div>
 
             <div class="wallet-actions">
-                <button class="action-btn btn-add-money">ADD MONEY</button>
-                <button class="action-btn btn-refer-earn" onclick="location.href='refer-earn.html'">REFER AND EARN</button>
+                <button class="action-btn btn-add-money" onclick="Swal.fire('Info', 'Add money to wallet is coming soon!', 'info')">ADD MONEY</button>
+                <button class="action-btn btn-refer-earn" onclick="location.href='/refer-earn'">REFER AND EARN</button>
             </div>
         </section>
 
@@ -186,18 +196,28 @@
                 <thead>
                     <tr>
                         <th>DATE</th>
-                        <th>DISCRIPTION</th>
+                        <th>DESCRIPTION</th>
                         <th>STATUS</th>
                         <th>AMOUNT</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Feb 28, 2025</td>
-                        <td>ORDER PAYMENT</td>
-                        <td>DEBITED</td>
-                        <td>7,990.00</td>
-                    </tr>
+                    <% if (typeof user !== 'undefined' && user.walletTransactions && user.walletTransactions.length > 0) { %>
+                        <% user.walletTransactions.slice().reverse().forEach(tx => { %>
+                            <tr>
+                                <td><%= new Date(tx.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %></td>
+                                <td><%= tx.description ? tx.description.toUpperCase() : 'TRANSACTION' %></td>
+                                <td class="<%= tx.type === 'Credit' ? 'tx-credit' : 'tx-debit' %>">
+                                    <%= tx.type ? tx.type.toUpperCase() : 'DEBITED' %>
+                                </td>
+                                <td>₹<%= tx.amount ? tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00' %></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #6B7280; padding: 20px;">No transaction history.</td>
+                        </tr>
+                    <% } %>
                 </tbody>
             </table>
                 </div> <!-- profile-main-content -->
@@ -207,6 +227,7 @@
 
     <%- include('partials/footer') %>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         lucide.createIcons();
     </script>

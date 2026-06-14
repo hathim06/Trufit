@@ -4,17 +4,43 @@ import variantModel from '../../User/models/variants.js';
 import cartModel from '../../User/models/cartModel.js';
 import wishlistModel from '../../User/models/wishlistModel.js';
 import categoryModel from '../../User/models/categoryModel.js';
+import Offer from '../../User/models/offerModel.js';
+
+const getOfferPricing = async (offerId, price) => {
+    if (!offerId) {
+        return { offerId: null, offerPrice: null, discount: 0 };
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(offerId)) {
+        throw new Error('Invalid offer selected');
+    }
+
+    const offer = await Offer.findOne({
+        _id: offerId,
+        isActive: true,
+        validFrom: { $lte: new Date() },
+        validTo: { $gte: new Date() }
+    });
+
+    if (!offer) {
+        throw new Error('Selected offer is not active or has expired');
+    }
+
+    const productPrice = Number(price);
+    const discount = Number(offer.discountPercentage);
+    const offerPrice = Math.round((productPrice - (productPrice * discount / 100)) * 100) / 100;
+
+    return { offerId: offer._id, offerPrice, discount };
+};
 
 const syncProductWithVariants = async (productId) => {
     const variants = await variantModel.find({ productId, isDeleted: false, quantity: { $gt: 0 } });
     const uniqueSizes = [...new Set(variants.map(v => v.size))];
     const uniqueColors = [...new Set(variants.map(v => v.color))];
-    const totalQuantity = variants.reduce((sum, v) => sum + v.quantity, 0);
 
     await productModel.findByIdAndUpdate(productId, {
         size: uniqueSizes,
-        color: uniqueColors,
-        quantity: totalQuantity
+        color: uniqueColors
     });
 };
 
@@ -28,6 +54,8 @@ const addProductService = async (req) => {
         throw new Error("Invalid category selected");
     }
 
+    const offerPricing = await getOfferPricing(req.body.offerId, req.body.price);
+
     const imageUrls = [];
     if (req.files) {
         if (req.files.mainImage) imageUrls.push(req.files.mainImage[0].path);
@@ -39,13 +67,12 @@ const addProductService = async (req) => {
     const newProduct = new productModel({
         name: req.body.productName,
         categoryId: req.body.categoryId,
-        offerId: req.body.offerId || null,
+        offerId: offerPricing.offerId,
         showOnHomepage: req.body.showOnHomepage === 'Yes',
         status: req.body.status || 'Active',
         price: req.body.price,
-        offerPrice: req.body.offerPrice || null,
-        discount: req.body.discount || 0,
-        quantity: req.body.quantity,
+        offerPrice: offerPricing.offerPrice,
+        discount: offerPricing.discount,
         size: req.body.size || 'M',
         color: req.body.color,
         image: imageUrls,
@@ -139,11 +166,19 @@ const getProductsService = async (query) => {
         filter.categoryId = category;
     }
 
-    const products = await productModel.find(filter)
+    const rawProducts = await productModel.find(filter)
         .populate('categoryId')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
+
+    const products = await Promise.all(rawProducts.map(async (product) => {
+        const variants = await variantModel.find({ productId: product._id, isDeleted: false });
+        const totalVariantStock = variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
+        const productObj = product.toObject();
+        productObj.totalVariantStock = totalVariantStock;
+        return productObj;
+    }));
 
     const totalProducts = await productModel.countDocuments(filter);
     const totalPages = Math.ceil(totalProducts / limit);
@@ -169,7 +204,19 @@ const getProductsService = async (query) => {
 
 const getSingleProductService = async (id) => {
     if (!mongoose.Types.ObjectId.isValid(id)) throw new Error("Invalid product ID");
-    return await productModel.findById(id).populate('categoryId');
+    const product = await productModel.findById(id).populate('categoryId');
+    if (product) {
+        const variants = await variantModel.find({ productId: product._id, isDeleted: false });
+        if (variants.length > 0) {
+            // Calculate total stock from variants
+            const totalStock = variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
+            const productObj = product.toObject();
+            productObj.totalStock = totalStock;
+            productObj.variants = variants;
+            return productObj;
+        }
+    }
+    return product;
 };
 
 const updateProductService = async (req) => {
@@ -180,16 +227,17 @@ const updateProductService = async (req) => {
         throw new Error("Category is required");
     }
 
+    const offerPricing = await getOfferPricing(req.body.offerId, req.body.price);
+
     const updateData = {
         name: req.body.productName,
         categoryId: req.body.categoryId,
-        offerId: req.body.offerId || null,
+        offerId: offerPricing.offerId,
         showOnHomepage: req.body.showOnHomepage === 'Yes',
         status: req.body.status,
         price: req.body.price,
-        offerPrice: req.body.offerPrice || null,
-        discount: req.body.discount || 0,
-        quantity: req.body.quantity,
+        offerPrice: offerPricing.offerPrice,
+        discount: offerPricing.discount,
         description: req.body.description
     };
 

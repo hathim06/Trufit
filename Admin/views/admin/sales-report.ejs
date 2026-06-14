@@ -1,0 +1,126 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'report' }) %>
+    <main class="main-content">
+        <%- include('./partials/adminHeader', { title: 'SALES REPORT' }) %>
+
+        <div style="display: flex; justify-content: flex-end; gap: 15px; margin-bottom: 30px; margin-top: 20px;">
+            <form action="/admin/sales-report" method="GET" style="display: flex; gap: 10px; align-items: center;">
+                <select name="filterType" style="padding: 8px; border-radius: 5px;" onchange="toggleCustomDates(this.value)">
+                    <option value="" disabled <%= !locals.filterType ? 'selected' : '' %>>Select Filter</option>
+                    <option value="daily" <%= locals.filterType === 'daily' ? 'selected' : '' %>>Daily</option>
+                    <option value="weekly" <%= locals.filterType === 'weekly' ? 'selected' : '' %>>Weekly</option>
+                    <option value="yearly" <%= locals.filterType === 'yearly' ? 'selected' : '' %>>Yearly</option>
+                    <option value="custom" <%= locals.filterType === 'custom' ? 'selected' : '' %>>Custom Range</option>
+                </select>
+                
+                <div id="customDates" class="custom-dates-wrapper">
+                    <input type="date" name="startDate" value="<%= locals.startDate || '' %>" style="padding: 8px; border-radius: 5px;">
+                    <input type="date" name="endDate" value="<%= locals.endDate || '' %>" style="padding: 8px; border-radius: 5px;">
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="padding: 8px 15px;">Filter</button>
+            </form>
+            
+            <a href="/admin/sales-report/download/pdf?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary" style="text-decoration: none;">Download PDF</a>
+            <a href="/admin/sales-report/download/excel?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary" style="text-decoration: none;">Download Excel</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card" style="background: #000; color: #FFF;">
+                <div class="stat-info">
+                    <h3 style="color: #AAA;">Total Order Amount</h3>
+                    <div class="value">₹ <%= totalOrderAmount.toLocaleString() %></div>
+                </div>
+                <div class="stat-icon" style="background: rgba(255,255,255,0.1);">
+                    <i data-lucide="indian-rupee" style="color: #059669;"></i>
+                </div>
+            </div>
+            <div class="stat-card" style="background: #000; color: #FFF;">
+                <div class="stat-info">
+                    <h3 style="color: #AAA;">Total Sales Count</h3>
+                    <div class="value"><%= totalSalesCount %></div>
+                </div>
+                <div class="stat-icon" style="background: rgba(255,255,255,0.1);">
+                    <i data-lucide="shopping-cart" style="color: #059669;"></i>
+                </div>
+            </div>
+            <div class="stat-card" style="background: #000; color: #FFF;">
+                <div class="stat-info">
+                    <h3 style="color: #AAA;">Total Discounts Applied</h3>
+                    <div class="value">₹ <%= totalDiscount.toLocaleString() %></div>
+                </div>
+                <div class="stat-icon" style="background: rgba(255,255,255,0.1);">
+                    <i data-lucide="percent" style="color: #059669;"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container" style="margin-top: 30px;">
+            <div class="table-header">
+                <h2>Orders</h2>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Discount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (orders && orders.length > 0) { %>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td><%= order.orderId %></td>
+                                <td><%= order.userId ? order.userId.firstName + ' ' + order.userId.lastName : 'N/A' %></td>
+                                <td><%= new Date(order.createdAt).toLocaleDateString('en-GB') %></td>
+                                <%
+                                    const computedOrderTotal = order.items ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0) : 0;
+                                    const subtotalOrderTotal = order.subtotal != null ? Math.max(0, order.subtotal - (order.discountAmount || 0)) : 0;
+                                    const displayOrderTotal = subtotalOrderTotal || order.totalAmount || computedOrderTotal;
+                                %>
+                                <td>₹<%= displayOrderTotal.toLocaleString() %></td>
+                                <td>₹<%= order.discountAmount || order.couponDiscount || 0 %></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5" style="text-align: center;">No orders found for the selected period.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <style>
+        .custom-dates-wrapper { display: none; gap: 10px; }
+        .custom-dates-wrapper.visible { display: flex; }
+    </style>
+
+    <script>
+        lucide.createIcons();
+
+        // Set initial visibility based on server-side filter value
+        (function () {
+            const currentFilter = '<%= locals.filterType || "" %>';
+            const customDatesDiv = document.getElementById('customDates');
+            if (currentFilter === 'custom') {
+                customDatesDiv.classList.add('visible');
+            }
+        })();
+
+        function toggleCustomDates(value) {
+            const customDatesDiv = document.getElementById('customDates');
+            if (value === 'custom') {
+                customDatesDiv.classList.add('visible');
+            } else {
+                customDatesDiv.classList.remove('visible');
+            }
+        }
+    </script>
+</body>
+</html>

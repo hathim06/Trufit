@@ -147,7 +147,8 @@
                     <div class="form-group">
                         <label>First Name</label>
                         <span id="firstName-error" class="error-message"></span>
-                        <input type="text" name="firstName" id="firstName" placeholder="First Name" required>
+                        <input type="text" name="firstName" id="firstName" placeholder="First Name" required
+                            value="<%= (typeof formData !== 'undefined' && formData && formData.firstName) ? formData.firstName : '' %>">
                         <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('first name')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
                         <% } %>
@@ -155,7 +156,8 @@
                     <div class="form-group">
                         <label>Last Name</label>
                         <span id="lastName-error" class="error-message"></span>
-                        <input type="text" name="lastName" id="lastName" placeholder="Last Name" required>
+                        <input type="text" name="lastName" id="lastName" placeholder="Last Name" required
+                            value="<%= (typeof formData !== 'undefined' && formData && formData.lastName) ? formData.lastName : '' %>">
                         <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('last name')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
                         <% } %>
@@ -163,7 +165,8 @@
                     <div class="form-group full-width">
                         <label>Email Address</label>
                         <span id="email-error" class="error-message"></span>
-                        <input type="email" name="email" id="email" placeholder="Enter your email" required>
+                        <input type="email" name="email" id="email" placeholder="Enter your email" required
+                            value="<%= (typeof formData !== 'undefined' && formData && formData.email) ? formData.email : '' %>">
                         <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('email')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
                         <% } %>

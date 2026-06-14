@@ -503,6 +503,11 @@
                                     </div>
 
                                     <div class="summary-box">
+                                        <%
+                                            const computedOrderTotal = order.items ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0) : 0;
+                                            const subtotalOrderTotal = order.subtotal != null ? Math.max(0, order.subtotal - (order.discountAmount || 0)) : 0;
+                                            const displayOrderTotal = subtotalOrderTotal || order.totalAmount || computedOrderTotal;
+                                        %>
                                         <div class="summary-row">
                                             <span>Subtotal</span>
                                             <span>₹<%= order.subtotal.toLocaleString() %></span>
@@ -517,7 +522,7 @@
                                         </div>
                                         <div class="summary-row total">
                                             <span>Total paid</span>
-                                            <span>₹<%= order.totalAmount.toLocaleString() %></span>
+                                            <span>₹<%= displayOrderTotal.toLocaleString() %></span>
                                         </div>
                                     </div>
 

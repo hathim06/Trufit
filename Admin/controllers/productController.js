@@ -3,6 +3,7 @@ import { STATUS_CODES } from '../../utils/statusCodes.js';
 import productService from '../Services/productService.js';
 import categoryService from '../Services/categoryService.js';
 import colorService from '../Services/colorService.js';
+import Offer from '../../User/models/offerModel.js';
 
 const loadProductPage = async (req, res) => {
     try {
@@ -33,7 +34,12 @@ const loadAddProduct = async (req, res) => {
     try {
         const { categories } = await categoryService.getCategoriesService('', 1, 100, 'listed');
         const { colors } = await colorService.getAllColorsService({ limit: 100 });
-        res.render('admin/add-product', { categories, colors });
+        const offers = await Offer.find({
+            isActive: true,
+            validFrom: { $lte: new Date() },
+            validTo: { $gte: new Date() }
+        }).sort({ createdAt: -1 });
+        res.render('admin/add-product', { categories, colors, offers });
     } catch (error) {
         console.log(error);
         res.redirect('/admin/products');
@@ -46,7 +52,12 @@ const loadEditProduct = async (req, res) => {
         const { categories } = await categoryService.getCategoriesService('', 1, 100, 'listed');
         const variants = await productService.getVariantsByProductId(req.params.id);
         const { colors } = await colorService.getAllColorsService({ limit: 100 });
-        res.render('admin/edit-product', { product, categories, variants, colors });
+        const offers = await Offer.find({
+            isActive: true,
+            validFrom: { $lte: new Date() },
+            validTo: { $gte: new Date() }
+        }).sort({ createdAt: -1 });
+        res.render('admin/edit-product', { product, categories, variants, colors, offers });
     } catch (error) {
         console.log(error);
         res.redirect('/admin/products');

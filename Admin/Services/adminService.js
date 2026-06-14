@@ -24,7 +24,6 @@ const getDashboardDataService = async () => {
     const productCount = await productModel.countDocuments({ isDeleted: false });
     const orderCount = await orderModel.countDocuments();
     
-    // Calculate total revenue from delivered orders
     const revenueData = await orderModel.aggregate([
         { $match: { orderStatus: 'Delivered' } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
@@ -36,7 +35,6 @@ const getDashboardDataService = async () => {
         .sort({ createdAt: -1 })
         .limit(5);
 
-    // Sales Data for Graph (Last 7 Days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -50,6 +48,28 @@ const getDashboardDataService = async () => {
         { $sort: { "_id": 1 } }
     ]);
 
+    const topProducts = await orderModel.aggregate([
+        { $unwind: "$items" },
+        { $group: { _id: "$items.productId", totalSold: { $sum: "$items.quantity" } } },
+        { $sort: { totalSold: -1 } },
+        { $limit: 10 },
+        { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } },
+        { $unwind: "$product" },
+        { $project: { name: "$product.name", totalSold: 1 } }
+    ]);
+
+    const topCategories = await orderModel.aggregate([
+        { $unwind: "$items" },
+        { $lookup: { from: 'products', localField: 'items.productId', foreignField: '_id', as: 'product' } },
+        { $unwind: "$product" },
+        { $group: { _id: "$product.categoryId", totalSold: { $sum: "$items.quantity" } } },
+        { $sort: { totalSold: -1 } },
+        { $limit: 10 },
+        { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'category' } },
+        { $unwind: "$category" },
+        { $project: { name: "$category.name", totalSold: 1 } }
+    ]);
+
     return { 
         customerCount, 
         productCount, 
@@ -57,6 +77,8 @@ const getDashboardDataService = async () => {
         totalRevenue,
         recentOrders,
         salesStats,
+        topProducts,
+        topCategories,
         activePage: 'dashboard'
     };
 };

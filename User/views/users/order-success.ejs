@@ -113,7 +113,12 @@
                 </div>
                 <div class="info-row">
                     <span>Amount Paid</span>
-                    <span>₹<%= order.totalAmount.toLocaleString() %></span>
+                    <%
+                        const computedOrderTotal = order.items ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0) : 0;
+                        const subtotalOrderTotal = order.subtotal != null ? Math.max(0, order.subtotal - (order.discountAmount || 0)) : 0;
+                        const displayOrderTotal = subtotalOrderTotal || order.totalAmount || computedOrderTotal;
+                    %>
+                    <span>₹<%= displayOrderTotal.toLocaleString() %></span>
                 </div>
             </div>
 

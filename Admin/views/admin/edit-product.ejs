@@ -316,8 +316,17 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>OFFER ID</label>
-                        <input type="text" name="offerId" value="<%= product.offerId || '' %>" style="background:#E5E7EB;border:none;border-radius:12px;">
+                        <label>OFFER</label>
+                        <select name="offerId" onchange="applySelectedOffer()" style="background:#E5E7EB;border:none;border-radius:12px;">
+                            <option value="" data-discount="0">No Offer</option>
+                            <% if (typeof offers !== 'undefined' && offers.length > 0) { %>
+                                <% offers.forEach(offer => { %>
+                                    <option value="<%= offer._id %>" data-discount="<%= offer.discountPercentage %>" <%= product.offerId && product.offerId.toString() === offer._id.toString() ? 'selected' : '' %>>
+                                        <%= offer.name %> - <%= offer.discountPercentage %>%
+                                    </option>
+                                <% }) %>
+                            <% } %>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>HOMEPAGE</label>
@@ -338,7 +347,7 @@
                     </div>
                     <div class="form-group">
                         <label>BASE PRICE (MRP)</label>
-                        <input type="number" name="price" value="<%= product.price %>" step="any" onchange="calculateDiscount()" style="background:#E5E7EB;border:none;border-radius:12px;">
+                        <input type="number" name="price" value="<%= product.price %>" step="any" onchange="applySelectedOffer()" style="background:#E5E7EB;border:none;border-radius:12px;">
                     </div>
                     <div class="form-group">
                         <label>SALE PRICE (OFFER)</label>
@@ -349,13 +358,12 @@
                 <div class="form-grid" style="grid-template-columns: 1fr 1fr; border-top: 1px solid #E5E7EB; padding-top: 25px;">
                     <div class="form-group">
                         <label>AUTO DISCOUNT %</label>
-                        <input type="number" id="discountInput" name="discount" value="<%= product.discount %>" 
-                            oninput="calculateOfferPrice()"
+                        <input type="number" id="discountInput" name="discount" value="<%= product.discount %>" readonly
                             style="background:#fff;border:1px solid #D1D5DB;border-radius:12px;color:#10B981;font-weight:800;font-size:18px;">
                     </div>
                     <div class="form-group">
                         <label>TOTAL STOCK <span style="font-size:10px;color:#10B981;font-weight:600;">(auto-calculated)</span></label>
-                        <input type="number" id="totalStockInput" name="quantity" value="<%= product.quantity %>" readonly style="background:#F3F4F6;border:none;border-radius:12px;color:#10B981;font-weight:800;font-size:18px;cursor:not-allowed;">
+                        <input type="number" id="totalStockInput" value="0" readonly style="background:#F3F4F6;border:none;border-radius:12px;color:#10B981;font-weight:800;font-size:18px;cursor:not-allowed;">
                     </div>
                 </div>
 
@@ -477,13 +485,25 @@
             }
         }
 
+        function applySelectedOffer() {
+            const offerSelect = document.querySelector('select[name="offerId"]');
+            const selectedOption = offerSelect.options[offerSelect.selectedIndex];
+            const discount = parseFloat(selectedOption.dataset.discount || '0');
+            const discountInput = document.getElementById('discountInput');
+
+            discountInput.value = discount || '';
+            calculateOfferPrice();
+        }
+
         function calculateOfferPrice() {
             const price = parseFloat(document.querySelector('input[name="price"]').value);
             const discount = parseFloat(document.getElementById('discountInput').value);
             const offerInput = document.querySelector('input[name="offerPrice"]');
-            if (price && discount >= 0 && discount <= 100) {
+            if (price && discount > 0 && discount <= 100) {
                 const offerPrice = price - (price * (discount / 100));
                 offerInput.value = offerPrice.toFixed(2);
+            } else {
+                offerInput.value = '';
             }
         }
 

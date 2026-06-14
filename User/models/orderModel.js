@@ -39,6 +39,9 @@ const orderSchema = new mongoose.Schema({
         },
         cancellationReason: {
             type: String
+        },
+        returnReason: {
+            type: String
         }
     }],
     shippingAddress: {
@@ -73,12 +76,25 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    couponCode: {
+        type: String,
+        default: null
+    },
     totalAmount: {
         type: Number,
         required: true
     },
+    walletAmountApplied: {
+        type: Number,
+        default: 0
+    },
     returnReason: {
         type: String
+    },
+    returnStatus: {
+        type: String,
+        enum: ['Pending', 'Approved', 'Rejected'],
+        default: 'Pending'
     },
     createdAt: {
         type: Date,

@@ -6,21 +6,22 @@ import addressModel from '../models/addressModel.js';
 import cartModel from '../models/cartModel.js';
 import wishlistModel from '../models/wishlistModel.js';
 import categoryModel from '../models/categoryModel.js';
+import couponModel from '../models/couponModel.js';
 
 const loadLogin = (req, res) => {
     const message = req.query.message || req.session.authMessage;
     if (req.session.authMessage) {
         delete req.session.authMessage;
     }
-    res.render('users/login', { message: message, success: req.query.success });
+    res.render('users/login', { message: message, success: req.query.success, formData: null });
 };
 
 const loadRegister = (req, res) => {
-    res.render('users/signup', { message: req.query.message, success: req.query.success });
+    res.render('users/signup', { message: req.query.message, success: req.query.success, formData: null });
 };
 
 const loadForgotPassword = (req, res) => {
-    res.render('users/forgot-password', { message: req.query.message, success: req.query.success });
+    res.render('users/forgot-password', { message: req.query.message, success: req.query.success, formData: null });
 };
 
 const loadResetPassword = (req, res) => {
@@ -53,7 +54,7 @@ const registerUser = async (req, res) => {
 
         res.redirect('/verify-otp');
     } catch (error) {
-        res.render('users/signup', { message: error.message });
+        res.render('users/signup', { message: error.message, formData: req.body });
     }
 };
 
@@ -89,7 +90,7 @@ const loginUser = async (req, res) => {
             res.redirect('/');
         });
     } catch (error) {
-        res.render('users/login', { message: error.message });
+        res.render('users/login', { message: error.message, formData: req.body });
     }
 };
 
@@ -114,7 +115,7 @@ const forgotPassword = async (req, res) => {
 
         res.redirect('/reset-password');
     } catch (error) {
-        res.render('users/forgot-password', { message: error.message });
+        res.render('users/forgot-password', { message: error.message, formData: req.body });
     }
 };
 
@@ -382,8 +383,36 @@ const getUserCounts = async (req, res) => {
 
         res.json({ success: true, cartCount, wishlistCount });
     } catch (error) {
-        console.error('getUserCounts error:', error);
-        res.json({ success: false, cartCount: 0, wishlistCount: 0 });
+        console.error('Get User Counts Error:', error);
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failed to fetch counts' });
+    }
+};
+
+const loadCoupons = async (req, res) => {
+    try {
+        const coupons = await couponModel.find({
+            status: 'Active',
+            startDate: { $lte: new Date() },
+            expiryDate: { $gte: new Date() }
+        }).sort({ createdAt: -1 });
+
+        res.render('users/coupons', {
+            activePage: 'coupons',
+            coupons
+        });
+    } catch (error) {
+        console.error('Error loading coupons:', error);
+        res.redirect('/profile');
+    }
+};
+
+const loadWallet = async (req, res) => {
+    try {
+        const user = await userModel.findById(req.session.user);
+        res.render('users/wallet', { user });
+    } catch (error) {
+        console.error('Error loading wallet:', error);
+        res.redirect('/profile');
     }
 };
 
@@ -417,5 +446,7 @@ export default {
     changeEmail,
     updatePassword,
     googleAuthCallback,
-    getUserCounts
+    getUserCounts,
+    loadCoupons,
+    loadWallet
 };

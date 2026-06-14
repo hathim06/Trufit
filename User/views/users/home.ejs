@@ -983,33 +983,57 @@
                 <section class="categories section-spacing">
                     <div class="container">
                         <div class="category-grid stagger-children" id="categoryGrid">
-                            <div class="category-card anim-slide-left">
-                                <div class="card-image">
-                                    <img src="public/apple_smart_2.png" alt="Apple Watch">
+                            <% if (categories && categories.length > 0) { %>
+                                <% categories.forEach((category, index) => { %>
+                                    <% const animClass = index === 0 ? 'anim-slide-left' : (index === 1 ? 'anim-fade-up' : 'anim-slide-right'); %>
+                                    <div class="category-card <%= animClass %>">
+                                        <a href="/shop?category=<%= category._id %>" style="text-decoration: none; color: inherit;">
+                                            <div class="card-image">
+                                                <img src="public/apple_smart_2.png" alt="<%= category.name %>">
+                                            </div>
+                                            <div class="card-content">
+                                                <h3><%= category.name %></h3>
+                                                <p><%= category.description || 'Explore our collection' %></p>
+                                            </div>
+                                        </a>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <!-- Fallback to static categories if database is empty -->
+                                <div class="category-card anim-slide-left">
+                                    <a href="/shop?category=apple" style="text-decoration: none; color: inherit;">
+                                        <div class="card-image">
+                                            <img src="public/apple_smart_2.png" alt="Apple Watch">
+                                        </div>
+                                        <div class="card-content">
+                                            <h3>Apple</h3>
+                                            <p>Apple is one of the most famous smart watches providing company.</p>
+                                        </div>
+                                    </a>
                                 </div>
-                                <div class="card-content">
-                                    <h3>Apple</h3>
-                                    <p>Apple is one of the most famous smart watches providing company.</p>
+                                <div class="category-card anim-fade-up">
+                                    <a href="/shop?category=xiaomi" style="text-decoration: none; color: inherit;">
+                                        <div class="card-image">
+                                            <img src="public/apple_smart_2.png" alt="Xiaomi Watch">
+                                        </div>
+                                        <div class="card-content">
+                                            <h3>Xiaomi</h3>
+                                            <p>Xiaomi smart watches are produced by MI company.</p>
+                                        </div>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="category-card anim-fade-up">
-                                <div class="card-image">
-                                    <img src="public/apple_smart_2.png" alt="Xiaomi Watch">
+                                <div class="category-card anim-slide-right">
+                                    <a href="/shop?category=fitbit" style="text-decoration: none; color: inherit;">
+                                        <div class="card-image">
+                                            <img src="public/fitbit_max_1.png" alt="FitBit Watch">
+                                        </div>
+                                        <div class="card-content">
+                                            <h3>FitBit</h3>
+                                            <p>FitBit smart watches are best for there health and fitness features.</p>
+                                        </div>
+                                    </a>
                                 </div>
-                                <div class="card-content">
-                                    <h3>Xiaomi</h3>
-                                    <p>Xiaomi smart watches are produced by MI company.</p>
-                                </div>
-                            </div>
-                            <div class="category-card anim-slide-right">
-                                <div class="card-image">
-                                    <img src="public/fitbit_max_1.png" alt="FitBit Watch">
-                                </div>
-                                <div class="card-content">
-                                    <h3>FitBit</h3>
-                                    <p>FitBit smart watches are best for there health and fitness features.</p>
-                                </div>
-                            </div>
+                            <% } %>
                         </div>
                     </div>
                 </section>

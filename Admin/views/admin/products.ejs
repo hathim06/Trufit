@@ -112,7 +112,12 @@
                                         <%= product.isDeleted ? 'DELETED' : product.status.toUpperCase() %>
                                     </span>
                                 </td>
-                                <td><%= product.quantity %> left</td>
+                                <td>
+                                    <% const stock = product.totalVariantStock || 0; %>
+                                    <span class="status-badge <%= stock === 0 ? 'status-unlisted' : (stock < 10 ? 'status-pending' : 'status-listed') %>" style="font-size:11px;">
+                                        <%= stock %> units
+                                    </span>
+                                </td>
                                 <td>
                                     <div class="action-btns" id="action-btns-<%= product._id %>" style="display: flex; gap: 8px; align-items: center;">
                                         <% if (product.isDeleted) { %>

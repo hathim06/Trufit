@@ -412,9 +412,18 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>OFFER ID</label>
-                                <input type="text" name="offerId" placeholder="Optional"
+                                <label>OFFER</label>
+                                <select name="offerId" onchange="applySelectedOffer()"
                                     style="background:#E5E7EB;border:none;border-radius:12px;">
+                                    <option value="" data-discount="0">No Offer</option>
+                                    <% if (typeof offers !== 'undefined' && offers.length > 0) { %>
+                                        <% offers.forEach(offer => { %>
+                                            <option value="<%= offer._id %>" data-discount="<%= offer.discountPercentage %>">
+                                                <%= offer.name %> - <%= offer.discountPercentage %>%
+                                            </option>
+                                        <% }) %>
+                                    <% } %>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>HOMEPAGE</label>
@@ -437,7 +446,7 @@
                             <div class="form-group">
                                 <label>BASE PRICE (MRP)</label>
                                 <input type="number" name="price" placeholder="0.00" step="any"
-                                    onchange="calculateDiscount()"
+                                    onchange="applySelectedOffer()"
                                     style="background:#E5E7EB;border:none;border-radius:12px;">
                             </div>
                             <div class="form-group">
@@ -453,13 +462,13 @@
                             <div class="form-group">
                                 <label>AUTO DISCOUNT %</label>
                                 <input type="number" id="discountInput" name="discount" 
-                                    oninput="calculateOfferPrice()"
+                                    readonly
                                     style="background:#fff;border:1px solid #D1D5DB;border-radius:12px;color:#10B981;font-weight:800;font-size:18px;">
                             </div>
                             <div class="form-group">
                                 <label>TOTAL STOCK <span
                                         style="font-size:10px;color:#10B981;font-weight:600;">(auto-calculated)</span></label>
-                                <input type="number" id="totalStockInput" name="quantity" placeholder="0" readonly
+                                <input type="number" id="totalStockInput" placeholder="0" readonly
                                     style="background:#F3F4F6;border:none;border-radius:12px;color:#10B981;font-weight:800;font-size:18px;cursor:not-allowed;">
                             </div>
                         </div>
@@ -559,13 +568,25 @@
                     }
                 }
 
+                function applySelectedOffer() {
+                    const offerSelect = document.querySelector('select[name="offerId"]');
+                    const selectedOption = offerSelect.options[offerSelect.selectedIndex];
+                    const discount = parseFloat(selectedOption.dataset.discount || '0');
+                    const discountInput = document.getElementById('discountInput');
+
+                    discountInput.value = discount || '';
+                    calculateOfferPrice();
+                }
+
                 function calculateOfferPrice() {
                     const price = parseFloat(document.querySelector('input[name="price"]').value);
                     const discount = parseFloat(document.getElementById('discountInput').value);
                     const offerInput = document.querySelector('input[name="offerPrice"]');
-                    if (price && discount >= 0 && discount <= 100) {
+                    if (price && discount > 0 && discount <= 100) {
                         const offerPrice = price - (price * (discount / 100));
                         offerInput.value = offerPrice.toFixed(2);
+                    } else {
+                        offerInput.value = '';
                     }
                 }
 

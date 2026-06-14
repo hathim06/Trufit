@@ -7,4 +7,6 @@ export const categorySchema = z.object({
         .trim()
         .refine(val => val.length > 0, "Category name is required"),
     description: z.string().max(200, "Description must be less than 200 characters").optional().or(z.literal(''))
+        ,
+    offerId: z.string().optional().or(z.literal(''))
 });

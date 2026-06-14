@@ -27,6 +27,18 @@
                                             style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; resize:vertical;"></textarea>
                                     </div>
 
+                                    <div class="form-group">
+                                        <label>Category Offer</label>
+                                        <select name="offerId" style="width:100%;">
+                                            <option value="">No Offer</option>
+                                            <% if (typeof offers !== 'undefined' && offers.length > 0) { %>
+                                                <% offers.forEach(offer => { %>
+                                                    <option value="<%= offer._id %>"><%= offer.name %> - <%= offer.discountPercentage %>%</option>
+                                                <% }) %>
+                                            <% } %>
+                                        </select>
+                                    </div>
+
                                     <div style="margin-top: 30px; display: flex; gap: 15px;">
                                         <button type="submit" class="btn btn-primary" style="width: 200px;">ADD
                                             CATEGORY</button>
@@ -50,7 +62,8 @@
                     const formData = new FormData(categoryForm);
                     const data = {
                         name: formData.get('name'),
-                        description: formData.get('description')
+                        description: formData.get('description'),
+                        offerId: formData.get('offerId')
                     };
 
                     const z = Zod.z;
@@ -60,7 +73,8 @@
                             .max(50, "Category name must be less than 50 characters")
                             .trim()
                             .refine(val => val.length > 0, "Category name is required"),
-                        description: z.string().max(200, "Description must be less than 200 characters").optional()
+                        description: z.string().max(200, "Description must be less than 200 characters").optional(),
+                        offerId: z.string().optional()
                     });
 
                     try {

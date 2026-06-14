@@ -806,11 +806,14 @@
                                 onclick="toggleWishlist(event, '<%= product._id %>')"></i>
                         </h1>
                         <div class="price-row">
-                            <% if (product.offerPrice && product.offerPrice < product.price) { %>
-                                <span class="current-price">₹<%= product.offerPrice %></span>
+                            <% if (product.effectiveDiscount && product.effectivePrice < product.price) { %>
+                                <span class="current-price">₹<%= product.effectivePrice %></span>
                                 <span class="old-price">₹<%= product.price %></span>
                                 <span class="discount">
-                                    <%= Math.round((1 - product.offerPrice/product.price) * 100) %>% off
+                                    <%= product.effectiveDiscount %>% off
+                                    <% if (product.effectiveOfferName) { %>
+                                        - <%= product.effectiveOfferName %>
+                                    <% } %>
                                 </span>
                                 <% } else { %>
                                     <span class="current-price">₹<%= product.price %></span>
@@ -839,7 +842,7 @@
                         </div>
 
                         <p class="stock-status" id="stockStatus">
-                            <%= product.quantity> 0 ? 'In Stock' : 'Out of Stock' %>
+                            <!-- JS will populate status based on variant stock -->
                         </p>
 
                         <!-- Highlights Section -->
@@ -930,29 +933,22 @@
                                                                     onclick="decrementQty()">-</button>
                                                                 <input type="text" value="1" id="productQty"
                                                                     class="qty-input"
-                                                                    data-stock="<%= product.quantity %>" readonly>
+                                                                    data-stock="0" readonly>
                                                                 <button class="qty-btn"
                                                                     onclick="incrementQty()">+</button>
                                                             </div>
                                                             <span id="stockRemainingLabel"
-                                                                style="font-size: 14px; color: #6B7280;">Only <%=
-                                                                    product.quantity %>
-                                                                    items left!</span>
+                                                                style="font-size: 14px; color: #6B7280;"></span>
                                                         </div>
 
                                                         <div class="action-btns">
                                                             <button class="btn btn-buy btn-primary" id="buyNowBtn"
                                                                 onclick="buyNow(event, '<%= product._id %>')"
-                                                                <%=product.quantity <=0
-                                                                ? 'disabled style="opacity: 0.5; cursor: not-allowed;"'
-                                                                : '' %>>Buy Now</button>
+                                                                >Buy Now</button>
                                                             <button class="btn btn-cart btn-secondary" id="addToCartBtn"
                                                                 onclick="addToCart(event, '<%= product._id %>')"
-                                                                <%=product.quantity <=0
-                                                                ? 'disabled style="opacity: 0.5; cursor: not-allowed;"'
-                                                                : '' %>>
-                                                                <%= product.quantity> 0 ? 'Add to Cart' : 'Out of Stock'
-                                                                    %>
+                                                                >
+                                                                Add to Cart
                                                             </button>
                                                         </div>
                     </div>
@@ -1001,18 +997,22 @@
                                     <td>₹<%= product.price %>
                                     </td>
                                 </tr>
-                                <% if (product.offerPrice) { %>
+                                <% if (product.effectiveDiscount && product.effectivePrice < product.price) { %>
                                     <tr>
                                         <th>Offer Price</th>
-                                        <td>₹<%= product.offerPrice %>
+                                        <td>₹<%= product.effectivePrice %>
                                         </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Offer</th>
+                                        <td><%= product.effectiveOfferName %> (<%= product.effectiveDiscount %>% off)</td>
                                     </tr>
                                     <% } %>
                                         <tr>
                                             <th>Availability</th>
                                             <td>
-                                                <%= product.quantity> 0 ? 'In Stock (' + product.quantity + ' items)' :
-                                                    'Out of Stock' %>
+                                                <!-- Dynamic via Variant -->
+                                                Depends on selected size/color
                                             </td>
                                         </tr>
                                         <tr>
@@ -1061,11 +1061,11 @@
                                                     <%= relatedProduct.name %>
                                                 </h3>
                                                 <div class="related-price">
-                                                    <% if (relatedProduct.offerPrice && relatedProduct.offerPrice <
+                                                    <% if (relatedProduct.effectiveDiscount && relatedProduct.effectivePrice <
                                                         relatedProduct.price) { %>
                                                         <span class="related-old-price">₹<%= relatedProduct.price %>
                                                         </span>
-                                                        <span>₹<%= relatedProduct.offerPrice %></span>
+                                                        <span>₹<%= relatedProduct.effectivePrice %></span>
                                                         <% } else { %>
                                                             <span>₹<%= relatedProduct.price %></span>
                                                             <% } %>
@@ -1173,6 +1173,20 @@
                     const firstColorItem = document.querySelector('.color-grid .color-item');
                     if (firstColorItem) {
                         firstColorItem.click();
+                    } else if (variantsData.length === 0 && document.getElementById('selectedSize')) {
+                        // Product has no variants - set default values for non-variant products
+                        const sizeItem = document.querySelector('.size-grid .size-item');
+                        if (sizeItem) {
+                            sizeItem.click();
+                        }
+                        const colorItem = document.querySelector('.color-grid .color-item');
+                        if (colorItem) {
+                            colorItem.click();
+                        }
+                        // Set default values for non-variant products
+                        document.getElementById('selectedVariantId').value = '';
+                        if (sizeItem) document.getElementById('selectedSize').value = sizeItem.dataset.size;
+                        if (colorItem) document.getElementById('selectedColor').value = colorItem.dataset.color;
                     }
                     lucide.createIcons();
                 });
@@ -1190,6 +1204,12 @@
                 let currentSelectedColor = '';
                 let currentSelectedSize = '';
                 const variantsData = JSON.parse(document.getElementById('variantData').dataset.variants || '[]');
+                const productOffer = {
+                    discount: Number('<%= product.effectiveDiscount || 0 %>'),
+                    price: Number('<%= product.effectivePrice || product.price || 0 %>'),
+                    basePrice: Number('<%= product.price || 0 %>'),
+                    name: '<%= product.effectiveOfferName || "" %>'
+                };
 
                 function updateProductUI(variant) {
                     if (!variant) return;
@@ -1228,14 +1248,14 @@
 
                     // Update Price
                     const priceContainer = document.querySelector('.price-row');
-                    if (variant.offerPrice && variant.offerPrice < variant.price) {
+                    if (productOffer.discount > 0 && productOffer.price < productOffer.basePrice) {
                         priceContainer.innerHTML = `
-                            <span class="current-price">₹${variant.offerPrice}</span>
-                            <span class="old-price">₹${variant.price}</span>
-                            <span class="discount">${Math.round((1 - variant.offerPrice / variant.price) * 100)}% off</span>
+                            <span class="current-price">₹${productOffer.price.toLocaleString()}</span>
+                            <span class="old-price">₹${productOffer.basePrice.toLocaleString()}</span>
+                            <span class="discount">${productOffer.discount}% off${productOffer.name ? ' - ' + productOffer.name : ''}</span>
                         `;
                     } else {
-                        priceContainer.innerHTML = `<span class="current-price">₹${variant.price}</span>`;
+                        priceContainer.innerHTML = `<span class="current-price">₹${variant.price.toLocaleString()}</span>`;
                     }
 
                     // Update Stock
@@ -1428,7 +1448,7 @@
                 async function addToCart(event, productId) {
                     // Stop the click from triggering the anchor tag
                     event.preventDefault();
-                    const variantId = document.getElementById('selectedVariantId').value;
+                    const variantId = document.getElementById('selectedVariantId').value || '';
                     const quantity = parseInt(document.getElementById('productQty').value);
 
                     if (quantity < 1) {
@@ -1444,7 +1464,7 @@
                             },
                             body: JSON.stringify({
                                 productId: productId,
-                                variantId: variantId,
+                                variantId: variantId || null,
                                 quantity: quantity
                             })
                         });
@@ -1483,7 +1503,7 @@
 
                 async function buyNow(event, productId) {
                     event.preventDefault();
-                    const variantId = document.getElementById('selectedVariantId').value;
+                    const variantId = document.getElementById('selectedVariantId').value || '';
                     const quantity = parseInt(document.getElementById('productQty').value);
 
                     if (quantity < 1) {
@@ -1495,7 +1515,7 @@
                         const response = await fetch('/cart/add', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ productId, variantId, quantity })
+                            body: JSON.stringify({ productId, variantId: variantId || null, quantity })
                         });
 
                         const data = await response.json();

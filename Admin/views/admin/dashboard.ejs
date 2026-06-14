@@ -1,186 +1,369 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Admin Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <style>
-    .stats-grid {
+    .dashboard-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 20px;
+        margin-bottom: 30px;
     }
 
-    .table-container {
-        width: 100%;
-        overflow-x: auto;
+    .chart-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        margin-bottom: 30px;
     }
 
-    .page-header {
+    .chart-card h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: #111;
+    }
+
+    .best-sellers-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 30px;
+    }
+
+    @media (max-width: 900px) {
+        .best-sellers-grid { grid-template-columns: 1fr; }
+    }
+
+    .best-sellers-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .best-sellers-card h2 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .best-sellers-card h2 span.bs-icon {
+        background: #f0f0f0;
+        border-radius: 8px;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .best-seller-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f4f4f4;
+    }
+
+    .best-seller-item:last-child { border-bottom: none; }
+
+    .rank-badge {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .rank-1 { background: #FFD700; color: #7a5a00; }
+    .rank-2 { background: #C0C0C0; color: #444; }
+    .rank-3 { background: #CD7F32; color: #fff; }
+    .rank-other { background: #f0f0f0; color: #666; }
+
+    .best-seller-name {
+        flex: 1;
+        font-size: 13px;
+        font-weight: 500;
+        color: #222;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .best-seller-bar-wrap {
+        width: 80px;
+        background: #f0f0f0;
+        border-radius: 99px;
+        height: 6px;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .best-seller-bar {
+        height: 100%;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #111, #555);
+    }
+
+    .best-seller-count {
+        font-size: 12px;
+        font-weight: 700;
+        color: #111;
+        width: 32px;
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .recent-orders-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        margin-bottom: 30px;
+    }
+
+    .recent-orders-card .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
+        margin-bottom: 18px;
     }
 
-    .filter-bar {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
+    .recent-orders-card h2 {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111;
     }
 
-    .search-input {
-        flex: 1;
-        min-width: 200px;
+    .empty-state {
+        text-align: center;
+        padding: 30px;
+        color: #aaa;
+        font-size: 13px;
     }
 </style>
 
 <%- include('partials/head') %>
 
-    <body>
+<body>
+    <%- include('./partials/sidebar', { activePage: 'dashboard' }) %>
+    <main class="main-content">
+        <%- include('./partials/adminHeader', { title: 'ADMIN DASHBOARD' }) %>
 
-        <%- include('./partials/sidebar', { activePage: 'dashboard' }) %>
-            <main class="main-content">
-                <%- include('./partials/adminHeader', { title: 'ADMIN DASHBOARD' }) %>
+        <!-- Stat Cards -->
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Total Revenue</h3>
+                    <div class="value">₹ <%= totalRevenue.toLocaleString() %></div>
+                </div>
+                <div class="stat-icon">
+                    <i data-lucide="indian-rupee"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Orders</h3>
+                    <div class="value"><%= orderCount %></div>
+                </div>
+                <div class="stat-icon">
+                    <i data-lucide="shopping-cart"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Products</h3>
+                    <div class="value"><%= productCount %></div>
+                </div>
+                <div class="stat-icon">
+                    <i data-lucide="package"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Customers</h3>
+                    <div class="value"><%= customerCount %></div>
+                </div>
+                <div class="stat-icon">
+                    <i data-lucide="users"></i>
+                </div>
+            </div>
+        </div>
 
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-info">
-                                <h3>Total Revenue</h3>
-                                <div class="value">₹ 145,250</div>
-                            </div>
-                            <div class="stat-icon">
-                                <i data-lucide="indian-rupee"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-info">
-                                <h3>Orders</h3>
-                                <div class="value">84</div>
-                            </div>
-                            <div class="stat-icon">
-                                <i data-lucide="shopping-cart"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-info">
-                                <h3>Products</h3>
-                                <div class="value">24</div>
-                            </div>
-                            <div class="stat-icon">
-                                <i data-lucide="package"></i>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-info">
-                                <h3>Customers</h3>
-                                <div class="value">42</div>
-                            </div>
-                            <div class="stat-icon">
-                                <i data-lucide="users"></i>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Revenue Chart -->
+        <div class="chart-card">
+            <h2>Revenue Overview — Last 7 Days</h2>
+            <canvas id="revenueOverviewChart" height="80"></canvas>
+        </div>
 
-                    <div class="table-container" style="margin-top: 30px; margin-bottom: 30px;">
-                        <div class="table-header">
-                            <h2>Revenue Overview</h2>
+        <!-- Best Sellers -->
+        <div class="best-sellers-grid">
+            <!-- Top Products -->
+            <div class="best-sellers-card">
+                <h2>
+                    <span class="bs-icon">🏆</span>
+                    Top 10 Best Selling Products
+                </h2>
+                <% if (topProducts && topProducts.length > 0) { %>
+                    <% const maxProduct = topProducts[0].totalSold; %>
+                    <% topProducts.forEach((product, i) => { %>
+                        <div class="best-seller-item">
+                            <div class="rank-badge <%= i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other' %>">
+                                <%= i + 1 %>
+                            </div>
+                            <div class="best-seller-name" title="<%= product.name %>"><%= product.name %></div>
+                            <div class="best-seller-bar-wrap">
+                                <div class="best-seller-bar" data-width="<%= Math.round((product.totalSold / maxProduct) * 100) %>"></div>
+                            </div>
+                            <div class="best-seller-count"><%= product.totalSold %></div>
                         </div>
-                        <canvas id="revenueOverviewChart" height="100"></canvas>
-                    </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="empty-state">No sales data available yet.</div>
+                <% } %>
+            </div>
 
-                    <div class="table-container">
-                        <div class="table-header">
-                            <h2>Recent Orders</h2>
-                            <a href="/admin/orders" class="btn-view-all">View All</a>
+            <!-- Top Categories -->
+            <div class="best-sellers-card">
+                <h2>
+                    <span class="bs-icon">📦</span>
+                    Top 10 Best Selling Categories
+                </h2>
+                <% if (topCategories && topCategories.length > 0) { %>
+                    <% const maxCat = topCategories[0].totalSold; %>
+                    <% topCategories.forEach((cat, i) => { %>
+                        <div class="best-seller-item">
+                            <div class="rank-badge <%= i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other' %>">
+                                <%= i + 1 %>
+                            </div>
+                            <div class="best-seller-name" title="<%= cat.name %>"><%= cat.name %></div>
+                            <div class="best-seller-bar-wrap">
+                                <div class="best-seller-bar" data-width="<%= Math.round((cat.totalSold / maxCat) * 100) %>"></div>
+                            </div>
+                            <div class="best-seller-count"><%= cat.totalSold %></div>
                         </div>
-                        <table>
-                            <thead>
+                    <% }) %>
+                <% } else { %>
+                    <div class="empty-state">No sales data available yet.</div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="recent-orders-card">
+            <div class="card-header">
+                <h2>Recent Orders</h2>
+                <a href="/admin/orders" class="btn-view-all">View All</a>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (recentOrders && recentOrders.length > 0) { %>
+                            <% recentOrders.forEach(order => { %>
                                 <tr>
-                                    <th>Order ID</th>
-                                    <th>Customer</th>
-                                    <th>Date</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
+                                    <td><%= order.orderId %></td>
+                                    <td><%= order.userId ? order.userId.firstName + ' ' + order.userId.lastName : 'N/A' %></td>
+                                    <td><%= new Date(order.createdAt).toLocaleDateString('en-GB') %></td>
+                                    <%
+                                        const computedRecentTotal = order.items ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0) : 0;
+                                        const subtotalRecentTotal = order.subtotal != null ? Math.max(0, order.subtotal - (order.discountAmount || 0)) : 0;
+                                        const displayRecentTotal = subtotalRecentTotal || order.totalAmount || computedRecentTotal;
+                                    %>
+                                    <td>₹<%= displayRecentTotal.toLocaleString() %></td>
+                                    <td>
+                                        <span class="status-badge status-<%= order.orderStatus.toLowerCase().replace(' ', '-') %>">
+                                            <%= order.orderStatus %>
+                                        </span>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>#TRU-9843</td>
-                                    <td>Adarsh Sharma</td>
-                                    <td>18/05/2026</td>
-                                    <td>₹14,999</td>
-                                    <td><span class="status-badge status-completed">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>#TRU-9842</td>
-                                    <td>Neha Patel</td>
-                                    <td>17/05/2026</td>
-                                    <td>₹8,499</td>
-                                    <td><span class="status-badge status-pending">Pending</span></td>
-                                </tr>
-                                <tr>
-                                    <td>#TRU-9841</td>
-                                    <td>Rahul Verma</td>
-                                    <td>16/05/2026</td>
-                                    <td>₹19,999</td>
-                                    <td><span class="status-badge status-completed">Completed</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-            </main>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="5" class="empty-state">No recent orders found.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 
-            <script>
-                lucide.createIcons();
+    <!-- Embed server data safely — keeps EJS out of JS blocks (avoids linter errors) -->
+    <script type="application/json" id="salesStatsData"><%- JSON.stringify(salesStats) %></script>
 
-                // Static Revenue Overview Chart
-                const revenueCtx = document.getElementById('revenueOverviewChart').getContext('2d');
-                new Chart(revenueCtx, {
-                    type: 'line',
-                    data: {
-                        labels: ['12 May', '13 May', '14 May', '15 May', '16 May', '17 May', '18 May'],
-                        datasets: [{
-                            label: 'Daily Revenue (Last 7 Days)',
-                            data: [12000, 19000, 15000, 25000, 22000, 30000, 45000],
-                            borderColor: '#000',
-                            backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                            tension: 0.4,
-                            fill: true,
-                            pointRadius: 5,
-                            pointBackgroundColor: '#000'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: true, position: 'top' },
-                            tooltip: {
-                                callbacks: {
-                                    label: function (context) {
-                                        return '₹ ' + context.parsed.y.toLocaleString();
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function (value) {
-                                        return '₹' + value.toLocaleString();
-                                    }
-                                }
-                            }
+    <script>
+        lucide.createIcons();
+
+        const salesStats = JSON.parse(document.getElementById('salesStatsData').textContent);
+        const labels = salesStats.map(stat => stat._id);
+        const chartData = salesStats.map(stat => stat.totalSales);
+
+        const revenueCtx = document.getElementById('revenueOverviewChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: labels.length ? labels : ['No Data'],
+                datasets: [{
+                    label: 'Daily Revenue',
+                    data: chartData.length ? chartData : [0],
+                    borderColor: '#111',
+                    backgroundColor: 'rgba(17,17,17,0.06)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#111',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => '₹ ' + ctx.parsed.y.toLocaleString()
                         }
                     }
-                });
-            </script>
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: '#f0f0f0' },
+                        ticks: { callback: v => '₹' + v.toLocaleString() }
+                    }
+                }
+            }
+        });
 
-    </body>
-
+        // Apply progress bar widths from data-width attributes (avoids EJS inside style attributes)
+        document.querySelectorAll('.best-seller-bar[data-width]').forEach(bar => {
+            bar.style.width = bar.dataset.width + '%';
+        });
+    </script>
+</body>
 </html>

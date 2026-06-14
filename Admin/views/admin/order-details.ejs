@@ -32,11 +32,13 @@
                                 <th>TAX (0%)</th>
                                 <th>DISCOUNT</th>
                                 <th>TOTAL</th>
+                                <th>STATUS</th>
+                                <th>ACTION</th>
                             </tr>
                         </thead>
                         <tbody>
                             <% order.items.forEach(item => { %>
-                                <tr>
+                                <tr id="item-row-<%= item._id %>">
                                     <td>
                                         <div style="display: flex; align-items: center; gap: 15px;">
                                             <% 
@@ -61,6 +63,26 @@
                                     <td>₹0</td>
                                     <td>₹0</td>
                                     <td style="font-weight: 700;">₹<%= ((item.price || 0) * item.quantity).toLocaleString() %></td>
+                                    <td>
+                                        <span id="item-status-<%= item._id %>" class="status-badge <%= item.status === 'Delivered' ? 'status-listed' : (item.status === 'Cancelled' ? 'status-unlisted' : 'status-pending') %>" style="font-size: 11px;">
+                                            <%= item.status %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <% if (item.status === 'Return Pending') { %>
+                                            <span style="color: #F59E0B; font-size: 12px; font-weight: 700;">Awaiting approval</span>
+                                        <% } else if (item.status !== 'Cancelled' && item.status !== 'Delivered' && item.status !== 'Returned' && order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Delivered' && order.orderStatus !== 'Return Pending') { %>
+                                            <button
+                                                onclick="cancelItem('<%= order._id %>', '<%= item._id %>', '<%= item.name %>')"
+                                                id="cancel-btn-<%= item._id %>"
+                                                style="background: #EF4444; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;"
+                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                                Cancel Item
+                                            </button>
+                                        <% } else { %>
+                                            <span style="color: #9CA3AF; font-size: 12px;">—</span>
+                                        <% } %>
+                                    </td>
                                 </tr>
                             <% }) %>
                         </tbody>
@@ -68,17 +90,21 @@
                 </div>
 
                 <!-- Order Summary -->
-                <% 
-                    const computedSubtotal = order.items.reduce((sum, i) => sum + ((i.price || 0) * i.quantity), 0);
+                <%
+                    const computedSubtotal = order.items.reduce((sum, i) => {
+                        const unitPrice = i.price || i.productId?.offerPrice || i.variantId?.price || i.productId?.price || 0;
+                        return sum + (unitPrice * (i.quantity || 0));
+                    }, 0);
                     const displaySubtotal  = (order.subtotal && order.subtotal > 0)       ? order.subtotal       : computedSubtotal;
                     const displayDiscount  = (order.discountAmount != null)               ? order.discountAmount  : 0;
-                    const displayTotal     = (order.totalAmount && order.totalAmount > 0) ? order.totalAmount     : (computedSubtotal - displayDiscount);
+                    const subtotalTotal    = Math.max(0, displaySubtotal - displayDiscount);
+                    const displayTotal     = (order.totalAmount && order.totalAmount > 0) ? order.totalAmount     : subtotalTotal;
                 %>
                 <div class="table-container" style="max-width: 400px; align-self: flex-end;">
                     <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px;">
                         <div style="display: flex; justify-content: space-between;">
                             <span>Subtotal</span>
-                            <span>₹<%= displaySubtotal.toLocaleString() %></span>
+                            <span id="order-subtotal">₹<%= displaySubtotal.toLocaleString() %></span>
                         </div>
                         <div style="display: flex; justify-content: space-between; color: #10B981;">
                             <span>Discount</span>
@@ -90,7 +116,7 @@
                         </div>
                         <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 18px; border-top: 1px solid #E5E7EB; margin-top: 10px; padding-top: 10px;">
                             <span>Grand Total</span>
-                            <span>₹<%= displayTotal.toLocaleString() %></span>
+                            <span id="order-total">₹<%= displayTotal.toLocaleString() %></span>
                         </div>
                     </div>
                 </div>
@@ -150,8 +176,108 @@
         </div>
     </main>
 
+    <!-- Cancel Item Confirmation Modal -->
+    <div id="cancelItemModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:12px; padding:32px; max-width:420px; width:90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                <div style="background:#FEF2F2; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <i data-lucide="x-circle" style="width:22px; height:22px; color:#EF4444;"></i>
+                </div>
+                <h3 style="font-size:18px; font-weight:700; color:#111827; margin:0;">Cancel Item</h3>
+            </div>
+            <p id="cancelItemText" style="font-size:14px; color:#6B7280; margin-bottom:24px; line-height:1.6;"></p>
+            <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button onclick="closeCancelModal()" style="padding:10px 20px; border:1px solid #D1D5DB; border-radius:6px; background:#fff; font-weight:600; font-size:14px; cursor:pointer; color:#374151;">
+                    Keep Item
+                </button>
+                <button id="confirmCancelBtn" onclick="confirmCancelItem()" style="padding:10px 20px; border:none; border-radius:6px; background:#EF4444; color:#fff; font-weight:700; font-size:14px; cursor:pointer;">
+                    Cancel Item
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         lucide.createIcons();
+
+        let pendingCancelData = null;
+
+        function cancelItem(orderId, itemId, itemName) {
+            pendingCancelData = { orderId, itemId };
+            document.getElementById('cancelItemText').textContent =
+                `Are you sure you want to cancel "${itemName}"? The stock will be restored automatically.`;
+            const modal = document.getElementById('cancelItemModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeCancelModal() {
+            document.getElementById('cancelItemModal').style.display = 'none';
+            pendingCancelData = null;
+        }
+
+        async function confirmCancelItem() {
+            if (!pendingCancelData) return;
+
+            const { orderId, itemId } = pendingCancelData;
+            const confirmBtn = document.getElementById('confirmCancelBtn');
+            confirmBtn.textContent = 'Cancelling...';
+            confirmBtn.disabled = true;
+
+            try {
+                const response = await fetch(`/admin/orders/cancel-item/${orderId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ itemId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    closeCancelModal();
+                    // Update item status badge in the table
+                    const statusEl = document.getElementById(`item-status-${itemId}`);
+                    if (statusEl) {
+                        statusEl.textContent = 'Cancelled';
+                        statusEl.className = 'status-badge status-unlisted';
+                        statusEl.style.fontSize = '11px';
+                    }
+                    // Hide the cancel button for this item
+                    const btn = document.getElementById(`cancel-btn-${itemId}`);
+                    if (btn) {
+                        btn.parentElement.innerHTML = '<span style="color:#9CA3AF; font-size:12px;">—</span>';
+                    }
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.message || 'Failed to cancel item', 'error');
+                }
+            } catch (err) {
+                showToast('Something went wrong. Please try again.', 'error');
+            } finally {
+                confirmBtn.textContent = 'Cancel Item';
+                confirmBtn.disabled = false;
+                closeCancelModal();
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('cancelItemModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCancelModal();
+        });
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+                background: ${type === 'success' ? '#10B981' : '#EF4444'};
+                color: #fff; padding: 14px 20px; border-radius: 8px;
+                font-size: 14px; font-weight: 600;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
     </script>
 </body>
 </html>

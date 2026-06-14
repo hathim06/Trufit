@@ -3,20 +3,27 @@ import cartModel from '../models/cartModel.js';
 import productModel from '../models/productModel.js';
 import variantModel from '../models/variants.js';
 import wishlistModel from '../models/wishlistModel.js';
+import { attachEffectiveOffer } from '../utils/offerPricing.js';
 
 const getCartService = async (userId) => {
     const cart = await cartModel.findOne({ userId })
         .populate({
             path: 'items.productId',
-            populate: { path: 'categoryId' }
+            populate: [
+                { path: 'offerId' },
+                { path: 'categoryId', populate: { path: 'offerId' } }
+            ]
         })
-        .populate('items.variantId');
+        .populate('items.variantId')
+        .lean();
 
     if (cart && cart.items) {
         cart.items = cart.items.filter(item => {
             const product = item.productId;
             if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) return false;
             if (product.categoryId && !product.categoryId.isListed) return false;
+            if (!item.variantId || item.variantId.isDeleted) return false;
+            item.productId = attachEffectiveOffer(product);
             return true;
         });
     }
@@ -32,21 +39,27 @@ const addToCartService = async (userId, productId, variantId, quantity = 1) => {
         throw new Error("This product is currently unavailable");
     }
 
-    let variant = null;
-    if (variantId) {
-        variant = await variantModel.findById(variantId);
-        if (!variant || variant.isDeleted) throw new Error("Selected variant is unavailable");
+    if (!variantId || variantId === "" || variantId === "null" || variantId === "undefined") {
+        const defaultVariant = await variantModel.findOne({ productId: productId, isDeleted: false, quantity: { $gt: 0 } });
+        if (!defaultVariant) {
+            throw new Error("No variant in stock available");
+        }
+        variantId = defaultVariant._id;
     }
 
-    let cart = await cartModel.findOne({ userId });
+    const variant = await variantModel.findOne({ _id: variantId, productId, isDeleted: false });
+    if (!variant) throw new Error("Selected variant is unavailable");
 
-    let stockAvailable = variant ? variant.quantity : product.quantity;
+    let cart = await cartModel.findOne({ userId });
+    const stockAvailable = variant.quantity;
+
     let currentCartQuantity = 0;
 
     if (cart) {
         const existingItem = cart.items.find(item =>
             item.productId.toString() === productId.toString() &&
-            (!variantId || (item.variantId && item.variantId.toString() === variantId.toString()))
+            item.variantId &&
+            item.variantId.toString() === variantId.toString()
         );
         if (existingItem) currentCartQuantity = existingItem.quantity;
     }
@@ -65,7 +78,8 @@ const addToCartService = async (userId, productId, variantId, quantity = 1) => {
     } else {
         const existingItemIndex = cart.items.findIndex(item =>
             item.productId.toString() === productId.toString() &&
-            (!variantId || (item.variantId && item.variantId.toString() === variantId.toString()))
+            item.variantId &&
+            item.variantId.toString() === variantId.toString()
         );
 
         if (existingItemIndex > -1) {
@@ -86,35 +100,28 @@ const addToCartService = async (userId, productId, variantId, quantity = 1) => {
     return cart;
 };
 
-const removeFromCartService = async (userId, productId) => {
+const removeFromCartService = async (userId, cartItemId) => {
     const cart = await cartModel.findOne({ userId });
     if (!cart) throw new Error("Cart not found");
 
-    cart.items = cart.items.filter(item => item.productId.toString() !== productId.toString());
+    cart.items = cart.items.filter(item => item._id.toString() !== cartItemId.toString());
     await cart.save();
 };
 
-const updateCartQuantityService = async (userId, productId, quantity) => {
+const updateCartQuantityService = async (userId, cartItemId, quantity) => {
     const cart = await cartModel.findOne({ userId });
     if (!cart) throw new Error("Cart not found");
 
-    const item = cart.items.find(item => item.productId.toString() === productId.toString());
+    const item = cart.items.find(item => item._id.toString() === cartItemId.toString());
     if (!item) throw new Error("Product not found in cart");
 
     const variantId = item.variantId;
-    let stockAvailable;
+    if (!variantId) throw new Error("Variant no longer available");
 
-    if (variantId) {
-        const variant = await variantModel.findById(variantId);
-        if (!variant || variant.isDeleted) throw new Error("Variant no longer available");
-        stockAvailable = variant.quantity;
-    } else {
-        const product = await productModel.findById(productId);
-        if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
-            throw new Error("This product is currently unavailable");
-        }
-        stockAvailable = product.quantity;
-    }
+    const variant = await variantModel.findById(variantId);
+    if (!variant || variant.isDeleted) throw new Error("Variant no longer available");
+
+    const stockAvailable = variant.quantity;
 
     const MAX_LIMIT = 5;
     if (quantity > MAX_LIMIT) {
@@ -122,7 +129,7 @@ const updateCartQuantityService = async (userId, productId, quantity) => {
     }
 
     if (quantity > stockAvailable) {
-        throw new Error(stockAvailable === 0 ? "Product is out of stock" : `Only ${stockAvailable} units available in stock`);
+        throw new Error(stockAvailable === 0 ? "Selected variant is out of stock" : `Only ${stockAvailable} units available in stock`);
     }
 
     item.quantity = quantity;

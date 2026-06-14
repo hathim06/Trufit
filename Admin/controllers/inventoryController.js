@@ -39,7 +39,7 @@ const getInventory = async (req, res) => {
             productsWithVariants = productsWithVariants.filter(p => {
                 const totalStock = p.variants.length > 0
                     ? p.variants.reduce((sum, v) => sum + v.quantity, 0)
-                    : p.quantity;
+                    : 0;
 
                 if (stockStatus === 'low') return totalStock > 0 && totalStock < 10;
                 if (stockStatus === 'out') return totalStock === 0;
@@ -75,7 +75,7 @@ const updateStock = async (req, res) => {
         if (variantId) {
             await variantModel.findByIdAndUpdate(variantId, { quantity });
         } else {
-            await productModel.findByIdAndUpdate(productId, { quantity });
+            return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: 'Variant ID is required to update stock' });
         }
 
         res.json({ success: true, message: 'Stock updated successfully' });

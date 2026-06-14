@@ -47,6 +47,28 @@ const userSchema = new mongoose.Schema({
     isAdmin: {
         type: Boolean,
         default: false
-    }
+    },
+    walletBalance: {
+        type: Number,
+        default: 0
+    },
+    walletTransactions: [{
+        type: {
+            type: String,
+            enum: ['Credit', 'Debit'],
+            required: true
+        },
+        amount: {
+            type: Number,
+            required: true
+        },
+        description: {
+            type: String
+        },
+        date: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 }, { timestamps: true })
 export default mongoose.model('User', userSchema);

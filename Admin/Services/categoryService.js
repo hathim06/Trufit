@@ -37,7 +37,8 @@ const addCategoryService = async (data) => {
     if (existing) throw new Error('Category already exists');
     return await categoryModel.create({
         name: data.name.trim(),
-        description: data.description || ''
+        description: data.description || '',
+        offerId: data.offerId || null
     });
 };
 
@@ -61,6 +62,7 @@ const updateCategoryService = async (id, data) => {
 
     cat.name = newName;
     cat.description = data.description || '';
+    cat.offerId = data.offerId || null;
     return await cat.save();
 };
 

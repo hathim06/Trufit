@@ -1,4 +1,11 @@
 import categoryService from '../Services/categoryService.js';
+import Offer from '../../User/models/offerModel.js';
+
+const getActiveOffers = () => Offer.find({
+    isActive: true,
+    validFrom: { $lte: new Date() },
+    validTo: { $gte: new Date() }
+}).sort({ createdAt: -1 });
 
 const getCategories = async (req, res) => {
     try {
@@ -24,7 +31,8 @@ const getCategories = async (req, res) => {
 };
 
 const loadAddCategory = async (req, res) => {
-    res.render('admin/add-category', { message: null });
+    const offers = await getActiveOffers();
+    res.render('admin/add-category', { message: null, offers });
 };
 
 const addCategory = async (req, res) => {
@@ -32,14 +40,16 @@ const addCategory = async (req, res) => {
         await categoryService.addCategoryService(req.body);
         res.redirect('/admin/categories?success=Category added successfully');
     } catch (error) {
-        res.render('admin/add-category', { message: error.message });
+        const offers = await getActiveOffers();
+        res.render('admin/add-category', { message: error.message, offers });
     }
 };
 
 const loadEditCategory = async (req, res) => {
     try {
         const category = await categoryService.getCategoryByIdService(req.params.id);
-        res.render('admin/edit-category', { category, message: null });
+        const offers = await getActiveOffers();
+        res.render('admin/edit-category', { category, message: null, offers });
     } catch (error) {
         res.redirect('/admin/categories');
     }
@@ -50,8 +60,9 @@ const updateCategory = async (req, res) => {
         await categoryService.updateCategoryService(req.params.id, req.body);
         res.redirect('/admin/categories?success=Category updated successfully');
     } catch (error) {
-        const category = { _id: req.params.id, name: req.body.name, description: req.body.description };
-        res.render('admin/edit-category', { category, message: error.message });
+        const offers = await getActiveOffers();
+        const category = { _id: req.params.id, name: req.body.name, description: req.body.description, offerId: req.body.offerId || null };
+        res.render('admin/edit-category', { category, message: error.message, offers });
     }
 };
 

@@ -3,19 +3,30 @@ import mongoose from 'mongoose';
 import productModel from '../models/productModel.js';
 import variantModel from '../models/variants.js';
 import categoryModel from '../models/categoryModel.js';
+import { attachEffectiveOffer } from '../utils/offerPricing.js';
 
 const getProductDetailsByIdService = async (productId) => {
-    const product = await productModel.findById(productId);
+    const product = await productModel.findById(productId)
+        .populate('offerId')
+        .populate({
+            path: 'categoryId',
+            populate: { path: 'offerId' }
+        });
     if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
         throw new Error(MESSAGES.PRODUCT_NOT_FOUND);
     }
     
-    const category = await categoryModel.findById(product.categoryId);
+    const category = product.categoryId;
     if (!category || !category.isListed) {
         throw new Error("Product category is unavailable");
     }
     
-    return product;
+    const variants = await variantModel.find({ productId: product._id, isDeleted: false });
+        const productObj = attachEffectiveOffer(product);
+        const totalStock = variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
+        productObj.totalStock = totalStock;
+        productObj.variants = variants;
+        return productObj;
 };
 
 const getVariantsByProductIdService = async (productId) => {
@@ -35,9 +46,15 @@ const getRelatedProductsService = async (productId) => {
             categoryId: currentProduct.categoryId,
             isDeleted: false,
             status: { $regex: /^active$/i }
-        }).limit(4).populate('categoryId');
+        })
+            .limit(4)
+            .populate('offerId')
+            .populate({
+                path: 'categoryId',
+                populate: { path: 'offerId' }
+            });
 
-        return relatedProducts;
+        return relatedProducts.map(product => attachEffectiveOffer(product));
     } catch (error) {
         console.error('Error fetching related products:', error);
         return [];
@@ -48,18 +65,23 @@ const getShopProductsService = async (filters = {}, page = 1) => {
     const itemsPerPage = 3;
     const skip = (page - 1) * itemsPerPage;
 
-    const activeCategory = await categoryModel.find({ isListed: true }).select('_id');
+    const activeCategory = await categoryModel.find({ 
+        isListed: { $ne: false }, 
+        isDeleted: { $ne: true }, 
+        isBlocked: { $ne: true } 
+    }).select('_id');
 
     const activeCategoryIds = activeCategory.map(cat => cat._id);
 
     let query = {
-        isDeleted: false, status: { $regex: /^active$/i },
+        isDeleted: { $ne: true }, 
+        status: { $regex: /^active$/i },
         categoryId: { $in: activeCategoryIds }
     };
 
     if (filters.category && filters.category.trim() !== '') {
         const selectedCategory = await categoryModel.findById(filters.category);
-        if (!selectedCategory || !selectedCategory.isListed) {
+        if (!selectedCategory || selectedCategory.isListed === false || selectedCategory.isDeleted === true || selectedCategory.isBlocked === true) {
         } else {
             query.categoryId = filters.category;
         }
@@ -83,9 +105,32 @@ const getShopProductsService = async (filters = {}, page = 1) => {
     }
 
     if (filters.minPrice || filters.maxPrice) {
-        query.price = {};
-        if (filters.minPrice) query.price.$gte = Number(filters.minPrice);
-        if (filters.maxPrice) query.price.$lte = Number(filters.maxPrice);
+        const min = filters.minPrice ? Number(filters.minPrice) : 0;
+        const max = filters.maxPrice ? Number(filters.maxPrice) : Infinity;
+
+        const priceConditions = [];
+        
+        const offerPriceActiveQuery = {
+            offerPrice: { $ne: null, $exists: true }
+        };
+        offerPriceActiveQuery.offerPrice = {};
+        if (filters.minPrice) offerPriceActiveQuery.offerPrice.$gte = min;
+        if (filters.maxPrice) offerPriceActiveQuery.offerPrice.$lte = max;
+        priceConditions.push(offerPriceActiveQuery);
+
+        const basePriceActiveQuery = {
+            $or: [
+                { offerPrice: null },
+                { offerPrice: { $exists: false } }
+            ]
+        };
+        basePriceActiveQuery.price = {};
+        if (filters.minPrice) basePriceActiveQuery.price.$gte = min;
+        if (filters.maxPrice) basePriceActiveQuery.price.$lte = max;
+        priceConditions.push(basePriceActiveQuery);
+
+        query.$and = query.$and || [];
+        query.$and.push({ $or: priceConditions });
     }
 
     let sortOptions = { createdAt: -1 };
@@ -95,11 +140,24 @@ const getShopProductsService = async (filters = {}, page = 1) => {
     const totalProducts = await productModel.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / itemsPerPage);
 
-    const products = await productModel.find(query)
+    const rawProducts = await productModel.find(query)
         .sort(sortOptions)
         .skip(skip)
         .limit(itemsPerPage)
-        .populate('categoryId');
+        .populate('offerId')
+        .populate({
+            path: 'categoryId',
+            populate: { path: 'offerId' }
+        });
+
+    const products = await Promise.all(rawProducts.map(async (product) => {
+        const variants = await variantModel.find({ productId: product._id, isDeleted: false });
+        const productObj = attachEffectiveOffer(product);
+        const totalStock = variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
+        productObj.totalStock = totalStock;
+        productObj.variants = variants;
+        return productObj;
+    }));
 
     return {
         products,
@@ -111,16 +169,24 @@ const getShopProductsService = async (filters = {}, page = 1) => {
 };
 
 const getListedCategoriesService = async () => {
-    return await categoryModel.find({ isListed: true }).sort({ name: 1 });
+    return await categoryModel.find({ 
+        isListed: { $ne: false }, 
+        isDeleted: { $ne: true }, 
+        isBlocked: { $ne: true } 
+    }).sort({ name: 1 });
 };
 
 const getSearchSuggestionsService = async (searchTerm) => {
-    const activeCategories = await categoryModel.find({ isListed: true }).select('_id');
+    const activeCategories = await categoryModel.find({ 
+        isListed: { $ne: false }, 
+        isDeleted: { $ne: true }, 
+        isBlocked: { $ne: true } 
+    }).select('_id');
     const activeCategoryIds = activeCategories.map(cat => cat._id);
 
     if (!searchTerm || searchTerm.trim() === '') {
         const latestProducts = await productModel.find({
-            isDeleted: false,
+            isDeleted: { $ne: true },
             status: { $regex: /^active$/i },
             categoryId: { $in: activeCategoryIds }
         })
@@ -139,7 +205,7 @@ const getSearchSuggestionsService = async (searchTerm) => {
 
     const products = await productModel.find({
         name: { $regex: query, $options: 'i' },
-        isDeleted: false,
+        isDeleted: { $ne: true },
         status: { $regex: /^active$/i },
         categoryId: { $in: activeCategoryIds }
     })
@@ -148,7 +214,9 @@ const getSearchSuggestionsService = async (searchTerm) => {
 
     const categories = await categoryModel.find({
         name: { $regex: query, $options: 'i' },
-        isListed: true
+        isListed: { $ne: false },
+        isDeleted: { $ne: true },
+        isBlocked: { $ne: true }
     })
         .select('name')
         .limit(3);

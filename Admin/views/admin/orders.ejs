@@ -44,6 +44,10 @@
                 <tbody>
                     <% if (orders && orders.length > 0) { %>
                         <% orders.forEach(order => { %>
+                            <%
+                                const hasPendingReturn = order.items && order.items.some(item => item.status === 'Return Pending');
+                                const displayStatus = hasPendingReturn ? 'Return Pending' : order.orderStatus;
+                            %>
                             <tr>
                                 <td><strong><%= order.orderId %></strong></td>
                                 <td>
@@ -55,42 +59,50 @@
                                     <% } %>
                                 </td>
                                 <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
-                                <td>₹<%= (order.totalAmount || 0).toLocaleString() %></td>
+                                <%
+                                    const computedOrderTotal = order.items ? order.items.reduce((sum, item) => {
+                                        const unitPrice = item.price || item.productId?.offerPrice || item.variantId?.price || item.productId?.price || 0;
+                                        return sum + (unitPrice * (item.quantity || 0));
+                                    }, 0) : 0;
+                                    const subtotalOrderTotal = order.subtotal != null ? Math.max(0, order.subtotal - (order.discountAmount || 0)) : 0;
+                                    const displayOrderTotal = subtotalOrderTotal || order.totalAmount || computedOrderTotal;
+                                %>
+                                <td>₹<%= displayOrderTotal.toLocaleString() %></td>
                                 <td><%= order.paymentMethod %></td>
                                 <td>
                                     <select class="status-select" onchange="updateStatus('<%= order._id %>', this.value)">
-                                        <% if (order.orderStatus === 'Pending') { %>
+                                        <% if (displayStatus === 'Pending') { %>
                                             <option value="Pending" selected>Pending</option>
                                             <option value="Confirmed">Confirmed</option>
                                             <option value="Cancelled">Cancelled</option>
-                                        <% } else if (order.orderStatus === 'Confirmed') { %>
+                                        <% } else if (displayStatus === 'Confirmed') { %>
                                             <option value="Confirmed" selected>Confirmed</option>
                                             <option value="Shipped">Shipped</option>
                                             <option value="Cancelled">Cancelled</option>
-                                        <% } else if (order.orderStatus === 'Shipped') { %>
+                                        <% } else if (displayStatus === 'Shipped') { %>
                                             <option value="Shipped" selected>Shipped</option>
                                             <option value="Out for Delivery">Out for Delivery</option>
-                                        <% } else if (order.orderStatus === 'Out for Delivery') { %>
+                                        <% } else if (displayStatus === 'Out for Delivery') { %>
                                             <option value="Out for Delivery" selected>Out for Delivery</option>
                                             <option value="Delivered">Delivered</option>
-                                        <% } else if (order.orderStatus === 'Delivered') { %>
+                                        <% } else if (displayStatus === 'Delivered') { %>
                                             <option value="Delivered" selected>Delivered</option>
-                                        <% } else if (order.orderStatus === 'Return Pending') { %>
+                                        <% } else if (displayStatus === 'Return Pending') { %>
                                             <option value="Return Pending" selected>Return Pending</option>
                                             <option value="Returned">Returned (Approve)</option>
                                             <option value="Delivered">Delivered (Reject)</option>
-                                        <% } else if (order.orderStatus === 'Cancelled') { %>
+                                        <% } else if (displayStatus === 'Cancelled') { %>
                                             <option value="Cancelled" selected>Cancelled</option>
-                                        <% } else if (order.orderStatus === 'Returned') { %>
+                                        <% } else if (displayStatus === 'Returned') { %>
                                             <option value="Returned" selected>Returned</option>
                                         <% } else { %>
-                                            <option value="Pending" <%= order.orderStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
-                                            <option value="Confirmed" <%= order.orderStatus === 'Confirmed' ? 'selected' : '' %>>Confirmed</option>
-                                            <option value="Shipped" <%= order.orderStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                                            <option value="Out for Delivery" <%= order.orderStatus === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
-                                            <option value="Delivered" <%= order.orderStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                                            <option value="Cancelled" <%= order.orderStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                                            <option value="Returned" <%= order.orderStatus === 'Returned' ? 'selected' : '' %>>Returned</option>
+                                            <option value="Pending" <%= displayStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
+                                            <option value="Confirmed" <%= displayStatus === 'Confirmed' ? 'selected' : '' %>>Confirmed</option>
+                                            <option value="Shipped" <%= displayStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                                            <option value="Out for Delivery" <%= displayStatus === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                                            <option value="Delivered" <%= displayStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                            <option value="Cancelled" <%= displayStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                            <option value="Returned" <%= displayStatus === 'Returned' ? 'selected' : '' %>>Returned</option>
                                         <% } %>
                                     </select>
                                 </td>

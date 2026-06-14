@@ -2,6 +2,73 @@ import { MESSAGES } from '../../utils/messages.js';
 import { STATUS_CODES } from '../../utils/statusCodes.js';
 import orderModel from '../../User/models/orderModel.js';
 import userModel from '../../User/models/userModel.js';
+import variantModel from '../../User/models/variants.js';
+import productModel from '../../User/models/productModel.js';
+
+const getItemUnitPrice = (item) => {
+    return Number(item.price)
+        || Number(item.productId?.offerPrice)
+        || Number(item.variantId?.price)
+        || Number(item.productId?.price)
+        || 0;
+};
+
+const getItemTotal = (item) => getItemUnitPrice(item) * (Number(item.quantity) || 0);
+
+const getItemRefundTotal = async (item) => {
+    const embeddedTotal = getItemTotal(item);
+    if (embeddedTotal > 0) return embeddedTotal;
+
+    if (item.variantId) {
+        const product = item.productId ? await productModel.findById(item.productId).select('offerPrice price') : null;
+        const productPrice = Number(product?.offerPrice) || Number(product?.price) || 0;
+        if (productPrice > 0) return productPrice * (Number(item.quantity) || 0);
+
+        const variant = await variantModel.findById(item.variantId).select('price');
+        const variantTotal = (Number(variant?.price) || 0) * (Number(item.quantity) || 0);
+        if (variantTotal > 0) return variantTotal;
+    }
+
+    return 0;
+};
+
+const getOrderTotal = (order) => {
+    const itemTotal = order.items.reduce((sum, item) => sum + getItemTotal(item), 0);
+    const subtotalTotal = Math.max(0, (Number(order.subtotal) || 0) - (Number(order.discountAmount) || 0));
+    const storedTotal = Number(order.totalAmount) || 0;
+    return subtotalTotal || storedTotal || itemTotal;
+};
+
+const refundToWallet = async (userId, amount, description) => {
+    if (amount <= 0) return;
+
+    const user = await userModel.findById(userId);
+    if (!user) return;
+
+    user.walletBalance += amount;
+    user.walletTransactions.push({
+        type: 'Credit',
+        amount,
+        description
+    });
+    await user.save();
+};
+
+const syncOrderStatusFromItems = (order) => {
+    if (order.items.length && order.items.every(item => item.status === 'Cancelled')) {
+        order.orderStatus = 'Cancelled';
+    } else if (order.items.some(item => item.status === 'Return Pending')) {
+        order.orderStatus = 'Return Pending';
+    } else if (order.items.length && order.items.every(item => ['Returned', 'Cancelled'].includes(item.status))) {
+        order.orderStatus = 'Returned';
+    } else if (order.items.some(item => item.status === 'Returned')) {
+        order.orderStatus = 'Delivered';
+    } else if (order.items.length && order.items.every(item => item.status === 'Delivered')) {
+        order.orderStatus = 'Delivered';
+    }
+};
+
+const hasPendingReturn = (order) => order.items.some(item => item.status === 'Return Pending');
 
 const getOrders = async (req, res) => {
     try {
@@ -12,43 +79,45 @@ const getOrders = async (req, res) => {
         const search = req.query.search || '';
         const status = req.query.status || '';
 
+        await orderModel.updateMany(
+            {
+                orderStatus: { $nin: ['Return Pending', 'Returned', 'Cancelled'] },
+                'items.status': 'Return Pending'
+            },
+            { $set: { orderStatus: 'Return Pending' } }
+        );
+
         const query = {};
         if (search) {
             query.orderId = { $regex: search, $options: 'i' };
         }
-        if (status) {
+        if (status === 'Return Pending') {
+            query.$or = [
+                { orderStatus: 'Return Pending' },
+                { 'items.status': 'Return Pending' }
+            ];
+        } else if (status) {
             query.orderStatus = status;
         }
 
-        const matchStage = { $match: query };
-
-        const pipeline = [
-            matchStage,
-            {
-                $addFields: {
-                    sortPriority: {
-                        $cond: { if: { $eq: ['$orderStatus', 'Pending'] }, then: 0, else: 1 }
-                    }
-                }
-            },
-            { $sort: { sortPriority: 1, createdAt: -1 } },
-            { $skip: skip },
-            { $limit: limit }
-        ];
-
-        const orders = await orderModel.aggregate(pipeline);
-
-        await orderModel.populate(orders, { path: 'userId', select: 'firstName lastName email' });
-
         const totalOrders = await orderModel.countDocuments(query);
         const totalPages = Math.ceil(totalOrders / limit);
+
+        const orders = await orderModel.find(query)
+            .populate('userId', 'firstName lastName email')
+            .populate('items.productId', 'price offerPrice')
+            .populate('items.variantId', 'price')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
         res.render('admin/orders', {
             orders,
             currentPage: page,
             totalPages,
             search,
-            status
+            status,
+            activePage: 'orders'
         });
     } catch (error) {
         console.error('Admin Get Orders Error:', error);
@@ -64,6 +133,54 @@ const updateOrderStatus = async (req, res) => {
         const currentOrder = await orderModel.findById(id);
         if (!currentOrder) {
             return res.status(STATUS_CODES.NOT_FOUND).json({ success: false, message: 'Order not found' });
+        }
+        const alreadyCancelledIds = new Set(
+            currentOrder.items
+                .filter(i => i.status === 'Cancelled')
+                .map(i => i._id.toString())
+        );
+
+        const isReturnDecision = (currentOrder.orderStatus === 'Return Pending' || hasPendingReturn(currentOrder)) && ['Returned', 'Delivered'].includes(status);
+        if (isReturnDecision) {
+            const pendingReturnItems = currentOrder.items.filter(item => item.status === 'Return Pending');
+            if (pendingReturnItems.length === 0) {
+                return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: 'No return request is pending for this order' });
+            }
+
+            if (status === 'Returned') {
+                let refundAmount = 0;
+                for (const item of pendingReturnItems) {
+                    item.status = 'Returned';
+                    refundAmount += await getItemRefundTotal(item);
+
+                    if (item.variantId) {
+                        await variantModel.findByIdAndUpdate(item.variantId, {
+                            $inc: { quantity: item.quantity }
+                        });
+                    }
+                }
+                refundAmount = refundAmount || getOrderTotal(currentOrder);
+
+                if (currentOrder.paymentStatus === 'Paid' || ['COD', 'Online', 'Wallet'].includes(currentOrder.paymentMethod) || currentOrder.walletAmountApplied > 0) {
+                    await refundToWallet(
+                        currentOrder.userId,
+                        refundAmount,
+                        `Refund for returned item(s) in order ${currentOrder.orderId}`
+                    );
+                    if (currentOrder.items.every(item => ['Returned', 'Cancelled'].includes(item.status))) {
+                        currentOrder.paymentStatus = 'Refunded';
+                    }
+                }
+            } else {
+                for (const item of pendingReturnItems) {
+                    item.status = 'Delivered';
+                }
+                currentOrder.returnReason = currentOrder.returnReason ? `Rejected: ${currentOrder.returnReason}` : 'Rejected by admin';
+            }
+
+            syncOrderStatusFromItems(currentOrder);
+            await currentOrder.save();
+            return res.json({ success: true, message: status === 'Returned' ? 'Return approved successfully' : 'Return rejected successfully' });
         }
 
         const updateData = {
@@ -86,6 +203,27 @@ const updateOrderStatus = async (req, res) => {
 
         if (!order) {
             return res.status(STATUS_CODES.NOT_FOUND).json({ success: false, message: 'Order not found' });
+        }
+
+        if (status === 'Cancelled' || status === 'Returned') {
+            for (const item of order.items) {
+                if (!alreadyCancelledIds.has(item._id.toString())) {
+                    if (item.variantId) {
+                        await variantModel.findByIdAndUpdate(item.variantId, {
+                            $inc: { quantity: item.quantity }
+                        });
+                    }
+                }
+            }
+            if (order.paymentStatus === 'Paid' || ['Online', 'Wallet'].includes(order.paymentMethod)) {
+                await refundToWallet(
+                    order.userId,
+                    getOrderTotal(order),
+                    `Refund for admin cancelled/returned order ${order.orderId}`
+                );
+                order.paymentStatus = 'Refunded';
+                await order.save();
+            }
         }
 
         res.json({ success: true, message: 'Status updated successfully' });
@@ -111,6 +249,63 @@ const getOrderDetails = async (req, res) => {
     } catch (error) {
         console.error('Admin Get Order Details Error:', error);
         res.redirect('/admin/orders');
+    }
+};
+
+const cancelOrderItem = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { itemId } = req.body;
+
+        const order = await orderModel.findById(id);
+
+        if (!order) {
+            return res.status(STATUS_CODES.NOT_FOUND).json({ success: false, message: 'Order not found' });
+        }
+
+        const item = order.items.find(i => i._id.toString() === itemId.toString());
+        if (!item) {
+            return res.status(STATUS_CODES.NOT_FOUND).json({ success: false, message: 'Item not found in order' });
+        }
+
+        if (item.status === 'Cancelled') {
+            return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: 'Item is already cancelled' });
+        }
+
+        if (item.variantId) {
+            await variantModel.findByIdAndUpdate(item.variantId, {
+                $inc: { quantity: item.quantity }
+            });
+        }
+
+        item.status = 'Cancelled';
+
+        const itemTotal = item.price * item.quantity;
+        order.subtotal = Math.max(0, order.subtotal - itemTotal);
+        order.totalAmount = Math.max(0, order.totalAmount - itemTotal);
+
+        const allCancelled = order.items.every(i => i.status === 'Cancelled');
+        if (allCancelled) {
+            order.orderStatus = 'Cancelled';
+        }
+
+        if (order.paymentStatus === 'Paid' || ['Online', 'Wallet'].includes(order.paymentMethod)) {
+            await refundToWallet(
+                order.userId,
+                itemTotal,
+                `Refund for admin cancelled item in order ${order.orderId}`
+            );
+            if (allCancelled) {
+                order.paymentStatus = 'Refunded';
+            }
+        }
+
+        await order.save();
+
+        res.json({ success: true, message: 'Item cancelled and stock restored successfully' });
+    } catch (error) {
+        console.error('Admin Cancel Item Error:', error);
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
     }
 };
 
@@ -158,9 +353,72 @@ const rejectReturn = async (req, res) => {
     }
 };
 
+const verifyReturnRequest = async (req, res) => {
+    try {
+        const { orderId, action } = req.body;
+        const order = await orderModel.findById(orderId);
+
+        if (!order) {
+            return res.status(404).json({ message: 'order not found' });
+        }
+
+        if (action === 'Approve') {
+            const pendingReturnItems = order.items.filter(item => item.status === 'Return Pending');
+            const refundAmount = pendingReturnItems.length > 0
+                ? (await Promise.all(pendingReturnItems.map(item => getItemRefundTotal(item))))
+                    .reduce((sum, amount) => sum + amount, 0)
+                : getOrderTotal(order);
+
+            order.returnStatus = 'Approved';
+            if (pendingReturnItems.length > 0) {
+                pendingReturnItems.forEach(item => {
+                    item.status = 'Returned';
+                });
+                syncOrderStatusFromItems(order);
+            } else {
+                order.orderStatus = 'Returned';
+                order.items.forEach(item => {
+                    if (item.status !== 'Cancelled') {
+                        item.status = 'Returned';
+                    }
+                });
+            }
+
+            for (const item of pendingReturnItems.length > 0 ? pendingReturnItems : order.items) {
+                if (item.variantId && item.status === 'Returned') {
+                    await variantModel.findByIdAndUpdate(item.variantId, {
+                        $inc: { quantity: item.quantity }
+                    });
+                }
+            }
+
+            await refundToWallet(
+                order.userId,
+                refundAmount,
+                `Refund for returned order ${order.orderId}`
+            );
+        } else if (action === 'Reject') {
+            order.returnStatus = 'Rejected';
+            order.orderStatus = 'Delivered';
+            order.items.forEach(item => {
+                if (item.status === 'Return Pending') {
+                    item.status = 'Delivered';
+                }
+            });
+        }
+        await order.save();
+        res.json({ message: `Return ${action.toLowerCase()} by admin`, action });
+    } catch (error) {
+        console.error('Admin Return Verify Error:', error);
+        res.status(STATUS_CODES.INTERNAL_SERVER_ERROR).json({ success: false, message: MESSAGES.SERVER_ERROR });
+    }
+}
+
 export default {
     getOrders,
     updateOrderStatus,
     getOrderDetails,
-    rejectReturn
+    cancelOrderItem,
+    rejectReturn,
+    verifyReturnRequest
 };

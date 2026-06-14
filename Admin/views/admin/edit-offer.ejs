@@ -1,0 +1,58 @@
+<%- include('partials/head') %>
+<body>
+    <%- include('partials/sidebar', { activePage: 'offers' }) %>
+
+    <main class="main-content">
+        <header class="page-header">
+            <h1 class="page-title">EDIT OFFER</h1>
+            <button type="button" class="btn" onclick="location.href='/admin/offers'">BACK</button>
+        </header>
+
+        <div class="table-container" style="max-width: 800px; margin: 0 auto; padding: 40px;">
+            <% if (message) { %>
+                <p style="background: #FEE2E2; color: #DC2626; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 20px;"><%= message %></p>
+            <% } %>
+
+            <form action="/admin/edit-offer/<%= offer._id %>" method="POST">
+                <div class="form-group">
+                    <label>OFFER NAME</label>
+                    <input type="text" name="name" value="<%= offer.name %>" placeholder="Example: Summer Sale" required>
+                </div>
+
+                <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>DISCOUNT PERCENTAGE</label>
+                        <input type="number" name="discountPercentage" value="<%= offer.discountPercentage %>" placeholder="Enter percentage" required min="1" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>STATUS</label>
+                        <select name="isActive" required>
+                            <option value="true" <%= offer.isActive ? 'selected' : '' %>>Active</option>
+                            <option value="false" <%= !offer.isActive ? 'selected' : '' %>>Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>VALID FROM</label>
+                        <input type="date" name="validFrom" value="<%= new Date(offer.validFrom).toISOString().split('T')[0] %>" required>
+                    </div>
+                    <div class="form-group">
+                        <label>VALID TO</label>
+                        <input type="date" name="validTo" value="<%= new Date(offer.validTo).toISOString().split('T')[0] %>" required>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; margin-top: 40px;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 60px;">UPDATE OFFER</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

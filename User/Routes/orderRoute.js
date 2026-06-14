@@ -15,4 +15,12 @@ router.patch('/profile/orders/:id/return', userAuth.isLoggedIn, orderController.
 router.patch('/profile/orders/:id/return-item', userAuth.isLoggedIn, orderController.returnOrderItem);
 router.get('/profile/orders/:id/invoice', userAuth.isLoggedIn, orderController.downloadInvoice);
 
+//coupons
+
+router.post('/apply-coupon', userAuth.isLoggedIn, orderController.applyCoupon);
+router.post('/remove-coupon', userAuth.isLoggedIn, orderController.removeCoupon);
+router.post('/verify-payment', userAuth.isLoggedIn, orderController.verifyPayment);
+router.post('/profile/orders/:id/retry-payment', userAuth.isLoggedIn, orderController.retryPayment);
+
+
 export default router;

@@ -363,7 +363,7 @@
                                                                         : 'N/A' %> | Qty : <%= item.quantity %>
                                                                 </div>
                                                                 <div class="item-status">
-                                                                    <% const itemStatus = item.status === 'Cancelled' ? 'Cancelled' : order.orderStatus; %>
+                                                                    <% const itemStatus = ['Cancelled', 'Return Pending', 'Returned'].includes(item.status) ? item.status : order.orderStatus; %>
                                                                     <div class="status-dot <%= itemStatus.replace(/\s+/g, '-') %>">
                                                                     </div>
                                                                     <% if (itemStatus === 'Cancelled') { %>

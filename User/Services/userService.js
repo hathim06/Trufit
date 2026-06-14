@@ -14,7 +14,7 @@ const findUserOrThrow = async (userId) => {
 const generateOtp = () => Math.floor(1000 + Math.random() * 9000);
 
 const isOtpExpired = (createdAt) => {
-    return Date.now() - createdAt > 5 * 60 * 1000; // 5 min
+    return Date.now() - createdAt > 5 * 60 * 1000;
 };
 
 const generateAndSendOtp = async (email) => {
@@ -30,11 +30,10 @@ const generateAndSendOtp = async (email) => {
 };
 
 const registerUserService = async (data) => {
-    const { firstName, lastName, email, password, referalCode } = data;
+    const { firstName, lastName, email, password, referredBy } = data;
 
     const normalizedEmail = email.trim().toLowerCase();
-    
-    // Check if email already exists
+
     const existingUser = await userModel.findOne({ email: normalizedEmail });
     if (existingUser) {
         if (existingUser.isBlocked) throw new Error("Account blocked");
@@ -43,13 +42,35 @@ const registerUserService = async (data) => {
 
     const hashPassword = await bcrypt.hash(password, 10);
 
+    const referalCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
     const user = new userModel({
         firstName,
         lastName,
         email,
         password: hashPassword,
-        referalCode: referalCode || ""
+        referalCode: referalCode
     });
+
+    if (referredBy) {
+        const referrer = await userModel.findOne({ referalCode: referredBy });
+        if (referrer) {
+            referrer.walletBalance += 100;
+            referrer.walletTransactions.push({
+                type: 'Credit',
+                amount: 100,
+                description: 'Referral Bonus (Someone used your code)'
+            });
+            await referrer.save();
+
+            user.walletBalance += 50;
+            user.walletTransactions.push({
+                type: 'Credit',
+                amount: 50,
+                description: 'Signup Bonus (Used a referral code)'
+            });
+        }
+    }
 
     return await user.save();
 };

@@ -57,10 +57,26 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="/admin/report"
+            <a href="/admin/sales-report"
                 class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'report' ? 'active' : '' %>">
                 <i data-lucide="file-text"></i>
                 <span class="nav-text">Report</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="/admin/coupons"
+                class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'coupons' ? 'active' : '' %>">
+                <i data-lucide="ticket"></i>
+                <span class="nav-text">Coupons</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a href="/admin/offers"
+                class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'offers' ? 'active' : '' %>">
+                <i data-lucide="badge-percent"></i>
+                <span class="nav-text">Offers</span>
             </a>
         </li>
 

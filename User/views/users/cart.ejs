@@ -296,13 +296,12 @@
                             <% let cartTotal = 0; %>
                             <% if (typeof cart !== 'undefined' && cart && cart.items && cart.items.length > 0) { %>
                                 <% cart.items.forEach(item => { %>
-                                    <% let currentPrice = (item.productId.offerPrice && item.productId.offerPrice < item.productId.price) ? item.productId.offerPrice : item.productId.price; %>
+                                    <% let currentPrice = (item.productId.offerPrice && item.productId.offerPrice < item.productId.price) ? item.productId.offerPrice : item.variantId.price; %>
                                     <% let itemTotal = currentPrice * item.quantity; %>
                                     <% cartTotal += itemTotal; %>
                                     <% 
-                                        let stock = item.variantId ? item.variantId.quantity : item.productId.quantity;
+                                        let stock = item.variantId ? item.variantId.quantity : 0;
                                         let isOutOfStock = stock < item.quantity;
-                                        let totalStock = stock;
                                     %>
                                     <tr class="<%= isOutOfStock ? 'item-out-of-stock' : '' %>">
                                         <td>
@@ -319,7 +318,7 @@
                                                 <div>
                                                     <span class="product-name"><%= item.productId.name %></span>
                                                     <% if (isOutOfStock) { %>
-                                                        <div class="stock-warning">Insufficient stock (Available: <%= totalStock %>)</div>
+                                                        <div class="stock-warning">Insufficient stock (Available: <%= stock %>)</div>
                                                     <% } %>
                                                 </div>
                                             </div>
@@ -332,18 +331,18 @@
                                         </td>
                                         <td><span class="price-text">₹<%= currentPrice.toLocaleString() %></span></td>
                                         <td>
-                                            <div class="qty-selector">
-                                                <button class="qty-btn update-qty" data-id="<%= item.productId ? item.productId._id : '' %>" data-qty="<%= item.quantity - 1 %>" <%= (item.quantity <= 1) ? "disabled" : "" %>>-</button>
+                                            <div class="qty-selector" data-stock="<%= stock %>">
+                                                <button class="qty-btn update-qty minus" data-id="<%= item._id %>" <%= (item.quantity <= 1) ? "disabled" : "" %>>-</button>
                                                 <input type="text" value="<%= item.quantity %>" class="qty-input" readonly>
-                                                <button class="qty-btn update-qty" data-id="<%= item.productId ? item.productId._id : '' %>" data-qty="<%= item.quantity + 1 %>" <%= (item.quantity >= 5 || item.quantity >= totalStock) ? "disabled" : "" %>>+</button>
+                                                <button class="qty-btn update-qty plus" data-id="<%= item._id %>" <%= (item.quantity >= 5 || item.quantity >= stock) ? "disabled" : "" %>>+</button>
                                             </div>
                                             <% if (item.quantity >= 5) { %>
-                                                <div style="font-size: 10px; color: #6B7280; margin-top: 5px;">Max limit reached</div>
+                                                <div class="max-limit-msg" style="font-size: 10px; color: #6B7280; margin-top: 5px;">Max limit reached</div>
                                             <% } %>
                                         </td>
                                         <td><span class="total-text">₹<%= itemTotal.toLocaleString() %></span></td>
                                         <td>
-                                            <button class="btn btn-remove remove-item" data-id="<%= item.productId ? item.productId._id : '' %>">Remove</button>
+                                            <button class="btn btn-remove remove-item" data-id="<%= item._id %>">Remove</button>
                                         </td>
                                     </tr>
                                 <% }); %>
@@ -385,21 +384,24 @@
                     // Event delegation for Cart actions
                     document.addEventListener('click', (e) => {
                         if (e.target.classList.contains('update-qty')) {
-                            const id = e.target.dataset.id;
-                            const qty = parseInt(e.target.dataset.qty);
-                            if (id && !isNaN(qty)) updateQuantity(id, qty);
+                            const btn = e.target;
+                            const id = btn.dataset.id;
+                            const isPlus = btn.classList.contains('plus');
+                            const input = btn.closest('.qty-selector').querySelector('.qty-input');
+                            const currentQty = parseInt(input.value);
+                            const newQty = isPlus ? currentQty + 1 : currentQty - 1;
+                            if (id && !isNaN(newQty)) updateQuantity(id, newQty, btn);
                         } else if (e.target.classList.contains('remove-item')) {
                             const id = e.target.dataset.id;
                             if (id) removeFromCart(id);
                         }
                     });
 
-                    async function updateQuantity(productId, newQty) {
+                    async function updateQuantity(cartItemId, newQty, btn) {
                         if (newQty < 1 || newQty > 5) return;
                         
-                        if (window.TrufitLoader) window.TrufitLoader.show();
                         try {
-                            const response = await fetch(`/cart/update/${productId}`, {
+                            const response = await fetch(`/cart/update/${cartItemId}`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ quantity: newQty })
@@ -407,18 +409,51 @@
                             
                             const data = await response.json();
                             if (response.ok) {
-                                location.reload();
+                                const selector = btn.closest('.qty-selector');
+                                const input = selector.querySelector('.qty-input');
+                                const minusBtn = selector.querySelector('.minus');
+                                const plusBtn = selector.querySelector('.plus');
+                                const stock = parseInt(selector.dataset.stock) || 0;
+                                
+                                input.value = newQty;
+                                minusBtn.disabled = (newQty <= 1);
+                                plusBtn.disabled = (newQty >= 5 || newQty >= stock);
+                                
+                                const row = btn.closest('tr');
+                                const priceText = row.querySelector('.price-text').textContent;
+                                const price = parseInt(priceText.replace(/[^0-9]/g, ''));
+                                const rowTotalEl = row.querySelector('.total-text');
+                                if (rowTotalEl && !isNaN(price)) {
+                                    rowTotalEl.textContent = '₹' + (price * newQty).toLocaleString();
+                                }
+                                
+                                let maxLimitMsg = selector.parentElement.querySelector('.max-limit-msg');
+                                if (newQty >= 5) {
+                                    if (!maxLimitMsg) {
+                                        maxLimitMsg = document.createElement('div');
+                                        maxLimitMsg.className = 'max-limit-msg';
+                                        maxLimitMsg.style.cssText = 'font-size: 10px; color: #6B7280; margin-top: 5px;';
+                                        maxLimitMsg.textContent = 'Max limit reached';
+                                        selector.parentElement.appendChild(maxLimitMsg);
+                                    }
+                                } else {
+                                    if (maxLimitMsg) {
+                                        maxLimitMsg.remove();
+                                    }
+                                }
+                                
+                                refreshCartTotals();
+                                if (typeof updateHeaderCounts === 'function') updateHeaderCounts();
                             } else {
-                                if (window.TrufitLoader) window.TrufitLoader.hide();
                                 Swal.fire('Error', data.message || 'Failed to update quantity', 'error');
                             }
                         } catch (error) {
-                            if (window.TrufitLoader) window.TrufitLoader.hide();
+                            console.error(error);
                             Swal.fire('Error', 'Something went wrong', 'error');
                         }
                     }
 
-                    async function removeFromCart(productId) {
+                    async function removeFromCart(cartItemId) {
                         const result = await Swal.fire({
                             title: 'Remove item?',
                             text: 'Are you sure you want to remove this item from your cart?',
@@ -431,10 +466,10 @@
                         if (!result.isConfirmed) return;
 
                         try {
-                            const response = await fetch(`/cart/remove/${productId}`, { method: 'POST' });
+                            const response = await fetch(`/cart/remove/${cartItemId}`, { method: 'POST' });
                             if (response.ok) {
                                 // Remove the row from the DOM
-                                const row = document.querySelector(`button.remove-item[data-id="${productId}"]`)?.closest('tr');
+                                const row = document.querySelector(`button.remove-item[data-id="${cartItemId}"]`)?.closest('tr');
                                 if (row) {
                                     row.style.transition = 'opacity 0.3s ease';
                                     row.style.opacity = '0';

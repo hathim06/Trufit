@@ -20,6 +20,8 @@ router.post('/verify-otp', userAuth.isLoggedOut, userController.verifyOtp);
 router.get('/resend-otp', userController.resendOtp);
 router.get('/resend-reset-otp', userController.resendResetOtp);
 router.get('/profile', userAuth.isLoggedIn, userController.loadProfile);
+router.get('/coupons', userAuth.isLoggedIn, userController.loadCoupons);
+router.get('/wallet', userAuth.isLoggedIn, userController.loadWallet);
 router.get('/edit-profile', userAuth.isLoggedIn, userController.loadEditProfile);
 router.post('/edit-profile', userAuth.isLoggedIn, userController.editProfile);
 router.get('/address', userAuth.isLoggedIn, userController.loadAddress);
