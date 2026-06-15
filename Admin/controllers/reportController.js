@@ -16,7 +16,10 @@ const getFilteredOrders = async (filterType, startDate, endDate) => {
         const startOfYear = new Date(now.getFullYear(), 0, 1);
         dateQuery = { $gte: startOfYear, $lte: new Date() };
     } else if (filterType === 'custom' && startDate && endDate) {
-        dateQuery = { $gte: new Date(startDate), $lte: new Date(endDate) };
+        const customStartDate = new Date(startDate);
+        const customEndDate = new Date(endDate);
+        customEndDate.setHours(23, 59, 59, 999);
+        dateQuery = { $gte: customStartDate, $lte: customEndDate };
     }
 
     const query = dateQuery.$gte
@@ -25,22 +28,47 @@ const getFilteredOrders = async (filterType, startDate, endDate) => {
     return await Order.find(query).populate('userId', 'firstName lastName email').sort({ createdAt: -1 });
 };
 
+const getOrderDiscount = order => order.discountAmount || order.couponDiscount || 0;
+
+const getOrderTotal = order => {
+    const computedOrderTotal = order.items
+        ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0)
+        : 0;
+    const subtotalOrderTotal = order.subtotal != null
+        ? Math.max(0, order.subtotal - getOrderDiscount(order))
+        : 0;
+
+    return subtotalOrderTotal || order.totalAmount || computedOrderTotal;
+};
+
+const getCustomerName = order => {
+    if (!order.userId) return 'N/A';
+    return `${order.userId.firstName || ''} ${order.userId.lastName || ''}`.trim() || 'N/A';
+};
+
+const getReportRows = orders => orders.map(order => ({
+    id: order._id.toString(),
+    orderId: order.orderId || order._id.toString(),
+    date: order.createdAt,
+    dateText: order.createdAt.toISOString().split('T')[0],
+    customer: getCustomerName(order),
+    total: getOrderTotal(order),
+    discount: getOrderDiscount(order),
+    paymentMethod: order.paymentMethod || 'N/A'
+}));
+
 export const getSalesReport = async (req, res) => {
     try {
         const { filterType, startDate, endDate } = req.query;
         const orders = await getFilteredOrders(filterType, startDate, endDate);
+        const reportRows = getReportRows(orders);
 
-        let totalSalesCount = orders.length;
-        let totalOrderAmount = 0;
-        let totalDiscount = 0;
-
-        orders.forEach(order => {
-            totalOrderAmount += order.totalAmount;
-            totalDiscount += (order.couponDiscount || 0);
-        });
+        const totalSalesCount = reportRows.length;
+        const totalOrderAmount = reportRows.reduce((sum, order) => sum + order.total, 0);
+        const totalDiscount = reportRows.reduce((sum, order) => sum + order.discount, 0);
 
         res.render('admin/sales-report', {
-            orders,
+            orders: reportRows,
             totalSalesCount,
             totalOrderAmount,
             totalDiscount,
@@ -58,6 +86,7 @@ export const downloadExcelReport = async (req, res) => {
     try {
         const { filterType, startDate, endDate } = req.query;
         const orders = await getFilteredOrders(filterType, startDate, endDate);
+        const reportRows = getReportRows(orders);
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Sales Report');
@@ -71,13 +100,13 @@ export const downloadExcelReport = async (req, res) => {
             { header: 'Payment Method', key: 'paymentMethod', width: 20 }
         ];
 
-        orders.forEach(order => {
+        reportRows.forEach(order => {
             worksheet.addRow({
-                _id: order._id.toString(),
-                date: order.createdAt.toISOString().split('T')[0],
-                customer: order.userId ? `${order.userId.firstName} ${order.userId.lastName}` : 'N/A',
-                total: order.totalAmount,
-                discount: order.couponDiscount || 0,
+                _id: order.orderId,
+                date: order.dateText,
+                customer: order.customer,
+                total: order.total,
+                discount: order.discount,
                 paymentMethod: order.paymentMethod
             });
         });
@@ -97,6 +126,7 @@ export const downloadPdfReport = async (req, res) => {
     try {
         const { filterType, startDate, endDate } = req.query;
         const orders = await getFilteredOrders(filterType, startDate, endDate);
+        const reportRows = getReportRows(orders);
 
         const doc = new PDFDocument({ margin: 30 });
 
@@ -108,12 +138,12 @@ export const downloadPdfReport = async (req, res) => {
         doc.fontSize(20).text('Sales Report', { align: 'center' });
         doc.moveDown();
 
-        orders.forEach(order => {
-            doc.fontSize(12).text(`Order ID: ${order._id}`);
-            doc.text(`Date: ${order.createdAt.toISOString().split('T')[0]}`);
-            doc.text(`Customer: ${order.userId ? order.userId.firstName + ' ' + order.userId.lastName : 'N/A'}`);
-            doc.text(`Total Amount: $${order.totalAmount}`);
-            doc.text(`Discount: $${order.couponDiscount || 0}`);
+        reportRows.forEach(order => {
+            doc.fontSize(12).text(`Order ID: ${order.orderId}`);
+            doc.text(`Date: ${order.dateText}`);
+            doc.text(`Customer: ${order.customer}`);
+            doc.text(`Total Amount: Rs. ${order.total}`);
+            doc.text(`Discount: Rs. ${order.discount}`);
             doc.moveDown();
         });
 

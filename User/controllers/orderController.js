@@ -296,6 +296,7 @@ const loadOrders = async (req, res) => {
         const userId = req.session.user;
 
         const orders = await orderModel.find({ userId })
+
             .sort({ createdAt: -1 })
             .populate('items.productId')
             .populate('items.variantId');

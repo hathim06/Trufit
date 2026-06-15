@@ -35,7 +35,7 @@ const getUsersService = async (queryParams) => {
         .limit(limit);
 
     const totalAllUsers = await userModel.countDocuments({ isAdmin: false, isDeleted: { $ne: true } });
-    // const activeUsersCount = await userModel.countDocuments({ isAdmin: false, isDeleted: { $ne: true }, isBlocked: false });
+    const totalActiveUsers=await userModel.countDocuments({isAdmin:false,isDeleted:{$ne:true},isBlocked:false});
     // const blockedUsersCount = await userModel.countDocuments({ isAdmin: false, isDeleted: { $ne: true }, isBlocked: true });
     // const deletedUsersCount = await userModel.countDocuments({ isAdmin: false, isDeleted: true });
 
@@ -47,7 +47,8 @@ const getUsersService = async (queryParams) => {
         totalPages,
         totalUsers,
         limit,
-        totalAllUsers
+        totalAllUsers,
+        totalActiveUsers
     };
 };
 

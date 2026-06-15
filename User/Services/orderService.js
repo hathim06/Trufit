@@ -149,7 +149,6 @@ const createOrder = async (userId, addressId, paymentMethod, couponCode = null, 
             const user = await userModel.findById(userId).session(session);
             if (!user) throw new Error('User not found');
 
-            // If they pay remainder/full using Wallet
             if (totalAmount > 0) {
                 if (user.walletBalance < totalAmount) {
                     throw new Error('Insufficient wallet balance');
@@ -184,8 +183,6 @@ const createOrder = async (userId, addressId, paymentMethod, couponCode = null, 
             await couponObj.save({ session });
         }
 
-        // Only delete cart for non-online payments (COD, Wallet, or if Wallet covered everything)
-        // For online payments, cart will be deleted after payment verification
         if (paymentMethod !== 'Online' || totalAmount === 0) {
             await cartModel.findOneAndDelete({ userId }, { session });
         }

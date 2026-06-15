@@ -13,15 +13,15 @@
                     <option value="yearly" <%= locals.filterType === 'yearly' ? 'selected' : '' %>>Yearly</option>
                     <option value="custom" <%= locals.filterType === 'custom' ? 'selected' : '' %>>Custom Range</option>
                 </select>
-                
+
                 <div id="customDates" class="custom-dates-wrapper">
                     <input type="date" name="startDate" value="<%= locals.startDate || '' %>" style="padding: 8px; border-radius: 5px;">
                     <input type="date" name="endDate" value="<%= locals.endDate || '' %>" style="padding: 8px; border-radius: 5px;">
                 </div>
-                
+
                 <button type="submit" class="btn btn-primary" style="padding: 8px 15px;">Filter</button>
             </form>
-            
+
             <a href="/admin/sales-report/download/pdf?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary" style="text-decoration: none;">Download PDF</a>
             <a href="/admin/sales-report/download/excel?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary" style="text-decoration: none;">Download Excel</a>
         </div>
@@ -30,7 +30,7 @@
             <div class="stat-card" style="background: #000; color: #FFF;">
                 <div class="stat-info">
                     <h3 style="color: #AAA;">Total Order Amount</h3>
-                    <div class="value">₹ <%= totalOrderAmount.toLocaleString() %></div>
+                    <div class="value">Rs. <%= totalOrderAmount.toLocaleString() %></div>
                 </div>
                 <div class="stat-icon" style="background: rgba(255,255,255,0.1);">
                     <i data-lucide="indian-rupee" style="color: #059669;"></i>
@@ -48,7 +48,7 @@
             <div class="stat-card" style="background: #000; color: #FFF;">
                 <div class="stat-info">
                     <h3 style="color: #AAA;">Total Discounts Applied</h3>
-                    <div class="value">₹ <%= totalDiscount.toLocaleString() %></div>
+                    <div class="value">Rs. <%= totalDiscount.toLocaleString() %></div>
                 </div>
                 <div class="stat-icon" style="background: rgba(255,255,255,0.1);">
                     <i data-lucide="percent" style="color: #059669;"></i>
@@ -75,15 +75,10 @@
                         <% orders.forEach(order => { %>
                             <tr>
                                 <td><%= order.orderId %></td>
-                                <td><%= order.userId ? order.userId.firstName + ' ' + order.userId.lastName : 'N/A' %></td>
-                                <td><%= new Date(order.createdAt).toLocaleDateString('en-GB') %></td>
-                                <%
-                                    const computedOrderTotal = order.items ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0) : 0;
-                                    const subtotalOrderTotal = order.subtotal != null ? Math.max(0, order.subtotal - (order.discountAmount || 0)) : 0;
-                                    const displayOrderTotal = subtotalOrderTotal || order.totalAmount || computedOrderTotal;
-                                %>
-                                <td>₹<%= displayOrderTotal.toLocaleString() %></td>
-                                <td>₹<%= order.discountAmount || order.couponDiscount || 0 %></td>
+                                <td><%= order.customer %></td>
+                                <td><%= new Date(order.date).toLocaleDateString('en-GB') %></td>
+                                <td>Rs. <%= order.total.toLocaleString() %></td>
+                                <td>Rs. <%= order.discount.toLocaleString() %></td>
                             </tr>
                         <% }) %>
                     <% } else { %>
@@ -104,7 +99,6 @@
     <script>
         lucide.createIcons();
 
-        // Set initial visibility based on server-side filter value
         (function () {
             const currentFilter = '<%= locals.filterType || "" %>';
             const customDatesDiv = document.getElementById('customDates');
