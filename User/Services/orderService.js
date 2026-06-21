@@ -12,6 +12,46 @@ const generateOrderId = () => {
     return 'ORD' + Date.now() + Math.floor(Math.random() * 1000);
 };
 
+const getCouponUserUsageCount = (coupon, userId) => {
+    if (!coupon) return 0;
+    const userIdText = userId.toString();
+    if (coupon.usages && coupon.usages.length > 0) {
+        return coupon.usages.filter(usage => usage.userId?.toString() === userIdText).length;
+    }
+    return coupon.usedBy.filter(id => id.toString() === userIdText).length;
+};
+
+const isCouponUsageAvailable = (coupon, userId) => {
+    const maxUsage = Number(coupon.maxUsage) || 100;
+    const perUserLimit = Number(coupon.perUserLimit) || 1;
+
+    if (Number(coupon.usageCount || 0) >= maxUsage) return false;
+    return getCouponUserUsageCount(coupon, userId) < perUserLimit;
+};
+
+const registerCouponUsage = async (coupon, userId, orderId, session) => {
+    if (!coupon) return;
+
+    coupon.usageCount = Number(coupon.usageCount || 0) + 1;
+    coupon.usages.push({ userId, orderId });
+    if (!coupon.usedBy.map(id => id.toString()).includes(userId.toString())) {
+        coupon.usedBy.push(userId);
+    }
+    await coupon.save({ session });
+};
+
+const getDiscountShare = (order, itemTotal) => {
+    const subtotal = Number(order.subtotal) || 0;
+    const discountAmount = Number(order.discountAmount) || 0;
+    if (subtotal <= 0 || discountAmount <= 0) return 0;
+    return Math.min(itemTotal, Math.round((itemTotal / subtotal) * discountAmount));
+};
+
+const getCouponAwareItemRefundTotal = (order, item) => {
+    const itemTotal = Number(item.price || 0) * (Number(item.quantity) || 0);
+    return Math.max(0, itemTotal - getDiscountShare(order, itemTotal));
+};
+
 const createOrder = async (userId, addressId, paymentMethod, couponCode = null, useWallet = false) => {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -90,8 +130,8 @@ const createOrder = async (userId, addressId, paymentMethod, couponCode = null, 
             if (!couponObj) {
                 throw new Error('Invalid or expired coupon code');
             }
-            if (couponObj.usedBy.map(id => id.toString()).includes(userId.toString())) {
-                throw new Error('You have already used this coupon');
+            if (!isCouponUsageAvailable(couponObj, userId)) {
+                throw new Error('Coupon usage limit reached');
             }
             if (subtotal < couponObj.minPurchase) {
                 throw new Error(`Minimum purchase of ₹${couponObj.minPurchase} is required`);
@@ -179,13 +219,10 @@ const createOrder = async (userId, addressId, paymentMethod, couponCode = null, 
         await newOrder.save({ session });
 
         if (couponObj && paymentMethod !== 'Online') {
-            couponObj.usedBy.push(userId);
-            await couponObj.save({ session });
+            await registerCouponUsage(couponObj, userId, newOrder._id, session);
         }
 
-        if (paymentMethod !== 'Online' || totalAmount === 0) {
-            await cartModel.findOneAndDelete({ userId }, { session });
-        }
+        await cartModel.findOneAndDelete({ userId }, { session });
 
         await session.commitTransaction();
         session.endSession();
@@ -241,9 +278,8 @@ const finalizeOnlineOrder = async (orderId, userId) => {
 
         if (order.couponCode) {
             const coupon = await couponModel.findOne({ couponCode: order.couponCode }).session(session);
-            if (coupon && !coupon.usedBy.map(id => id.toString()).includes(userId.toString())) {
-                coupon.usedBy.push(userId);
-                await coupon.save({ session });
+            if (coupon && isCouponUsageAvailable(coupon, userId)) {
+                await registerCouponUsage(coupon, userId, order._id, session);
             }
         }
 
@@ -291,13 +327,13 @@ const cancelOrder = async (orderId, userId, reason = 'Cancelled by customer') =>
         order.returnReason = reason;
 
         let refundAmount = 0;
-        if (order.walletAmountApplied && order.walletAmountApplied > 0) {
+        if (order.paymentStatus === 'Paid' && order.walletAmountApplied && order.walletAmountApplied > 0) {
             refundAmount += order.walletAmountApplied;
         }
-        if (order.paymentStatus === 'Paid' || ['Online', 'Wallet'].includes(order.paymentMethod)) {
+        if (order.paymentStatus === 'Paid') {
             refundAmount += order.totalAmount;
             order.paymentStatus = 'Refunded';
-        } else if (order.walletAmountApplied && order.walletAmountApplied > 0) {
+        } else if (refundAmount > 0) {
             order.paymentStatus = 'Refunded';
         }
 
@@ -354,22 +390,23 @@ const cancelOrderItem = async (orderId, itemId, userId, reason = '') => {
         item.status = 'Cancelled';
         item.cancellationReason = reason;
 
-        const itemTotal = item.price * item.quantity;
-        order.subtotal = Math.max(0, order.subtotal - itemTotal);
-        order.totalAmount = Math.max(0, order.totalAmount - itemTotal);
+        const itemGrossTotal = Number(item.price || 0) * (Number(item.quantity) || 0);
+        const refundTotal = getCouponAwareItemRefundTotal(order, item);
+        order.subtotal = Math.max(0, order.subtotal - itemGrossTotal);
+        order.totalAmount = Math.max(0, order.totalAmount - refundTotal);
 
         const allCancelled = order.items.every(i => i.status === 'Cancelled');
         if (allCancelled) {
             order.orderStatus = 'Cancelled';
         }
 
-        if (order.paymentStatus === 'Paid' || ['Online', 'Wallet'].includes(order.paymentMethod) || (order.walletAmountApplied && order.walletAmountApplied > 0)) {
+        if (order.paymentStatus === 'Paid') {
             const user = await userModel.findById(userId).session(session);
             if (user) {
-                user.walletBalance += itemTotal;
+                user.walletBalance += refundTotal;
                 user.walletTransactions.push({
                     type: 'Credit',
-                    amount: itemTotal,
+                    amount: refundTotal,
                     description: `Refund for cancelled item in order ${order.orderId}`
                 });
                 await user.save({ session });

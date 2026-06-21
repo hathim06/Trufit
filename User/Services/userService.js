@@ -13,6 +13,28 @@ const findUserOrThrow = async (userId) => {
 
 const generateOtp = () => Math.floor(1000 + Math.random() * 9000);
 
+const generateReferralCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+
+const ensureReferralCode = async (userId) => {
+    const user = await userModel.findById(userId);
+    if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
+
+    if (user.referalCode && user.referalCode.trim()) {
+        return user;
+    }
+
+    let referralCode = generateReferralCode();
+    let existing = await userModel.findOne({ referalCode: referralCode });
+    while (existing) {
+        referralCode = generateReferralCode();
+        existing = await userModel.findOne({ referalCode: referralCode });
+    }
+
+    user.referalCode = referralCode;
+    await user.save();
+    return user;
+};
+
 const isOtpExpired = (createdAt) => {
     return Date.now() - createdAt > 5 * 60 * 1000;
 };
@@ -30,7 +52,8 @@ const generateAndSendOtp = async (email) => {
 };
 
 const registerUserService = async (data) => {
-    const { firstName, lastName, email, password, referredBy } = data;
+    const { firstName, lastName, email, password } = data;
+    const referredBy = (data.referredBy || data.referalCode || '').trim().toUpperCase();
 
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -42,14 +65,15 @@ const registerUserService = async (data) => {
 
     const hashPassword = await bcrypt.hash(password, 10);
 
-    const referalCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const referalCode = generateReferralCode();
 
     const user = new userModel({
         firstName,
         lastName,
         email,
         password: hashPassword,
-        referalCode: referalCode
+        referalCode: referalCode,
+        isVerified: true
     });
 
     if (referredBy) {
@@ -110,6 +134,7 @@ const resetPasswordService = async ({ email, otp, password, confirmPassword }) =
 
     user.password = await bcrypt.hash(password, 10);
     user.isGoogleAuth = false;
+    user.isVerified = true;
 
     return await user.save();
 };
@@ -208,5 +233,6 @@ export default {
     getDefaultAddressService,
     updateProfileService,
     updatePasswordService,
-    updateProfilePictureService
+    updateProfilePictureService,
+    ensureReferralCode
 };

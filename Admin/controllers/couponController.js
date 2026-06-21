@@ -45,7 +45,7 @@ export const loadAddCoupon = async (req, res) => {
 export const addCoupon = async (req, res) => {
     try {
         const { couponCode, description, startDate,
-            expiryDate, minPurchase, status, discount } = req.body;
+            expiryDate, minPurchase, status, discount, maxUsage, perUserLimit } = req.body;
 
         const existing = await couponModel.findOne({ couponCode: couponCode.trim().toUpperCase() });
         if (existing) {
@@ -59,7 +59,9 @@ export const addCoupon = async (req, res) => {
             expiryDate,
             minPurchase: parseFloat(minPurchase),
             status,
-            discountPercentage: parseFloat(discount)
+            discountPercentage: parseFloat(discount),
+            maxUsage: parseInt(maxUsage, 10) || 100,
+            perUserLimit: parseInt(perUserLimit, 10) || 1
         });
 
         await coupon.save();
@@ -86,7 +88,7 @@ export const loadEditCoupon = async (req, res) => {
 export const updateCoupon = async (req, res) => {
     try {
         const { couponCode, description, startDate, expiryDate, minPurchase,
-            status, discount } = req.body;
+            status, discount, maxUsage, perUserLimit } = req.body;
         const couponId = req.params.id;
 
         const existing = await couponModel.findOne({
@@ -105,7 +107,9 @@ export const updateCoupon = async (req, res) => {
             expiryDate,
             minPurchase: parseFloat(minPurchase),
             status,
-            discountPercentage: parseFloat(discount)
+            discountPercentage: parseFloat(discount),
+            maxUsage: parseInt(maxUsage, 10) || 100,
+            perUserLimit: parseInt(perUserLimit, 10) || 1
         });
 
         res.redirect('/admin/coupons');

@@ -94,11 +94,13 @@
                         %>
                 </p>
 
-                <% if (typeof orderId !=='undefined' && orderId) { %>
+                <% if (typeof orderId !=='undefined' && orderId && typeof canRetry !== 'undefined' && canRetry) { %>
                     <button onclick="retryPayment('<%= orderId %>')" class="btn-retry"
                         style="border:none; cursor:pointer; margin-bottom: 15px;">Retry Payment</button>
                     <a href="/profile/orders/<%= orderId %>" class="back-link"
                         style="display:block; font-weight:600; margin-bottom: 10px;">View Order Details</a>
+                    <% } else if (typeof orderId !=='undefined' && orderId) { %>
+                        <a href="/profile/orders/<%= orderId %>" class="btn-retry">View Order Details</a>
                     <% } else { %>
                         <a href="/checkout" class="btn-retry">Retry Checkout</a>
                         <% } %>

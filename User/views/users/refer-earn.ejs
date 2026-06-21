@@ -44,6 +44,22 @@
             letter-spacing: 2px;
         }
 
+        .copy-ref-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 0 auto 40px;
+            padding: 12px 18px;
+            border: none;
+            background: #111827;
+            color: #FFF;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
         /* How it Works */
         .how-it-works h2 {
             font-size: 24px;
@@ -150,7 +166,10 @@
         <div class="refer-grid">
             <div class="referral-box">
                 <div class="referral-header">YOUR REFERAL CODE</div>
-                <div class="referral-code">FEB-1234</div>
+                <div class="referral-code"><%= user && user.referalCode ? user.referalCode : 'N/A' %></div>
+                <button class="copy-ref-btn" onclick="copyCode()">
+                    <i data-lucide="copy"></i> Copy Code
+                </button>
             </div>
 
             <div class="how-it-works">
@@ -167,14 +186,14 @@
                         <div class="step-number">2</div>
                         <div class="step-content">
                             <h3>FRIEND SIGN UP & SHOPS</h3>
-                            <p>You Get An Amount And Will Be Stored To The Wallet</p>
+                            <p>Your friend gets ₹50 in wallet after signup through your code</p>
                         </div>
                     </div>
                     <div class="step">
                         <div class="step-number">3</div>
                         <div class="step-content">
                             <h3>YOU GET THE REWARD</h3>
-                            <p>You Get Reward To Your Wallet</p>
+                            <p>You get ₹100 in your wallet when the referral is used</p>
                         </div>
                     </div>
                 </div>
@@ -186,8 +205,27 @@
 
     <%- include('partials/footer') %>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         lucide.createIcons();
+
+        async function copyCode() {
+            const code = '<%= user && user.referalCode ? user.referalCode : "" %>';
+            if (!code) return;
+            try {
+                await navigator.clipboard.writeText(code);
+                Swal.fire({
+                    toast: true,
+                    position: 'bottom-end',
+                    icon: 'success',
+                    title: 'Referral code copied',
+                    showConfirmButton: false,
+                    timer: 1800
+                });
+            } catch (error) {
+                Swal.fire('Error', 'Could not copy referral code', 'error');
+            }
+        }
     </script>
 </body>
 

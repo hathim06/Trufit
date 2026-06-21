@@ -157,6 +157,34 @@
             color: #EF4444;
             font-weight: 600;
         }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 30px;
+        }
+
+        .pagination a,
+        .pagination span {
+            min-width: 36px;
+            height: 36px;
+            border: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #374151;
+            font-weight: 700;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+
+        .pagination .active {
+            background: #000;
+            color: #FFF;
+            border-color: #000;
+        }
     </style>
 </head>
 
@@ -202,8 +230,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% if (typeof user !== 'undefined' && user.walletTransactions && user.walletTransactions.length > 0) { %>
-                        <% user.walletTransactions.slice().reverse().forEach(tx => { %>
+                    <% if (typeof transactions !== 'undefined' && transactions.length > 0) { %>
+                        <% transactions.forEach(tx => { %>
                             <tr>
                                 <td><%= new Date(tx.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %></td>
                                 <td><%= tx.description ? tx.description.toUpperCase() : 'TRANSACTION' %></td>
@@ -220,6 +248,17 @@
                     <% } %>
                 </tbody>
             </table>
+            <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+                <div class="pagination">
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                        <% if (i === currentPage) { %>
+                            <span class="active"><%= i %></span>
+                        <% } else { %>
+                            <a href="/wallet?page=<%= i %>"><%= i %></a>
+                        <% } %>
+                    <% } %>
+                </div>
+            <% } %>
                 </div> <!-- profile-main-content -->
             </div> <!-- profile-container -->
         </section>

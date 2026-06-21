@@ -15,18 +15,32 @@ const getItemUnitPrice = (item) => {
 
 const getItemTotal = (item) => getItemUnitPrice(item) * (Number(item.quantity) || 0);
 
-const getItemRefundTotal = async (item) => {
+const getDiscountShare = (order, itemTotal) => {
+    const subtotal = Number(order.subtotal) || 0;
+    const discountAmount = Number(order.discountAmount) || 0;
+    if (subtotal <= 0 || discountAmount <= 0) return 0;
+    return Math.min(itemTotal, Math.round((itemTotal / subtotal) * discountAmount));
+};
+
+const getItemRefundTotal = async (item, order = null) => {
     const embeddedTotal = getItemTotal(item);
-    if (embeddedTotal > 0) return embeddedTotal;
+    if (embeddedTotal > 0) {
+        return order ? Math.max(0, embeddedTotal - getDiscountShare(order, embeddedTotal)) : embeddedTotal;
+    }
 
     if (item.variantId) {
         const product = item.productId ? await productModel.findById(item.productId).select('offerPrice price') : null;
         const productPrice = Number(product?.offerPrice) || Number(product?.price) || 0;
-        if (productPrice > 0) return productPrice * (Number(item.quantity) || 0);
+        if (productPrice > 0) {
+            const productTotal = productPrice * (Number(item.quantity) || 0);
+            return order ? Math.max(0, productTotal - getDiscountShare(order, productTotal)) : productTotal;
+        }
 
         const variant = await variantModel.findById(item.variantId).select('price');
         const variantTotal = (Number(variant?.price) || 0) * (Number(item.quantity) || 0);
-        if (variantTotal > 0) return variantTotal;
+        if (variantTotal > 0) {
+            return order ? Math.max(0, variantTotal - getDiscountShare(order, variantTotal)) : variantTotal;
+        }
     }
 
     return 0;
@@ -151,7 +165,7 @@ const updateOrderStatus = async (req, res) => {
                 let refundAmount = 0;
                 for (const item of pendingReturnItems) {
                     item.status = 'Returned';
-                    refundAmount += await getItemRefundTotal(item);
+                    refundAmount += await getItemRefundTotal(item, currentOrder);
 
                     if (item.variantId) {
                         await variantModel.findByIdAndUpdate(item.variantId, {
@@ -161,7 +175,7 @@ const updateOrderStatus = async (req, res) => {
                 }
                 refundAmount = refundAmount || getOrderTotal(currentOrder);
 
-                if (currentOrder.paymentStatus === 'Paid' || ['COD', 'Online', 'Wallet'].includes(currentOrder.paymentMethod) || currentOrder.walletAmountApplied > 0) {
+                if (currentOrder.paymentStatus === 'Paid') {
                     await refundToWallet(
                         currentOrder.userId,
                         refundAmount,
@@ -215,7 +229,7 @@ const updateOrderStatus = async (req, res) => {
                     }
                 }
             }
-            if (order.paymentStatus === 'Paid' || ['Online', 'Wallet'].includes(order.paymentMethod)) {
+            if (order.paymentStatus === 'Paid') {
                 await refundToWallet(
                     order.userId,
                     getOrderTotal(order),
@@ -281,18 +295,19 @@ const cancelOrderItem = async (req, res) => {
         item.status = 'Cancelled';
 
         const itemTotal = item.price * item.quantity;
+        const refundTotal = Math.max(0, itemTotal - getDiscountShare(order, itemTotal));
         order.subtotal = Math.max(0, order.subtotal - itemTotal);
-        order.totalAmount = Math.max(0, order.totalAmount - itemTotal);
+        order.totalAmount = Math.max(0, order.totalAmount - refundTotal);
 
         const allCancelled = order.items.every(i => i.status === 'Cancelled');
         if (allCancelled) {
             order.orderStatus = 'Cancelled';
         }
 
-        if (order.paymentStatus === 'Paid' || ['Online', 'Wallet'].includes(order.paymentMethod)) {
+        if (order.paymentStatus === 'Paid') {
             await refundToWallet(
                 order.userId,
-                itemTotal,
+                refundTotal,
                 `Refund for admin cancelled item in order ${order.orderId}`
             );
             if (allCancelled) {
@@ -365,7 +380,7 @@ const verifyReturnRequest = async (req, res) => {
         if (action === 'Approve') {
             const pendingReturnItems = order.items.filter(item => item.status === 'Return Pending');
             const refundAmount = pendingReturnItems.length > 0
-                ? (await Promise.all(pendingReturnItems.map(item => getItemRefundTotal(item))))
+                ? (await Promise.all(pendingReturnItems.map(item => getItemRefundTotal(item, order))))
                     .reduce((sum, amount) => sum + amount, 0)
                 : getOrderTotal(order);
 
@@ -392,11 +407,14 @@ const verifyReturnRequest = async (req, res) => {
                 }
             }
 
-            await refundToWallet(
-                order.userId,
-                refundAmount,
-                `Refund for returned order ${order.orderId}`
-            );
+            if (order.paymentStatus === 'Paid') {
+                await refundToWallet(
+                    order.userId,
+                    refundAmount,
+                    `Refund for returned order ${order.orderId}`
+                );
+                order.paymentStatus = 'Refunded';
+            }
         } else if (action === 'Reject') {
             order.returnStatus = 'Rejected';
             order.orderStatus = 'Delivered';

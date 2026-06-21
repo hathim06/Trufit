@@ -146,6 +146,19 @@
             color: #2563EB;
         }
 
+        .retry-payment-btn {
+            background: #111827;
+            color: #FFF;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+
         .order-body {
             padding: 0;
         }
@@ -232,6 +245,10 @@
         }
 
         .status-dot.Cancelled {
+            background: #EF4444;
+        }
+
+        .status-dot.Payment-Failed {
             background: #EF4444;
         }
 
@@ -363,10 +380,14 @@
                                                                         : 'N/A' %> | Qty : <%= item.quantity %>
                                                                 </div>
                                                                 <div class="item-status">
-                                                                    <% const itemStatus = ['Cancelled', 'Return Pending', 'Returned'].includes(item.status) ? item.status : order.orderStatus; %>
+                                                                    <% const itemStatus = order.paymentStatus === 'Failed' ? 'Payment Failed' : (['Cancelled', 'Return Pending', 'Returned'].includes(item.status) ? item.status : order.orderStatus); %>
                                                                     <div class="status-dot <%= itemStatus.replace(/\s+/g, '-') %>">
                                                                     </div>
-                                                                    <% if (itemStatus === 'Cancelled') { %>
+                                                                    <% if (itemStatus === 'Payment Failed') { %>
+                                                                        <span style="color:#EF4444;">
+                                                                            <%= itemStatus %>
+                                                                        </span>
+                                                                    <% } else if (itemStatus === 'Cancelled') { %>
                                                                         <span style="color:#EF4444;">
                                                                             <%= itemStatus %>
                                                                         </span>
@@ -412,6 +433,13 @@
                                                     </button>
                                                 </div>
                                                 <% } %>
+                                                <% if (typeof canRetryFailedOrder === 'function' && canRetryFailedOrder(order)) { %>
+                                                <div style="padding: 12px 20px; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end;">
+                                                    <button class="retry-payment-btn" onclick="retryPayment(event, '<%= order._id %>')">
+                                                        Retry Payment
+                                                    </button>
+                                                </div>
+                                                <% } %>
                                             </div>
                                             <% }) %>
                                                 <% } else { %>
@@ -433,6 +461,7 @@
             <%- include('partials/footer') %>
 
                 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
                 <script>
                     lucide.createIcons();
 
@@ -538,6 +567,50 @@
                             } catch (error) {
                                 Swal.fire('Error', 'Something went wrong', 'error');
                             }
+                        }
+                    }
+
+                    async function retryPayment(event, orderId) {
+                        event.stopPropagation();
+
+                        try {
+                            const response = await fetch(`/profile/orders/${orderId}/retry-payment`, { method: 'POST' });
+                            const data = await response.json();
+                            if (!data.success) {
+                                return Swal.fire('Error', data.message || 'Retry is no longer available', 'error');
+                            }
+
+                            const rzp = new Razorpay({
+                                key: data.key,
+                                amount: data.amount,
+                                currency: 'INR',
+                                name: 'Trufit Smartwatches',
+                                description: 'Retry payment for your order',
+                                order_id: data.rzpOrderId,
+                                handler: async function (paymentResponse) {
+                                    const verifyResponse = await fetch('/verify-payment', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            razorpay_order_id: paymentResponse.razorpay_order_id,
+                                            razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                                            razorpay_signature: paymentResponse.razorpay_signature,
+                                            orderId: data.orderId
+                                        })
+                                    });
+                                    const verifyData = await verifyResponse.json();
+                                    window.location.href = verifyData.redirectUrl || '/profile/orders';
+                                },
+                                modal: {
+                                    ondismiss: function () {
+                                        Swal.fire('Payment Pending', 'You can retry this payment again while it is available.', 'info');
+                                    }
+                                },
+                                theme: { color: '#000000' }
+                            });
+                            rzp.open();
+                        } catch (error) {
+                            Swal.fire('Error', 'Something went wrong', 'error');
                         }
                     }
                 </script>

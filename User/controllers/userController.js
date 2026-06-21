@@ -33,7 +33,6 @@ const registerUser = async (req, res) => {
         const email = req.body.email.trim().toLowerCase();
         const { firstName, lastName, password, confirmPassword } = req.body;
 
-        // Validate password before proceeding
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
         if (!firstName?.trim()) throw new Error("First name is required");
         if (!lastName?.trim()) throw new Error("Last name is required");
@@ -62,14 +61,32 @@ const verifyOtp = async (req, res) => {
     try {
         const enteredOtp = req.body.otp.join('');
         const tempUser = req.session.tempUser;
+        const pendingGoogleUserId = req.session.pendingGoogleUserId;
 
-        if (!tempUser) throw new Error("Session expired");
+        if (!tempUser && !pendingGoogleUserId) throw new Error("Session expired");
 
-        await userService.verifyOtpService(tempUser.email, enteredOtp);
+        if (tempUser) {
+            await userService.verifyOtpService(tempUser.email, enteredOtp);
+            await userService.registerUserService(tempUser);
+            delete req.session.tempUser;
+        } else {
+            const user = await userModel.findById(pendingGoogleUserId);
+            if (!user) throw new Error("Session expired");
 
-        await userService.registerUserService(tempUser);
+            await userService.verifyOtpService(user.email, enteredOtp);
+            user.isVerified = true;
+            await user.save();
+            delete req.session.pendingGoogleUserId;
 
-        delete req.session.tempUser;
+            req.session.user = user._id;
+            return req.session.save((err) => {
+                if (err) {
+                    console.error("Session Save Error:", err);
+                    return res.render('users/login', { message: MESSAGES.SESSION_ERROR });
+                }
+                res.redirect('/');
+            });
+        }
 
         res.redirect('/login?success=verified');
     } catch (error) {
@@ -181,8 +198,7 @@ const addAddress = async (req, res) => {
             userId: req.session.user,
             address: req.body
         });
-
-        // Check if redirecting from checkout
+        
         const redirectTo = req.body.redirect || req.query.redirect || '/address';
         res.redirect(redirectTo);
     } catch (error) {
@@ -227,13 +243,23 @@ const loadOtpPage = (req, res) => {
     res.render('users/verify-otp');
 };
 
+const getPendingOtpEmail = async (req) => {
+    if (req.session.tempUser?.email) {
+        return req.session.tempUser.email;
+    }
+
+    if (req.session.pendingGoogleUserId) {
+        const pendingUser = await userModel.findById(req.session.pendingGoogleUserId).select('email');
+        return pendingUser?.email || null;
+    }
+
+    return null;
+};
+
 const resendOtp = async (req, res) => {
     try {
-        const email = req.session.tempUser?.email;
+        const email = await getPendingOtpEmail(req);
         if (!email) return res.redirect('/signup');
-
-        const user = await userModel.findOne({ email });
-        if (user && user.isBlocked) throw new Error(MESSAGES.USER_BLOCKED);
 
         await userService.generateAndSendOtp(email);
 
@@ -341,6 +367,26 @@ const googleAuthCallback = async (req, res) => {
         });
         return;
     }
+
+    if (req.user.isGoogleAuth && req.user.isVerified === false) {
+        try {
+            await userService.generateAndSendOtp(req.user.email);
+            req.session.pendingGoogleUserId = req.user._id;
+            delete req.session.user;
+            req.session.save((err) => {
+                if (err) {
+                    console.error("Google Session Save Error:", err);
+                    return res.redirect('/login?message=Session error');
+                }
+                res.redirect('/verify-otp');
+            });
+        } catch (error) {
+            console.error("Google OTP Error:", error);
+            res.redirect('/login?message=Failed to send OTP');
+        }
+        return;
+    }
+
     req.session.user = req.user._id;
     req.session.save((err) => {
         if (err) {
@@ -409,9 +455,36 @@ const loadCoupons = async (req, res) => {
 const loadWallet = async (req, res) => {
     try {
         const user = await userModel.findById(req.session.user);
-        res.render('users/wallet', { user });
+        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+        const limit = 5;
+        const transactions = user?.walletTransactions
+            ? user.walletTransactions.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
+            : [];
+        const totalPages = Math.max(1, Math.ceil(transactions.length / limit));
+        const currentPage = Math.min(page, totalPages);
+        const start = (currentPage - 1) * limit;
+
+        res.render('users/wallet', {
+            user,
+            transactions: transactions.slice(start, start + limit),
+            currentPage,
+            totalPages
+        });
     } catch (error) {
         console.error('Error loading wallet:', error);
+        res.redirect('/profile');
+    }
+};
+
+const loadReferEarn = async (req, res) => {
+    try {
+        const user = await userService.ensureReferralCode(req.session.user);
+        res.render('users/refer-earn', {
+            activePage: 'refer',
+            user
+        });
+    } catch (error) {
+        console.error('Error loading referral page:', error);
         res.redirect('/profile');
     }
 };
@@ -448,5 +521,6 @@ export default {
     googleAuthCallback,
     getUserCounts,
     loadCoupons,
-    loadWallet
+    loadWallet,
+    loadReferEarn
 };

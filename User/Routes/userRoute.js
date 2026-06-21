@@ -22,6 +22,8 @@ router.get('/resend-reset-otp', userController.resendResetOtp);
 router.get('/profile', userAuth.isLoggedIn, userController.loadProfile);
 router.get('/coupons', userAuth.isLoggedIn, userController.loadCoupons);
 router.get('/wallet', userAuth.isLoggedIn, userController.loadWallet);
+router.get('/refer-earn', userAuth.isLoggedIn, userController.loadReferEarn);
+router.get('/refer-and-earn', userAuth.isLoggedIn, userController.loadReferEarn);
 router.get('/edit-profile', userAuth.isLoggedIn, userController.loadEditProfile);
 router.post('/edit-profile', userAuth.isLoggedIn, userController.editProfile);
 router.get('/address', userAuth.isLoggedIn, userController.loadAddress);

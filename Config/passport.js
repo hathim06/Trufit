@@ -20,7 +20,8 @@ passport.use(new GoogleStrategy({
                     email,
                     firstName: profile.name.givenName || profile.displayName || 'User',
                     lastName: profile.name.familyName || ' ',
-                    isGoogleAuth: true
+                    isGoogleAuth: true,
+                    isVerified: false
                 });
             }
 

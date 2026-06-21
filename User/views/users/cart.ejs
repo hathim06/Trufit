@@ -420,6 +420,22 @@
                                 plusBtn.disabled = (newQty >= 5 || newQty >= stock);
                                 
                                 const row = btn.closest('tr');
+                                const stockWarning = row.querySelector('.stock-warning');
+                                if (newQty <= stock) {
+                                    row.classList.remove('item-out-of-stock');
+                                    if (stockWarning) stockWarning.remove();
+                                } else {
+                                    row.classList.add('item-out-of-stock');
+                                    if (!stockWarning) {
+                                        const nameWrap = row.querySelector('.product-cell > div:last-child');
+                                        if (nameWrap) {
+                                            const warning = document.createElement('div');
+                                            warning.className = 'stock-warning';
+                                            warning.textContent = `Insufficient stock (Available: ${stock})`;
+                                            nameWrap.appendChild(warning);
+                                        }
+                                    }
+                                }
                                 const priceText = row.querySelector('.price-text').textContent;
                                 const price = parseInt(priceText.replace(/[^0-9]/g, ''));
                                 const rowTotalEl = row.querySelector('.total-text');

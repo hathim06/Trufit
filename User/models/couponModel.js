@@ -30,6 +30,34 @@ const couponSchema = new mongoose.Schema({
         min: 0,
         max: 100
     },
+    maxUsage: {
+        type: Number,
+        default: 100,
+        min: 1
+    },
+    perUserLimit: {
+        type: Number,
+        default: 1,
+        min: 1
+    },
+    usageCount: {
+        type: Number,
+        default: 0
+    },
+    usages: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        orderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Order'
+        },
+        usedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     status: {
         type: String,
         enum: ['Active', 'Expired', 'Inactive'],

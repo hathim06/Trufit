@@ -10,6 +10,34 @@ import razorpay from '../../Config/razorpay.js';
 import crypto from 'crypto';
 import { attachEffectiveOffer, getEffectivePrice } from '../utils/offerPricing.js';
 
+const FAILED_ORDER_RETRY_DAYS = 3;
+
+const canRetryFailedOrder = (order) => {
+    if (!order || order.paymentMethod !== 'Online' || order.paymentStatus !== 'Failed') return false;
+    const retryUntil = new Date(order.createdAt);
+    retryUntil.setDate(retryUntil.getDate() + FAILED_ORDER_RETRY_DAYS);
+    return new Date() <= retryUntil;
+};
+
+const getCouponUserUsageCount = (coupon, userId) => {
+    const userIdText = userId.toString();
+    if (coupon.usages && coupon.usages.length > 0) {
+        return coupon.usages.filter(usage => usage.userId?.toString() === userIdText).length;
+    }
+    return coupon.usedBy.filter(id => id.toString() === userIdText).length;
+};
+
+const isCouponApplicable = (coupon, userId, subtotal) => {
+    const maxUsage = Number(coupon.maxUsage) || 100;
+    const perUserLimit = Number(coupon.perUserLimit) || 1;
+    if (coupon.status !== 'Active') return false;
+    if (new Date(coupon.startDate) > new Date()) return false;
+    if (new Date(coupon.expiryDate) < new Date()) return false;
+    if (Number(subtotal) < Number(coupon.minPurchase)) return false;
+    if (Number(coupon.usageCount || 0) >= maxUsage) return false;
+    return getCouponUserUsageCount(coupon, userId) < perUserLimit;
+};
+
 const loadCheckout = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -74,8 +102,9 @@ const loadCheckout = async (req, res) => {
             status: 'Active',
             startDate: { $lte: new Date() },
             expiryDate: { $gte: new Date() },
-            usedBy: { $ne: userId }
-        });
+            minPurchase: { $lte: subtotal }
+        }).sort({ discountPercentage: -1 });
+        const applicableCoupons = coupons.filter(coupon => isCouponApplicable(coupon, userId, subtotal));
 
         let discountAmount = 0;
         let appliedCoupon = null;
@@ -101,7 +130,7 @@ const loadCheckout = async (req, res) => {
             discountAmount,
             total,
             appliedCoupon,
-            coupons,
+            coupons: applicableCoupons,
             walletBalance: user ? user.walletBalance : 0,
             userData: user ? { mobile: user.mobile || '', email: user.email || '' } : { mobile: '', email: '' }
         });
@@ -126,8 +155,8 @@ const applyCoupon = async (req, res) => {
         if (!coupon) {
             return res.json({ success: false, message: 'Invalid or expired coupon' });
         }
-        if (coupon.usedBy.map(id => id.toString()).includes(userId.toString())) {
-            return res.json({ success: false, message: 'You have already used this coupon' });
+        if (!isCouponApplicable(coupon, userId, subtotal)) {
+            return res.json({ success: false, message: 'Coupon is not applicable or usage limit reached' });
         }
         if (subtotal < coupon.minPurchase) {
             return res.json({ success: false, message: `Minimum purchase of ₹${coupon.minPurchase} is required` });
@@ -198,7 +227,7 @@ const retryPayment = async (req, res) => {
         const orderId = req.params.id;
         const order = await orderModel.findById(orderId);
 
-        if (!order || order.paymentStatus === 'Paid' || order.orderStatus === 'Cancelled') {
+        if (!order || order.userId.toString() !== req.session.user.toString() || !canRetryFailedOrder(order)) {
             return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: 'Invalid order for retry' });
         }
 
@@ -284,10 +313,22 @@ const loadOrderSuccess = async (req, res) => {
     }
 };
 
-const loadOrderFailed = (req, res) => {
+const loadOrderFailed = async (req, res) => {
+    let canRetry = false;
+
+    if (req.query.orderId) {
+        const failedOrder = await orderModel.findOneAndUpdate(
+            { _id: req.query.orderId, userId: req.session.user, paymentMethod: 'Online', paymentStatus: { $ne: 'Paid' } },
+            { paymentStatus: 'Failed' },
+            { new: true }
+        ).catch(error => console.error('Failed to mark order payment failed:', error));
+        canRetry = canRetryFailedOrder(failedOrder);
+    }
+
     res.render('users/order-failed', {
         message: req.query.message || null,
-        orderId: req.query.orderId || null
+        orderId: req.query.orderId || null,
+        canRetry
     });
 };
 
@@ -301,7 +342,7 @@ const loadOrders = async (req, res) => {
             .populate('items.productId')
             .populate('items.variantId');
 
-        res.render('users/orders', { orders });
+        res.render('users/orders', { orders, canRetryFailedOrder });
     } catch (error) {
         console.error('Load Orders Error:', error);
         res.redirect('/');

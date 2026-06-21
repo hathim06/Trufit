@@ -109,11 +109,17 @@ const removeFromCartService = async (userId, cartItemId) => {
 };
 
 const updateCartQuantityService = async (userId, cartItemId, quantity) => {
+    quantity = Number(quantity);
+    if (!Number.isInteger(quantity) || quantity < 1) {
+        throw new Error("Invalid quantity");
+    }
+
     const cart = await cartModel.findOne({ userId });
     if (!cart) throw new Error("Cart not found");
 
     const item = cart.items.find(item => item._id.toString() === cartItemId.toString());
     if (!item) throw new Error("Product not found in cart");
+    const currentQuantity = item.quantity;
 
     const variantId = item.variantId;
     if (!variantId) throw new Error("Variant no longer available");
@@ -128,7 +134,7 @@ const updateCartQuantityService = async (userId, cartItemId, quantity) => {
         throw new Error(`Maximum limit per person is ${MAX_LIMIT} units`);
     }
 
-    if (quantity > stockAvailable) {
+    if (quantity > currentQuantity && quantity > stockAvailable) {
         throw new Error(stockAvailable === 0 ? "Selected variant is out of stock" : `Only ${stockAvailable} units available in stock`);
     }
 
