@@ -78,12 +78,6 @@ const getCouponAwareItemRefundTotal = (order, item) => {
     return Math.max(0, itemTotal - getDiscountShare(order, itemTotal));
 };
 
-const calculateCouponDiscount = (coupon, subtotal) => {
-    const percentageDiscount = Math.round(Number(subtotal) * (Number(coupon.discountPercentage) / 100));
-    const maxDiscount = Number(coupon.maxDiscountAmount) || percentageDiscount;
-    return Math.min(percentageDiscount, maxDiscount);
-};
-
 const createOrder = async (userId, addressId, paymentMethod, couponCode = null, useWallet = false) => {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -169,7 +163,7 @@ const createOrder = async (userId, addressId, paymentMethod, couponCode = null, 
                 throw new Error(`Minimum purchase of ₹${couponObj.minPurchase} is required`);
             }
 
-            discountAmount = calculateCouponDiscount(couponObj, subtotal);
+            discountAmount = Math.round(subtotal * (couponObj.discountPercentage / 100));
             totalAmount = subtotal - discountAmount;
         }
 
@@ -300,10 +294,6 @@ const finalizeOnlineOrder = async (orderId, userId) => {
             if (item.status !== 'Cancelled') {
                 item.status = 'Confirmed';
             }
-        }
-
-        if (!order.items.some(item => item.status !== 'Cancelled')) {
-            throw new Error('There are no active items left in this order to confirm');
         }
 
         if (order.couponCode) {
@@ -519,6 +509,4 @@ export default {
     canReturnOrder,
     canReturnOrderItem
 };
-
-
 

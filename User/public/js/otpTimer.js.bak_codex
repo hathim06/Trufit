@@ -9,6 +9,7 @@
  * @param {function} config.onTimerEnd - Callback when timer ends (optional)
  */
 function initializeOtpTimer(config) {
+    // Set defaults
     const timerElement = document.getElementById(config.timerElementId);
     const timerContainer = document.getElementById(config.timerContainerId);
     const resendButton = document.getElementById(config.resendButtonId);
@@ -18,66 +19,67 @@ function initializeOtpTimer(config) {
 
     if (!timerElement || !timerContainer || !resendButton) {
         console.error('OTP Timer: Missing required HTML elements');
-        return null;
+        return;
     }
 
-    const showCountdown = () => {
-        timerContainer.style.display = 'inline';
-        resendButton.style.display = 'none';
-        resendButton.classList.add('disabled');
-    };
-
-    const showResendButton = () => {
-        timerContainer.style.display = 'none';
-        resendButton.style.display = 'inline';
-        resendButton.classList.remove('disabled');
-    };
-
-    const storedExpiry = Number(sessionStorage.getItem(storageKey));
-    const now = Date.now();
     let timeLeft;
+    const storedExpiry = sessionStorage.getItem(storageKey);
+    const now = Date.now();
 
-    if (Number.isFinite(storedExpiry) && storedExpiry > now) {
-        timeLeft = Math.ceil((storedExpiry - now) / 1000);
+    // Calculate remaining time
+    if (storedExpiry && now < parseInt(storedExpiry, 10)) {
+        // Timer still running from previous session
+        timeLeft = Math.ceil((parseInt(storedExpiry, 10) - now) / 1000);
     } else {
+        // Start fresh timer
         timeLeft = duration;
-        sessionStorage.setItem(storageKey, String(now + (duration * 1000)));
+        sessionStorage.setItem(storageKey, now + (duration * 1000));
     }
 
+    timerElement.textContent = timeLeft;
+
+    // If timer already expired
     if (timeLeft <= 0) {
-        sessionStorage.removeItem(storageKey);
         showResendButton();
-        return null;
+        return;
     }
 
-    showCountdown();
-    timerElement.textContent = String(timeLeft).padStart(2, '0');
-
+    // Start countdown
     const countdown = setInterval(() => {
-        timeLeft -= 1;
-        timerElement.textContent = String(Math.max(timeLeft, 0)).padStart(2, '0');
+        timeLeft--;
+        timerElement.textContent = timeLeft;
 
         if (timeLeft <= 0) {
             clearInterval(countdown);
-            sessionStorage.removeItem(storageKey);
             showResendButton();
+            sessionStorage.removeItem(storageKey);
 
+            // Execute callback if provided
             if (onTimerEnd && typeof onTimerEnd === 'function') {
                 onTimerEnd();
             }
         }
     }, 1000);
 
+    // Helper function to show resend button
+    function showResendButton() {
+        timerContainer.style.display = 'none';
+        resendButton.style.display = 'inline';
+        resendButton.classList.remove('disabled');
+    }
+
+    // Return object with cleanup/reset functions (optional)
     return {
         reset: () => {
             clearInterval(countdown);
             sessionStorage.removeItem(storageKey);
-            initializeOtpTimer(config);
+            initializeOtpTimer(config); // Restart timer
         },
         stop: () => clearInterval(countdown)
     };
 }
 
+// Export for use in modules (if needed)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { initializeOtpTimer };
 }

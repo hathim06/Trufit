@@ -17,7 +17,12 @@ import requestContext from './Middlewares/requestContext.js';
 import registerRoutes from './Routes/index.js';
 import registerErrorHandlers from './Middlewares/registerErrorHandlers.js';
 
-app.use(morgan('dev'))
+app.use(morgan('dev'));
+
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    next();
+});
 
 // Connect to Database
 connectDB();
@@ -42,6 +47,9 @@ app.set('views', [
 import productModel from './User/models/productModel.js';
 import bannerModel from './User/models/bannerModel.js';
 import categoryModel from './User/models/categoryModel.js';
+import reviewModel from './User/models/reviewModel.js';
+import variantModel from './User/models/variants.js';
+import { attachEffectiveOffer } from './User/utils/offerPricing.js';
 
 // Home Page
 app.get('/', async (req, res) => {
@@ -58,26 +66,41 @@ app.get('/', async (req, res) => {
             isDeleted: { $ne: true },
             status: 'Active',
             categoryId: { $in: activeCategoryIds }
-        }).sort({ createdAt: -1 }).limit(3);
+        }).sort({ createdAt: -1 }).limit(6);
 
         if (products.length === 0) {
             products = await productModel.find({
                 isDeleted: { $ne: true },
                 status: 'Active',
                 categoryId: { $in: activeCategoryIds }
-            }).sort({ createdAt: -1 }).limit(3);
+            }).sort({ createdAt: -1 }).limit(6);
         }
+
+        products = await Promise.all(products.map(async (product) => {
+            const variants = await variantModel.find({ productId: product._id, isDeleted: false });
+            const productObj = attachEffectiveOffer(product);
+            productObj.totalStock = variants.reduce((sum, variant) => sum + (Number(variant.quantity) || 0), 0);
+            return productObj;
+        }));
 
         const banners = await bannerModel.find({
             isDeleted: false,
             status: 'Active'
         }).sort({ order: 1 });
 
+        const reviews = await reviewModel.find({
+            isVerified: true
+        })
+            .sort({ createdAt: -1 })
+            .limit(6)
+            .select('userName userProfilePicture comment rating createdAt');
+
         res.render('users/home', {
             user: req.session.user,
             products: products,
             banners: banners,
-            categories: activeCategories
+            categories: activeCategories,
+            reviews
         });
     } catch (error) {
         console.log("Home Page Load Error:", error);
@@ -85,7 +108,8 @@ app.get('/', async (req, res) => {
             user: req.session.user,
             products: [],
             banners: [],
-            categories: []
+            categories: [],
+            reviews: []
         });
     }
 });
@@ -98,3 +122,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server started on http://0.0.0.0:${PORT}`);
 });
+

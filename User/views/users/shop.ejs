@@ -504,6 +504,8 @@
                     <div class="product-grid">
                         <% if (typeof products !=='undefined' && products.length> 0) { %>
                             <% products.forEach(product=> { %>
+                                <% const isBlocked = product.status && product.status.toLowerCase() !== 'active'; %>
+                                <% const isOutOfStock = Number(product.totalStock || 0) <= 0; %>
                                 <div class="product-card">
                                     <a href="/product/<%= product._id %>"
                                         style="text-decoration: none; color: inherit;">
@@ -514,16 +516,31 @@
                                                     <img src="/public/placeholder.png" alt="No Image">
                                                     <% } %>
 
+                                                        <% if (isBlocked) { %>
+                                                            <span class="stock-badge" style="background: #FEE2E2; color: #991B1B;">Unavailable</span>
+                                                        <% } else if (isOutOfStock) { %>
+                                                            <span class="stock-badge">Out of Stock</span>
+                                                        <% } %>
+
                                                         <div class="card-actions">
                                                             <div class="heart-btn <%= (typeof wishlistProductIds !== 'undefined' && wishlistProductIds.includes(product._id.toString())) ? 'active' : '' %>"
                                                                 onclick="toggleWishlist(event, '<%= product._id %>')">
                                                                 <i data-lucide="heart"></i>
                                                             </div>
 
-                                                            <div class="cart-btn-circle"
-                                                                onclick="addToCart(event, '<%= product._id %>')">
-                                                                <i data-lucide="shopping-cart"></i>
-                                                            </div>
+                                                            <% if (isBlocked) { %>
+                                                                <div class="cart-btn-circle disabled" title="Unavailable" aria-disabled="true">
+                                                                    <i data-lucide="shopping-cart"></i>
+                                                                </div>
+                                                            <% } else if (isOutOfStock) { %>
+                                                                <div class="cart-btn-circle disabled" title="Out of stock" aria-disabled="true">
+                                                                    <i data-lucide="shopping-cart"></i>
+                                                                </div>
+                                                            <% } else { %>
+                                                                <div class="cart-btn-circle" onclick="addToCart(event, '<%= product._id %>')">
+                                                                    <i data-lucide="shopping-cart"></i>
+                                                                </div>
+                                                            <% } %>
                                                         </div>
                                         </div>
                                         <div class="product-info">

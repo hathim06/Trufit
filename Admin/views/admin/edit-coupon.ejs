@@ -18,35 +18,39 @@
         </div>
 
         <div class="table-container" style="max-width: 800px; margin: 0 auto; padding: 40px;">
-            <% if (message) { %>
+            <% if (typeof errors !== 'undefined' && errors && errors.length) { %>
+                <div style="background: #FEE2E2; color: #991B1B; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
+                    <% errors.forEach(error => { %><div><%= error %></div><% }) %>
+                </div>
+            <% } else if (message) { %>
                 <p style="background: #FEE2E2; color: #DC2626; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 20px;"><%= message %></p>
             <% } %>
             <form action="/admin/edit-coupon/<%= coupon._id %>" method="POST">
                 <div class="form-group">
                     <label>COUPON CODE</label>
-                    <input type="text" name="couponCode" value="<%= coupon.couponCode %>" placeholder="Enter coupon code" required>
+                    <input type="text" name="couponCode" value="<%= formData.couponCode || coupon.couponCode %>" placeholder="Enter coupon code" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_-]+" title="Use letters, numbers, hyphen, or underscore only">
                 </div>
 
                 <div class="form-group">
                     <label>COUPON DESCRIPTION</label>
-                    <textarea name="description" class="description-area" style="min-height: 100px;" required><%= coupon.description %></textarea>
+                    <textarea name="description" class="description-area" style="min-height: 100px;" required minlength="5" maxlength="200"><%= formData.description || coupon.description %></textarea>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label>START DATE</label>
-                        <input type="date" name="startDate" value="<%= new Date(coupon.startDate).toISOString().split('T')[0] %>" required>
+                        <input type="date" name="startDate" value="<%= formData.startDate || new Date(coupon.startDate).toISOString().split('T')[0] %>" required>
                     </div>
                     <div class="form-group">
                         <label>EXPIRY DATE</label>
-                        <input type="date" name="expiryDate" value="<%= new Date(coupon.expiryDate).toISOString().split('T')[0] %>" required>
+                        <input type="date" name="expiryDate" value="<%= formData.expiryDate || new Date(coupon.expiryDate).toISOString().split('T')[0] %>" required>
                     </div>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group" style="flex: 1;">
                         <label>MINIMUM PURCHASE AMOUNT</label>
-                        <input type="number" name="minPurchase" value="<%= coupon.minPurchase %>" placeholder="Enter amount" required>
+                        <input type="number" name="minPurchase" value="<%= formData.minPurchase || coupon.minPurchase %>" placeholder="Enter amount" required min="0" step="0.01">
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>STATUS</label>
@@ -58,19 +62,25 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>DISCOUNT PERCENTAGE</label>
-                    <input type="number" name="discount" value="<%= coupon.discountPercentage %>" placeholder="Enter percentage" required min="0" max="100">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>DISCOUNT PERCENTAGE</label>
+                        <input type="number" name="discount" value="<%= formData.discount || coupon.discountPercentage %>" placeholder="Enter percentage" required min="1" max="100" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>MAX DISCOUNT LIMIT</label>
+                        <input type="number" name="maxDiscountAmount" value="<%= formData.maxDiscountAmount || coupon.maxDiscountAmount || '' %>" placeholder="Enter max amount" required min="1" step="0.01">
+                    </div>
                 </div>
 
                 <div class="form-grid">
                     <div class="form-group" style="flex: 1;">
                         <label>TOTAL COUPONS AVAILABLE</label>
-                        <input type="number" name="maxUsage" value="<%= coupon.maxUsage || 100 %>" required min="1">
+                        <input type="number" name="maxUsage" value="<%= formData.maxUsage || coupon.maxUsage || 100 %>" required min="1">
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>PER USER LIMIT</label>
-                        <input type="number" name="perUserLimit" value="<%= coupon.perUserLimit || 1 %>" required min="1">
+                        <input type="number" name="perUserLimit" value="<%= formData.perUserLimit || coupon.perUserLimit || 1 %>" required min="1">
                     </div>
                 </div>
 
@@ -86,3 +96,5 @@
     </script>
 </body>
 </html>
+
+

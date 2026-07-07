@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 const router = express.Router();
 import adminAuth from '../Middlewares/adminAuth.js';
 import upload from '../../User/Middlewares/upload.js';
@@ -103,6 +103,7 @@ router.patch('/colors/unblock/:id', adminAuth.isAdmin, colorController.unblockCo
 router.get('/orders', adminAuth.isAdmin, orderController.getOrders);
 router.get('/orders/:id', adminAuth.isAdmin, orderController.getOrderDetails);
 router.patch('/orders/status/:id', adminAuth.isAdmin, orderController.updateOrderStatus);
+router.patch('/orders/item-status/:id', adminAuth.isAdmin, orderController.updateOrderItemStatus);
 router.patch('/orders/cancel-item/:id', adminAuth.isAdmin, orderController.cancelOrderItem);
 router.post('/orders/verify-return', adminAuth.isAdmin, orderController.verifyReturnRequest);
 

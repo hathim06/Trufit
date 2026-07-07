@@ -9,7 +9,7 @@
                     <div class="stat-card">
                         <div class="stat-info">
                             <h3>Total Products</h3>
-                            <div class="value"><%= totalProducts %></div>
+                            <div class="value" id="totalProductsCount"><%= totalProducts %></div>
                         </div>
                         <div class="stat-icon" style="background: #E8F0FE; color: #1A73E8;">
                             <i data-lucide="package" style="color: #1A73E8;"></i>
@@ -19,7 +19,7 @@
                     <div class="stat-card">
                         <div class="stat-info">
                             <h3>Active Products</h3>
-                            <div class="value"><%= totalActiveProducts %></div>
+                            <div class="value" id="totalActiveProductsCount"><%= totalActiveProducts %></div>
                         </div>
                         <div class="stat-icon" style="background: #E6F4EA; color: #137333;">
                             <i data-lucide="package-check" style="color: #137333;"></i>
@@ -29,7 +29,7 @@
                     <div class="stat-card">
                         <div class="stat-info">
                             <h3>Blocked Products</h3>
-                            <div class="value"><%= typeof totalBlockedProducts !== 'undefined' ? totalBlockedProducts : 0 %></div>
+                            <div class="value" id="totalBlockedProductsCount"><%= typeof totalBlockedProducts !== 'undefined' ? totalBlockedProducts : 0 %></div>
                         </div>
                         <div class="stat-icon" style="background: #FCE8E6; color: #C5221F;">
                             <i data-lucide="shield-alert" style="color: #C5221F;"></i>
@@ -39,7 +39,7 @@
                     <div class="stat-card">
                         <div class="stat-info">
                             <h3>Soft Deleted</h3>
-                            <div class="value"><%= typeof totalDeletedProducts !== 'undefined' ? totalDeletedProducts : 0 %></div>
+                            <div class="value" id="totalDeletedProductsCount"><%= typeof totalDeletedProducts !== 'undefined' ? totalDeletedProducts : 0 %></div>
                         </div>
                         <div class="stat-icon" style="background: #F3F4F6; color: #4B5563;">
                             <i data-lucide="trash-2" style="color: #4B5563;"></i>
@@ -94,7 +94,7 @@
                 <tbody>
                     <% if (typeof products !== 'undefined' && products.length > 0) { %>
                         <% products.forEach(product => { %>
-                            <tr id="product-row-<%= product._id %>">
+                            <tr id="product-row-<%= product._id %>" data-deleted="<%= product.isDeleted ? 'true' : 'false' %>" data-status="<%= product.status %>">
                                 <td>
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <% if (product.image && product.image.length > 0) { %>
@@ -195,6 +195,82 @@
     <script>
         lucide.createIcons();
 
+        function changeCounter(id, delta) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const nextValue = Math.max((parseInt(el.textContent, 10) || 0) + delta, 0);
+            el.textContent = nextValue;
+        }
+
+        function updateProductCounters(row, action) {
+            if (!row) return;
+            const isDeleted = row.dataset.deleted === 'true';
+            const status = row.dataset.status;
+            const isActive = !isDeleted && status === 'Active';
+            const isBlocked = !isDeleted && status === 'Blocked';
+
+            if (action === 'block' && isActive) {
+                changeCounter('totalActiveProductsCount', -1);
+                changeCounter('totalBlockedProductsCount', 1);
+            }
+            if (action === 'unblock' && isBlocked) {
+                changeCounter('totalBlockedProductsCount', -1);
+                changeCounter('totalActiveProductsCount', 1);
+            }
+            if (action === 'soft-delete') {
+                if (!isDeleted) {
+                    changeCounter('totalProductsCount', -1);
+                    changeCounter('totalDeletedProductsCount', 1);
+                }
+                if (isActive) changeCounter('totalActiveProductsCount', -1);
+                if (isBlocked) changeCounter('totalBlockedProductsCount', -1);
+            }
+            if (action === 'restore') {
+                if (isDeleted) {
+                    changeCounter('totalProductsCount', 1);
+                    changeCounter('totalDeletedProductsCount', -1);
+                    if (status === 'Active') changeCounter('totalActiveProductsCount', 1);
+                    if (status === 'Blocked') changeCounter('totalBlockedProductsCount', 1);
+                }
+            }
+            if (action === 'hard-delete') {
+                if (isDeleted) {
+                    changeCounter('totalDeletedProductsCount', -1);
+                } else {
+                    changeCounter('totalProductsCount', -1);
+                    if (isActive) changeCounter('totalActiveProductsCount', -1);
+                    if (isBlocked) changeCounter('totalBlockedProductsCount', -1);
+                }
+            }
+        }
+
+        function refreshProductStatusUi(id, action) {
+            const row = document.getElementById(`product-row-${id}`);
+            const badge = document.getElementById(`status-badge-${id}`);
+            const actions = document.getElementById(`action-btns-${id}`);
+            const nextStatus = action === 'block' ? 'Blocked' : 'Active';
+
+            if (row) row.dataset.status = nextStatus;
+            if (badge) {
+                badge.className = `status-badge ${nextStatus === 'Active' ? 'status-listed' : 'status-unlisted'}`;
+                badge.textContent = nextStatus.toUpperCase();
+                badge.removeAttribute('style');
+            }
+            if (actions) {
+                const statusButton = action === 'block'
+                    ? `<button class="action-btn" style="background: #10B981;" onclick="confirmUnblock('${id}')" title="Unblock Product"><i data-lucide="eye"></i></button>`
+                    : `<button class="action-btn" style="background: #F59E0B;" onclick="confirmBlock('${id}')" title="Block Product"><i data-lucide="eye-off"></i></button>`;
+                actions.innerHTML = `
+                    <button class="action-btn" onclick="location.href='/admin/edit-product/${id}'" title="Edit Product"><i data-lucide="edit-3"></i></button>
+                    ${statusButton}
+                    <button class="action-btn" style="background: #6B7280;" onclick="confirmSoftDelete('${id}')" title="Soft Delete Product"><i data-lucide="archive"></i></button>
+                    <button class="action-btn" style="background: #DC2626;" onclick="confirmHardDelete('${id}')" title="Permanently Delete"><i data-lucide="trash-2"></i></button>
+                `;
+                lucide.createIcons();
+            }
+        }
+
+
         // Admin Action Handlers
         function confirmBlock(id) {
             Swal.fire({
@@ -233,7 +309,10 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        Swal.fire('Updated!', `Product has been ${action}ed.`, 'success').then(() => location.reload());
+                        const row = document.getElementById(`product-row-${id}`);
+                        updateProductCounters(row, action);
+                        refreshProductStatusUi(id, action);
+                        Swal.fire('Updated!', `Product has been ${action}ed.`, 'success');
                     } else {
                         Swal.fire('Error', data.message, 'error');
                     }
@@ -257,6 +336,7 @@
                             if (data.success) {
                                 Swal.fire('Soft Deleted!', data.message, 'success');
                                 const row = document.getElementById(`product-row-${id}`);
+                                updateProductCounters(row, 'soft-delete');
                                 if (row) row.remove();
                             } else {
                                 Swal.fire('Error', data.message, 'error');
@@ -283,6 +363,7 @@
                             if (data.success) {
                                 Swal.fire('Restored!', data.message, 'success');
                                 const row = document.getElementById(`product-row-${id}`);
+                                updateProductCounters(row, 'restore');
                                 if (row) row.remove();
                             } else {
                                 Swal.fire('Error', data.message, 'error');
@@ -309,6 +390,7 @@
                             if (data.success) {
                                 Swal.fire('Deleted!', 'Product has been permanently removed.', 'success');
                                 const row = document.getElementById(`product-row-${id}`);
+                                updateProductCounters(row, 'hard-delete');
                                 if (row) row.remove();
                             } else {
                                 Swal.fire('Error', data.message, 'error');

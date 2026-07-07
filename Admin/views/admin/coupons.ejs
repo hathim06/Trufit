@@ -10,7 +10,7 @@
 
         <div class="filter-bar" style="display: flex; gap: 15px; align-items: center; margin-bottom: 30px;">
             <div style="position: relative; flex: 1; max-width: 500px;">
-                <input type="text" class="search-input" placeholder="Search Coupons..." value="<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>" style="width: 100%; padding-right: 36px;">
+                <input type="text" class="search-input" placeholder="Search Coupons..." value="<%= typeof searchTerm !== 'undefined' ? searchTerm : (typeof searchItem !== 'undefined' ? searchItem : '') %>" style="width: 100%; padding-right: 36px;">
                 <% if (typeof searchTerm !== 'undefined' && searchTerm) { %>
                     <button onclick="clearSearch()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #9CA3AF; display: block;">✕</button>
                 <% } else { %>
@@ -35,6 +35,10 @@
                         <th>STARTING DATE</th>
                         <th>EXPIRY DATE</th>
                         <th>ACTION</th>
+                        <th>USED</th>
+                        <th>AVAILABLE</th>
+                        <th>MAX DISCOUNT</th>
+                        <th>MAX</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -43,7 +47,7 @@
                             <tr>
                                 <td><%= index + 1 + (currentPage - 1) * limit %></td>
                                 <td><strong><%= coupon.couponCode %></strong><br><small><%= coupon.description %></small></td>
-                                <td><%= coupon.discountPercentage %>% (Min: ₹<%= coupon.minPurchase %>)</td>
+                                <td><%= coupon.discountPercentage %>% (Min: Rs. <%= coupon.minPurchase %>)</td>
                                 <td><%= new Date(coupon.startDate).toLocaleDateString() %></td>
                                 <td><%= new Date(coupon.expiryDate).toLocaleDateString() %></td>
                                 <td>
@@ -52,11 +56,15 @@
                                         <button class="action-btn" onclick="deleteCoupon('<%= coupon._id %>')"><i data-lucide="trash-2"></i></button>
                                     </div>
                                 </td>
+                                <td><%= coupon.usedCount ?? coupon.usageCount ?? 0 %></td>
+                                <td><%= coupon.availableCount ?? Math.max((coupon.maxUsageCount ?? coupon.maxUsage ?? 0) - (coupon.usedCount ?? coupon.usageCount ?? 0), 0) %></td>
+                                <td>Rs. <%= (coupon.maxDiscountAmount || 0).toLocaleString() %></td>
+                                <td><%= coupon.maxUsageCount ?? coupon.maxUsage ?? 0 %></td>
                             </tr>
                         <% }) %>
                     <% } else { %>
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: #6B7280;">No coupons found. Click "ADD COUPON" to create one.</td>
+                            <td colspan="10" style="text-align: center; padding: 40px; color: #6B7280;">No coupons found. Click "ADD COUPON" to create one.</td>
                         </tr>
                     <% } %>
                 </tbody>
@@ -65,7 +73,7 @@
             <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
                 <div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px; padding-bottom: 20px;">
                     <% if (currentPage > 1) { %>
-                        <a href="/admin/coupons?page=<%= currentPage - 1 %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
+                        <a href="/admin/coupons?page=<%= currentPage - 1 %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : (typeof searchItem !== 'undefined' ? searchItem : '') %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
                            style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Previous</a>
                     <% } %>
 
@@ -73,7 +81,7 @@
                         <% if (i === currentPage) { %>
                             <span style="padding: 8px 16px; background: #000; color: #FFF; border: 1px solid #000; border-radius: 8px; font-weight: 700;"><%= i %></span>
                         <% } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) { %>
-                            <a href="/admin/coupons?page=<%= i %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
+                            <a href="/admin/coupons?page=<%= i %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : (typeof searchItem !== 'undefined' ? searchItem : '') %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
                                style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;"><%= i %></a>
                         <% } else if (i === currentPage - 3 || i === currentPage + 3) { %>
                             <span style="color: #9CA3AF;">...</span>
@@ -81,7 +89,7 @@
                     <% } %>
 
                     <% if (currentPage < totalPages) { %>
-                        <a href="/admin/coupons?page=<%= currentPage + 1 %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : '' %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
+                        <a href="/admin/coupons?page=<%= currentPage + 1 %>&search=<%= typeof searchTerm !== 'undefined' ? searchTerm : (typeof searchItem !== 'undefined' ? searchItem : '') %>&status=<%= typeof status !== 'undefined' ? status : '' %>" 
                            style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Next</a>
                     <% } %>
                 </div>
@@ -106,7 +114,7 @@
 
             if (result.isConfirmed) {
                 try {
-                    const response = await fetch(`/admin/coupons/delete/${id}`, { method: 'DELETE' });
+                    const response = await fetch(`/admin/delete-coupon/${id}`, { method: 'DELETE' });
                     const data = await response.json();
                     if (data.success) {
                         Swal.fire('Deleted!', data.message, 'success').then(() => location.reload());
@@ -146,3 +154,5 @@
     </script>
 </body>
 </html>
+
+

@@ -30,6 +30,15 @@ const removeFromWishlist = async (req, res) => {
     }
 };
 
+const clearWishlist = async (req, res) => {
+    try{
+        await wishlistService.removeAllProductsFromWishlistService(req.session.user);
+        return res.status(200).json({success:true,message:'All products removed'});
+    }catch(error){
+        return res.status(401).json({success:false,message:'Failed to clear wishlist'});
+    }
+}
+
 const toggleWishlist = async (req, res) => {
     try {
         const { productId } = req.body;
@@ -48,5 +57,6 @@ export default {
     loadWishlist,
     addToWishlist,
     removeFromWishlist,
-    toggleWishlist
+    toggleWishlist,
+    clearWishlist
 };

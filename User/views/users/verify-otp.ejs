@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <%- include('partials/head') %>
-    <script src="/js/otpTimer.js"></script>
+    <script src="/public/js/otpTimer.js"></script>
     <style>
         .otp-container {
             display: flex;
@@ -183,11 +183,6 @@
 
         // Initialize reusable OTP Timer
         document.addEventListener('DOMContentLoaded', function() {
-            // remove old timer if user came from signup
-            if (document.referrer && document.referrer.includes('/signup')) {
-                sessionStorage.removeItem('otpTimerExpiry');
-            }
-
             initializeOtpTimer({
                 timerElementId: 'timer',
                 timerContainerId: 'timer-container',
@@ -204,3 +199,4 @@
     </script>
 </body>
 </html>
+

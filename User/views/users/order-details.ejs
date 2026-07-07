@@ -258,14 +258,20 @@
         }
 
         .btn-action {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 10px;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
             border: none;
             cursor: pointer;
             color: #FFF;
+            letter-spacing: 0.3px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-action:hover {
+            opacity: 0.85;
         }
 
         .btn-cancel {
@@ -492,7 +498,7 @@
                                                          <button class="btn-action btn-cancel"
                                                              onclick="cancelItem('<%= order._id %>', '<%= item._id %>')">Cancel
                                                              Product</button>
-                                                         <% } else if (order.orderStatus==='Delivered' ) { %>
+                                                         <% } else if (typeof canReturnOrderItem === 'function' && canReturnOrderItem(order, item)) { %>
                                                              <button class="btn-action btn-return"
                                                                  onclick="returnOrderItem('<%= order._id %>', '<%= item._id %>')">Return
                                                                  This Item</button>
@@ -540,11 +546,18 @@
                                              Cancel Entire Order
                                          </button>
                                      <% } %>
-                                     <% if (order.orderStatus==='Delivered') { %>
+                                     <% if (typeof canReturnOrder === 'function' && canReturnOrder(order)) { %>
                                          <button onclick="returnOrder('<%= order._id %>')" 
                                              class="btn-action btn-return" 
                                              style="display: block; width: 100%; padding: 16px; margin-top: 15px; text-align: center; border-radius: 4px; font-size: 13px; font-weight: 700; text-transform: uppercase; border: none; cursor: pointer;">
                                              Return Entire Order
+                                         </button>
+                                     <% } %>
+                                     <% if (typeof canRetryFailedOrder === 'function' && canRetryFailedOrder(order)) { %>
+                                         <button onclick="retryPayment('<%= order._id %>')" 
+                                             class="btn-action btn-retry" 
+                                             style="display: block; width: 100%; padding: 16px; margin-top: 15px; text-align: center; border-radius: 4px; font-size: 13px; font-weight: 700; text-transform: uppercase; border: none; cursor: pointer; background: #111827; color: #FFF;">
+                                             Retry Payment
                                          </button>
                                      <% } %>
                                  </div>
@@ -555,26 +568,79 @@
 
             <%- include('partials/footer') %>
 
+                <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
                 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
                 <script>
                     lucide.createIcons();
+                    const cancellationReasons = [
+                        'Ordered by mistake',
+                        'Need to change size or color',
+                        'Found a better price elsewhere',
+                        'Delivery will take too long',
+                        'Payment or address issue',
+                        'Others'
+                    ];
+                    const returnReasons = [
+                        'Received damaged product',
+                        'Wrong item delivered',
+                        'Size or fit issue',
+                        'Product is not as expected',
+                        'Quality issue',
+                        'Others'
+                    ];
+
+                    async function promptOrderReason(type, target) {
+                        const reasons = type === 'return' ? returnReasons : cancellationReasons;
+                        const title = (type === 'return' ? 'Return ' : 'Cancel ') + target + '?';
+                        const label = type === 'return' ? 'Reason for return' : 'Reason for cancellation';
+                        const confirmText = type === 'return' ? 'Submit Return' : 'Confirm Cancellation';
+                        const options = reasons.map(reason => '<option value="' + reason + '">' + reason + '</option>').join('');
+
+                        const result = await Swal.fire({
+                            title,
+                            html: '<label for="reasonSelect" style="display:block;text-align:left;font-size:13px;font-weight:700;margin-bottom:8px;">' + label + '</label>' +
+                                '<select id="reasonSelect" class="swal2-input" style="width:100%;margin:0 0 12px 0;box-sizing:border-box;">' +
+                                '<option value="">Select a reason</option>' + options + '</select>' +
+                                '<textarea id="otherReason" class="swal2-textarea" placeholder="Type your reason" style="display:none;width:100%;margin:0;box-sizing:border-box;"></textarea>',
+                            showCancelButton: true,
+                            confirmButtonColor: type === 'return' ? '#F59E0B' : '#EF4444',
+                            cancelButtonColor: '#6B7280',
+                            confirmButtonText: confirmText,
+                            didOpen: () => {
+                                const select = document.getElementById('reasonSelect');
+                                const other = document.getElementById('otherReason');
+                                select.addEventListener('change', () => {
+                                    other.style.display = select.value === 'Others' ? 'block' : 'none';
+                                    if (select.value !== 'Others') other.value = '';
+                                });
+                            },
+                            preConfirm: () => {
+                                const selected = document.getElementById('reasonSelect').value;
+                                const other = document.getElementById('otherReason').value.trim();
+                                if (!selected) {
+                                    Swal.showValidationMessage('Please select a reason');
+                                    return false;
+                                }
+                                if (selected === 'Others' && !other) {
+                                    Swal.showValidationMessage('Please type your reason');
+                                    return false;
+                                }
+                                return selected === 'Others' ? other : selected;
+                            }
+                        });
+                        return result.value;
+                    }
+
 
                     async function cancelOrder(orderId) {
-                        const result = await Swal.fire({
-                            title: 'Cancel Order?',
-                            text: "Are you sure you want to cancel this order?",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonColor: '#EF4444',
-                            cancelButtonColor: '#6B7280',
-                            confirmButtonText: 'Yes, Cancel it!'
-                        });
+                        const reason = await promptOrderReason('cancel', 'Order');
 
-                        if (result.isConfirmed) {
+                        if (reason) {
                             try {
-                                const response = await fetch(`/profile/orders/${orderId}/cancel`, {
+                                const response = await fetch('/profile/orders/' + orderId + '/cancel', {
                                     method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' }
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ reason })
                                 });
                                 const data = await response.json();
                                 if (data.success) {
@@ -589,29 +655,54 @@
                         }
                     }
 
-                    async function returnOrder(orderId) {
-                        const { value: reason } = await Swal.fire({
-                            title: 'Return Entire Order?',
-                            input: 'textarea',
-                            inputLabel: 'Reason for return',
-                            inputPlaceholder: 'Please tell us why you are returning this order...',
-                            inputAttributes: {
-                                'aria-label': 'Type your reason here'
-                            },
-                            showCancelButton: true,
-                            confirmButtonColor: '#F59E0B',
-                            cancelButtonColor: '#6B7280',
-                            confirmButtonText: 'Submit Return',
-                            inputValidator: (value) => {
-                                if (!value) {
-                                    return 'You need to provide a reason!'
-                                }
+                    async function retryPayment(orderId) {
+                        try {
+                            const response = await fetch(`/profile/orders/${orderId}/retry-payment`, { method: 'POST' });
+                            const data = await response.json();
+                            if (!data.success) {
+                                return Swal.fire('Error', data.message || 'Retry is no longer available', 'error');
                             }
-                        });
+
+                            const rzp = new Razorpay({
+                                key: data.key,
+                                amount: data.amount,
+                                currency: 'INR',
+                                name: 'Trufit Smartwatches',
+                                description: 'Retry payment for your order',
+                                order_id: data.rzpOrderId,
+                                handler: async function (paymentResponse) {
+                                    const verifyResponse = await fetch('/verify-payment', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            razorpay_order_id: paymentResponse.razorpay_order_id,
+                                            razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                                            razorpay_signature: paymentResponse.razorpay_signature,
+                                            orderId: data.orderId
+                                        })
+                                    });
+                                    const verifyData = await verifyResponse.json();
+                                    window.location.href = verifyData.redirectUrl || '/profile/orders';
+                                },
+                                modal: {
+                                    ondismiss: function () {
+                                        Swal.fire('Payment Pending', 'You can retry this payment again while it is available.', 'info');
+                                    }
+                                },
+                                theme: { color: '#000000' }
+                            });
+                            rzp.open();
+                        } catch (error) {
+                            Swal.fire('Error', 'Something went wrong', 'error');
+                        }
+                    }
+
+                    async function returnOrder(orderId) {
+                        const reason = await promptOrderReason('return', 'Entire Order');
 
                         if (reason) {
                             try {
-                                const response = await fetch(`/profile/orders/${orderId}/return`, {
+                                const response = await fetch('/profile/orders/' + orderId + '/return', {
                                     method: 'PATCH',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ reason })
@@ -629,29 +720,12 @@
                         }
                     }
 
-                    async function returnOrderItem(orderId, itemId) {
-                        const { value: reason } = await Swal.fire({
-                            title: 'Return This Item?',
-                            input: 'textarea',
-                            inputLabel: 'Reason for return',
-                            inputPlaceholder: 'Please tell us why you are returning this item...',
-                            inputAttributes: {
-                                'aria-label': 'Type your reason here'
-                            },
-                            showCancelButton: true,
-                            confirmButtonColor: '#F59E0B',
-                            cancelButtonColor: '#6B7280',
-                            confirmButtonText: 'Submit Return',
-                            inputValidator: (value) => {
-                                if (!value) {
-                                    return 'You need to provide a reason!'
-                                }
-                            }
-                        });
+                                        async function returnOrderItem(orderId, itemId) {
+                        const reason = await promptOrderReason('return', 'This Item');
 
                         if (reason) {
                             try {
-                                const response = await fetch(`/profile/orders/${orderId}/return-item`, {
+                                const response = await fetch('/profile/orders/' + orderId + '/return-item', {
                                     method: 'PATCH',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ itemId, reason })
@@ -669,29 +743,12 @@
                         }
                     }
 
-                    async function cancelItem(orderId, itemId) {
-                        const { value: reason } = await Swal.fire({
-                            title: 'Cancel Product?',
-                            input: 'textarea',
-                            inputLabel: 'Reason for cancellation',
-                            inputPlaceholder: 'Please tell us why you are cancelling this product...',
-                            inputAttributes: {
-                                'aria-label': 'Type your reason here'
-                            },
-                            showCancelButton: true,
-                            confirmButtonColor: '#EF4444',
-                            cancelButtonColor: '#6B7280',
-                            confirmButtonText: 'Yes, Cancel it!',
-                            inputValidator: (value) => {
-                                if (!value) {
-                                    return 'You need to provide a reason!'
-                                }
-                            }
-                        });
+                                        async function cancelItem(orderId, itemId) {
+                        const reason = await promptOrderReason('cancel', 'Product');
 
                         if (reason) {
                             try {
-                                const response = await fetch(`/profile/orders/${orderId}/cancel-item`, {
+                                const response = await fetch('/profile/orders/' + orderId + '/cancel-item', {
                                     method: 'PATCH',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ itemId, reason })
@@ -708,7 +765,9 @@
                             }
                         }
                     }
-                </script>
+
+                                </script>
     </body>
 
 </html>
+

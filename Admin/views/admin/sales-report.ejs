@@ -1,12 +1,12 @@
 <%- include('partials/head') %>
 <body>
     <%- include('partials/sidebar', { activePage: 'report' }) %>
-    <main class="main-content">
+    <main class="main-content sales-report-page">
         <%- include('./partials/adminHeader', { title: 'SALES REPORT' }) %>
 
-        <div style="display: flex; justify-content: flex-end; gap: 15px; margin-bottom: 30px; margin-top: 20px;">
-            <form action="/admin/sales-report" method="GET" style="display: flex; gap: 10px; align-items: center;">
-                <select name="filterType" style="padding: 8px; border-radius: 5px;" onchange="toggleCustomDates(this.value)">
+        <section class="report-toolbar">
+            <form action="/admin/sales-report" method="GET" class="report-filter-form">
+                <select name="filterType" onchange="toggleCustomDates(this.value)" aria-label="Report filter">
                     <option value="" disabled <%= !locals.filterType ? 'selected' : '' %>>Select Filter</option>
                     <option value="daily" <%= locals.filterType === 'daily' ? 'selected' : '' %>>Daily</option>
                     <option value="weekly" <%= locals.filterType === 'weekly' ? 'selected' : '' %>>Weekly</option>
@@ -15,50 +15,47 @@
                 </select>
 
                 <div id="customDates" class="custom-dates-wrapper">
-                    <input type="date" name="startDate" value="<%= locals.startDate || '' %>" style="padding: 8px; border-radius: 5px;">
-                    <input type="date" name="endDate" value="<%= locals.endDate || '' %>" style="padding: 8px; border-radius: 5px;">
+                    <input type="date" name="startDate" value="<%= locals.startDate || '' %>" aria-label="Start date">
+                    <input type="date" name="endDate" value="<%= locals.endDate || '' %>" aria-label="End date">
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="padding: 8px 15px;">Filter</button>
+                <button type="submit" class="btn btn-primary">Filter</button>
             </form>
 
-            <a href="/admin/sales-report/download/pdf?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary" style="text-decoration: none;">Download PDF</a>
-            <a href="/admin/sales-report/download/excel?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary" style="text-decoration: none;">Download Excel</a>
-        </div>
+            <div class="report-actions">
+                <a href="/admin/sales-report/download/pdf?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary">PDF</a>
+                <a href="/admin/sales-report/download/excel?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary">Excel</a>
+            </div>
+        </section>
 
-        <div class="stats-grid">
-            <div class="stat-card" style="background: #000; color: #FFF;">
-                <div class="stat-info">
-                    <h3 style="color: #AAA;">Total Order Amount</h3>
-                    <div class="value">Rs. <%= totalOrderAmount.toLocaleString() %></div>
+        <section class="report-summary">
+            <div class="summary-panel">
+                <div>
+                    <span>Total Order Amount</span>
+                    <strong>Rs. <%= totalOrderAmount.toLocaleString() %></strong>
                 </div>
-                <div class="stat-icon" style="background: rgba(255,255,255,0.1);">
-                    <i data-lucide="indian-rupee" style="color: #059669;"></i>
-                </div>
+                <i data-lucide="indian-rupee"></i>
             </div>
-            <div class="stat-card" style="background: #000; color: #FFF;">
-                <div class="stat-info">
-                    <h3 style="color: #AAA;">Total Sales Count</h3>
-                    <div class="value"><%= totalSalesCount %></div>
+            <div class="summary-panel">
+                <div>
+                    <span>Total Sales Count</span>
+                    <strong><%= totalSalesCount.toLocaleString() %></strong>
                 </div>
-                <div class="stat-icon" style="background: rgba(255,255,255,0.1);">
-                    <i data-lucide="shopping-cart" style="color: #059669;"></i>
-                </div>
+                <i data-lucide="shopping-cart"></i>
             </div>
-            <div class="stat-card" style="background: #000; color: #FFF;">
-                <div class="stat-info">
-                    <h3 style="color: #AAA;">Total Discounts Applied</h3>
-                    <div class="value">Rs. <%= totalDiscount.toLocaleString() %></div>
+            <div class="summary-panel">
+                <div>
+                    <span>Total Discounts Applied</span>
+                    <strong>Rs. <%= totalDiscount.toLocaleString() %></strong>
                 </div>
-                <div class="stat-icon" style="background: rgba(255,255,255,0.1);">
-                    <i data-lucide="percent" style="color: #059669;"></i>
-                </div>
+                <i data-lucide="percent"></i>
             </div>
-        </div>
+        </section>
 
-        <div class="table-container" style="margin-top: 30px;">
+        <section class="table-container report-table">
             <div class="table-header">
-                <h2>Orders</h2>
+                <h2>Delivered Orders</h2>
+                <span><%= totalSalesCount.toLocaleString() %> records</span>
             </div>
             <table>
                 <thead>
@@ -74,7 +71,7 @@
                     <% if (orders && orders.length > 0) { %>
                         <% orders.forEach(order => { %>
                             <tr>
-                                <td><%= order.orderId %></td>
+                                <td><strong><%= order.orderId %></strong></td>
                                 <td><%= order.customer %></td>
                                 <td><%= new Date(order.date).toLocaleDateString('en-GB') %></td>
                                 <td>Rs. <%= order.total.toLocaleString() %></td>
@@ -83,17 +80,72 @@
                         <% }) %>
                     <% } else { %>
                         <tr>
-                            <td colspan="5" style="text-align: center;">No orders found for the selected period.</td>
+                            <td colspan="5" class="empty-report">No delivered orders found for the selected period.</td>
                         </tr>
                     <% } %>
                 </tbody>
             </table>
-        </div>
+        </section>
     </main>
 
     <style>
-        .custom-dates-wrapper { display: none; gap: 10px; }
+        .sales-report-page { background: #F6F7F9; }
+        .report-toolbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+            margin: 24px 0;
+            background: #FFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .report-filter-form, .report-actions, .custom-dates-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .report-toolbar select, .report-toolbar input { min-height: 40px; }
+        .report-actions .btn { text-decoration: none; min-width: 76px; text-align: center; }
+        .custom-dates-wrapper { display: none; }
         .custom-dates-wrapper.visible { display: flex; }
+        .report-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .summary-panel {
+            background: #111827;
+            color: #FFF;
+            border-radius: 8px;
+            padding: 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 118px;
+        }
+        .summary-panel span {
+            display: block;
+            color: #A7F3D0;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .summary-panel strong { font-size: 26px; }
+        .summary-panel i { width: 34px; height: 34px; color: #34D399; }
+        .report-table { border-radius: 8px; overflow-x: auto; }
+        .report-table .table-header span { color: #6B7280; font-size: 13px; font-weight: 600; }
+        .report-table th { background: #F9FAFB; text-transform: uppercase; font-size: 12px; }
+        .report-table td, .report-table th { white-space: nowrap; }
+        .empty-report { text-align: center; color: #6B7280; padding: 40px; }
+        @media (max-width: 900px) {
+            .report-toolbar { align-items: stretch; flex-direction: column; }
+            .report-summary { grid-template-columns: 1fr; }
+        }
     </style>
 
     <script>
@@ -102,18 +154,12 @@
         (function () {
             const currentFilter = '<%= locals.filterType || "" %>';
             const customDatesDiv = document.getElementById('customDates');
-            if (currentFilter === 'custom') {
-                customDatesDiv.classList.add('visible');
-            }
+            if (currentFilter === 'custom') customDatesDiv.classList.add('visible');
         })();
 
         function toggleCustomDates(value) {
             const customDatesDiv = document.getElementById('customDates');
-            if (value === 'custom') {
-                customDatesDiv.classList.add('visible');
-            } else {
-                customDatesDiv.classList.remove('visible');
-            }
+            customDatesDiv.classList.toggle('visible', value === 'custom');
         }
     </script>
 </body>

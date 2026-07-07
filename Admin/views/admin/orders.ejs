@@ -26,6 +26,12 @@
                 <option value="Returned" <%= status === 'Returned' ? 'selected' : '' %>>Returned</option>
                 <option value="Return Pending" <%= status === 'Return Pending' ? 'selected' : '' %>>Return Pending</option>
             </select>
+            <select id="sortFilter" class="search-input" style="max-width: 200px;">
+                <option value="newest" <%= sort === 'newest' ? 'selected' : '' %>>Newest first</option>
+                <option value="oldest" <%= sort === 'oldest' ? 'selected' : '' %>>Oldest first</option>
+                <option value="amountHigh" <%= sort === 'amountHigh' ? 'selected' : '' %>>Total high to low</option>
+                <option value="amountLow" <%= sort === 'amountLow' ? 'selected' : '' %>>Total low to high</option>
+            </select>
         </div>
 
         <div class="table-container">
@@ -125,16 +131,16 @@
                 let paginationHtml = '<div style="margin-top: 30px; display: flex; justify-content: center; align-items: center; gap: 10px; padding-bottom: 20px;">';
                 
                 if (currentPage > 1) {
-                    paginationHtml += `<a href="/admin/orders?page=${currentPage - 1}&search=${search}&status=${status}" style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Previous</a>`;
+                    paginationHtml += `<a href="/admin/orders?page=${currentPage - 1}&search=${search}&status=${status}&sort=${sort}" style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Previous</a>`;
                 }
 
                 for (let i = 1; i <= totalPages; i++) {
                     const activeStyles = i === currentPage ? 'background: #000; color: #FFF; border-color: #000;' : 'background: #FFF; color: #374151;';
-                    paginationHtml += `<a href="/admin/orders?page=${i}&search=${search}&status=${status}" style="padding: 8px 16px; text-decoration: none; border: 1px solid #E5E7EB; border-radius: 8px; ${activeStyles}">${i}</a>`;
+                    paginationHtml += `<a href="/admin/orders?page=${i}&search=${search}&status=${status}&sort=${sort}" style="padding: 8px 16px; text-decoration: none; border: 1px solid #E5E7EB; border-radius: 8px; ${activeStyles}">${i}</a>`;
                 }
 
                 if (currentPage < totalPages) {
-                    paginationHtml += `<a href="/admin/orders?page=${currentPage + 1}&search=${search}&status=${status}" style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Next</a>`;
+                    paginationHtml += `<a href="/admin/orders?page=${currentPage + 1}&search=${search}&status=${status}&sort=${sort}" style="padding: 8px 16px; text-decoration: none; color: #374151; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFF;">Next</a>`;
                 }
 
                 paginationHtml += '</div>';
@@ -150,15 +156,18 @@
         
         const orderSearch = document.getElementById('orderSearch');
         const statusFilter = document.getElementById('statusFilter');
+        const sortFilter = document.getElementById('sortFilter');
 
         function updateOrders() {
             const search = orderSearch.value;
             const status = statusFilter.value;
-            location.href = `/admin/orders?search=${search}&status=${status}`;
+            const sort = sortFilter ? sortFilter.value : 'newest';
+            location.href = `/admin/orders?search=${search}&status=${status}&sort=${sort}`;
         }
 
         function clearSearch() {
-            location.href = `/admin/orders?status=${statusFilter.value}`;
+            const sort = sortFilter ? sortFilter.value : 'newest';
+            location.href = `/admin/orders?status=${statusFilter.value}&sort=${sort}`;
         }
 
         if (orderSearch) {
@@ -171,6 +180,10 @@
 
         if (statusFilter) {
             statusFilter.addEventListener('change', updateOrders);
+        }
+
+        if (sortFilter) {
+            sortFilter.addEventListener('change', updateOrders);
         }
 
         async function updateStatus(orderId, newStatus) {

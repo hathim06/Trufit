@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <%- include('partials/head') %>
@@ -663,6 +663,25 @@
             cursor: pointer;
         }
 
+        .cart-icon-black.disabled {
+            background: #D1D5DB;
+            color: #6B7280;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .stock-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #FEE2E2;
+            color: #991B1B;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
         /* Footer */
         .footer {
             padding: 80px 0 40px;
@@ -942,9 +961,6 @@
                                                         </div>
 
                                                         <div class="action-btns">
-                                                            <button class="btn btn-buy btn-primary" id="buyNowBtn"
-                                                                onclick="buyNow(event, '<%= product._id %>')"
-                                                                >Buy Now</button>
                                                             <button class="btn btn-cart btn-secondary" id="addToCartBtn"
                                                                 onclick="addToCart(event, '<%= product._id %>')"
                                                                 >
@@ -1048,7 +1064,11 @@
                     <% if (typeof relatedProducts !=='undefined' && relatedProducts.length> 0) { %>
                         <div class="product-grid">
                             <% relatedProducts.forEach(relatedProduct=> { %>
+                                <% const isRelatedOutOfStock = Number(relatedProduct.totalStock || 0) <= 0; %>
                                 <div class="related-card">
+                                    <% if (isRelatedOutOfStock) { %>
+                                        <span class="stock-badge">Out of Stock</span>
+                                    <% } %>
                                     <div class="card-icons">
                                         <div class="icon-circ"><i data-lucide="heart" class="heart-icon"></i></div>
                                     </div>
@@ -1070,9 +1090,11 @@
                                                             <span>₹<%= relatedProduct.price %></span>
                                                             <% } %>
                                                 </div>
-                                                <div class="cart-icon-black"
-                                                    onclick="addToCart(event, '<%= relatedProduct._id %>')"><i
-                                                        data-lucide="shopping-cart"></i></div>
+                                                <% if (isRelatedOutOfStock) { %>
+                                                    <div class="cart-icon-black disabled" title="Out of stock" aria-disabled="true"><i data-lucide="shopping-cart"></i></div>
+                                                <% } else { %>
+                                                    <div class="cart-icon-black" onclick="addToCart(event, '<%= relatedProduct._id %>')"><i data-lucide="shopping-cart"></i></div>
+                                                <% } %>
                                 </div>
                                 <% }) %>
                         </div>
@@ -1097,11 +1119,11 @@
                                         (1-5)</label>
                                     <select id="reviewRating"
                                         style="width: 100%; padding: 8px; border: 1px solid #D1D5DB; border-radius: 6px;">
-                                        <option value="5">★★★★★ Excellent</option>
-                                        <option value="4">★★★★☆ Good</option>
-                                        <option value="3">★★★☆☆ Average</option>
-                                        <option value="2">★★☆☆☆ Poor</option>
-                                        <option value="1">★☆☆☆☆ Very Poor</option>
+                                        <option value="5">â˜…â˜…â˜…â˜…â˜… Excellent</option>
+                                        <option value="4">â˜…â˜…â˜…â˜…â˜† Good</option>
+                                        <option value="3">â˜…â˜…â˜…â˜†â˜† Average</option>
+                                        <option value="2">â˜…â˜…â˜†â˜†â˜† Poor</option>
+                                        <option value="1">â˜…â˜†â˜†â˜†â˜† Very Poor</option>
                                     </select>
                                 </div>
 
@@ -1501,41 +1523,6 @@
                     }
                 }
 
-                async function buyNow(event, productId) {
-                    event.preventDefault();
-                    const variantId = document.getElementById('selectedVariantId').value || '';
-                    const quantity = parseInt(document.getElementById('productQty').value);
-
-                    if (quantity < 1) {
-                        return Swal.fire('Error', 'Please select at least 1 item', 'error');
-                    }
-
-                    if (window.TrufitLoader) window.TrufitLoader.show();
-                    try {
-                        const response = await fetch('/cart/add', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ productId, variantId: variantId || null, quantity })
-                        });
-
-                        const data = await response.json();
-                        if (response.ok) {
-                            window.location.href = '/checkout';
-                        } else {
-                            if (window.TrufitLoader) window.TrufitLoader.hide();
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: data.message || 'Please log in to purchase items'
-                            });
-                        }
-                    } catch (error) {
-                        if (window.TrufitLoader) window.TrufitLoader.hide();
-                        console.error("Buy Now Error:", error);
-                        Swal.fire('Error', 'Something went wrong!', 'error');
-                    }
-                }
-
                 async function toggleWishlist(event, productId) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1645,7 +1632,7 @@
                             ? `<img src="${review.userProfilePicture}" alt="${review.userName}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #F3F4F6;">`
                             : `<div style="width: 50px; height: 50px; border-radius: 50%; background: #0369A1; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px;">${initials}</div>`;
 
-                        const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                        const stars = 'â˜…'.repeat(review.rating) + 'â˜†'.repeat(5 - review.rating);
                         const currentUserId = '<%= typeof userId !== "undefined" && userId ? userId : "" %>';
                         const isOwner = currentUserId && currentUserId === review.userId.toString();
 
@@ -1773,3 +1760,4 @@
     </body>
 
 </html>
+

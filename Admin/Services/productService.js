@@ -44,6 +44,20 @@ const syncProductWithVariants = async (productId) => {
     });
 };
 
+
+const validateVariantValues = ({ color, size, quantity, price }) => {
+    const errors = [];
+    const stock = Number(quantity);
+    const variantPrice = Number(price);
+
+    if (!String(color || '').trim()) errors.push('Variant color is required');
+    if (!String(size || '').trim()) errors.push('Variant strap fit is required');
+    if (!Number.isInteger(stock) || stock < 0) errors.push('Variant stock must be a whole number greater than or equal to 0');
+    if (!Number.isFinite(variantPrice) || variantPrice <= 0) errors.push('Variant price must be greater than 0');
+
+    if (errors.length > 0) throw new Error(errors.join('. '));
+    return { quantity: stock, price: variantPrice };
+};
 const addProductService = async (req) => {
    
     if (!req.body.categoryId || req.body.categoryId.trim() === '') {
@@ -52,6 +66,10 @@ const addProductService = async (req) => {
 
     if (!mongoose.Types.ObjectId.isValid(req.body.categoryId)) {
         throw new Error("Invalid category selected");
+    }
+
+    if (!Number.isFinite(Number(req.body.price)) || Number(req.body.price) <= 0) {
+        throw new Error("Base price must be greater than 0");
     }
 
     const offerPricing = await getOfferPricing(req.body.offerId, req.body.price);
@@ -105,12 +123,15 @@ const addProductService = async (req) => {
         });
 
 
+        let savedVariantCount = 0;
+
         for (let i = 0; i < req.body.variantColor.length; i++) {
             const color = req.body.variantColor[i];
-            const size = req.body.variantSize ? req.body.variantSize[i] : 'M';
-            const quantity = req.body.variantQuantity ? parseInt(req.body.variantQuantity[i]) : 0;
+            const size = req.body.variantSize ? req.body.variantSize[i] : 'Standard';
+            const quantity = req.body.variantQuantity ? parseInt(req.body.variantQuantity[i], 10) : 0;
+            const validated = validateVariantValues({ color, size, quantity, price: req.body.price });
 
-            if (color && color.trim() !== '' && quantity > 0) {
+            if (validated.quantity > 0) {
                 const variantImages = colorImagesMap.get(color) || [];
 
                 if (!firstVariantImage && variantImages.length > 0) firstVariantImage = variantImages[0];
@@ -119,19 +140,25 @@ const addProductService = async (req) => {
 
                 const newVariant = new variantModel({
                     productId: product._id,
-                    size: size,
-                    color: color,
-                    price: req.body.price,
-                    quantity: quantity,
+                    size,
+                    color,
+                    price: validated.price,
+                    quantity: validated.quantity,
                     image: finalImages,
                     isVerified: true,
                     isDeleted: false
                 });
                 await newVariant.save();
+                savedVariantCount += 1;
             }
         }
-    }
 
+        if (savedVariantCount === 0) {
+            throw new Error("Add at least one variant with stock greater than 0");
+        }
+    } else {
+        throw new Error("Add at least one color variant with stock");
+    }
     if (product.image.length === 0 && firstVariantImage) {
         product.image = [firstVariantImage];
         await product.save();
@@ -168,7 +195,7 @@ const getProductsService = async (query) => {
 
     const rawProducts = await productModel.find(filter)
         .populate('categoryId')
-        .sort({ createdAt: -1 })
+        .sort({createdAt: -1 })
         .skip(skip)
         .limit(limit);
 
@@ -227,6 +254,10 @@ const updateProductService = async (req) => {
         throw new Error("Category is required");
     }
 
+    if (!Number.isFinite(Number(req.body.price)) || Number(req.body.price) <= 0) {
+        throw new Error("Base price must be greater than 0");
+    }
+
     const offerPricing = await getOfferPricing(req.body.offerId, req.body.price);
 
     const updateData = {
@@ -271,10 +302,11 @@ const updateProductService = async (req) => {
 
         for (let i = 0; i < submittedColors.length; i++) {
             const color = submittedColors[i];
-            const size = submittedSizes[i] || 'M';
-            const quantity = parseInt(submittedQuantities[i]) || 0;
+            const size = submittedSizes[i] || 'Standard';
+            const quantity = parseInt(submittedQuantities[i], 10) || 0;
+            const validated = validateVariantValues({ color, size, quantity, price: req.body.price });
 
-            if (quantity <= 0) continue;
+            if (validated.quantity <= 0) continue;
 
             const existing = existingVariants.find(v => v.color === color && v.size === size);
             const newImgs = colorImagesMap.get(color) || [];
@@ -301,9 +333,9 @@ const updateProductService = async (req) => {
             if (!firstVariantImage && finalImages.length > 0) firstVariantImage = finalImages[0];
 
             if (existing) {
-                existing.quantity = quantity;
+                existing.quantity = validated.quantity;
                 existing.image = finalImages;
-                existing.price = req.body.price;
+                existing.price = validated.price;
                 await existing.save();
                 processedVariantIds.push(existing._id.toString());
             } else {
@@ -311,8 +343,8 @@ const updateProductService = async (req) => {
                     productId: id,
                     size: size,
                     color: color,
-                    price: req.body.price,
-                    quantity: quantity,
+                    price: validated.price,
+                    quantity: validated.quantity,
                     image: finalImages,
                     isVerified: true,
                     isDeleted: false
@@ -377,6 +409,12 @@ const getVariantsByProductId = async (productId) => {
 };
 
 const addVariantService = async (productId, variantData, imageFiles) => {
+    const validated = validateVariantValues({
+        color: variantData.color,
+        size: variantData.size,
+        quantity: Number(variantData.quantity),
+        price: Number(variantData.price)
+    });
     const imagePaths = [];
     if (imageFiles && imageFiles.length > 0) {
         imageFiles.forEach(file => { if (file.path) imagePaths.push(file.path); });
@@ -386,8 +424,8 @@ const addVariantService = async (productId, variantData, imageFiles) => {
         productId,
         size: variantData.size,
         color: variantData.color,
-        price: variantData.price,
-        quantity: variantData.quantity,
+        price: validated.price,
+        quantity: validated.quantity,
         image: imagePaths,
         isVerified: true,
         isDeleted: false
@@ -402,10 +440,17 @@ const updateVariantService = async (variantId, variantData, imageFiles) => {
     const variant = await variantModel.findById(variantId);
     if (!variant) throw new Error('Variant not found');
 
+    const validated = validateVariantValues({
+        color: variantData.color,
+        size: variantData.size,
+        quantity: Number(variantData.quantity),
+        price: Number(variantData.price)
+    });
+
     variant.size = variantData.size;
     variant.color = variantData.color;
-    variant.price = variantData.price;
-    variant.quantity = variantData.quantity;
+    variant.price = validated.price;
+    variant.quantity = validated.quantity;
 
     if (imageFiles && imageFiles.length > 0) {
         variant.image = imageFiles.map(file => file.path).filter(p => !!p);
@@ -448,3 +493,7 @@ export default {
     blockProductService,
     unblockProductService
 };
+
+
+
+

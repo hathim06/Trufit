@@ -211,7 +211,7 @@
     }
 
     /* ── Cropper Modal ── */
-    .cropper-modal {
+    #cropperModal.cropper-modal {
         display: none;
         position: fixed;
         top: 0; left: 0; width: 100vw; height: 100vh;
@@ -222,7 +222,7 @@
         padding: 40px;
     }
 
-    .cropper-modal.active { display: flex !important; }
+    #cropperModal.cropper-modal.active { display: flex !important; }
 
     .cropper-panel {
         background: #fff;
@@ -288,6 +288,25 @@
         transform: scale(1.1);
         background: #DC2626;
     }
+
+        #cropperModal .cropper-container img,
+        #cropperModal .cropper-canvas img,
+        #cropperModal .cropper-view-box img {
+            opacity: 1 !important;
+            filter: none !important;
+        }
+
+        #cropperModal .cropper-container .cropper-modal {
+            position: absolute;
+            inset: 0;
+            width: auto;
+            height: auto;
+            background: #000;
+            opacity: 0.35 !important;
+            z-index: 0;
+            padding: 0;
+            backdrop-filter: none;
+        }
 </style>
 </head>
 
@@ -402,7 +421,7 @@
                 <div id="variantsContainer" style="margin-top:40px;"></div>
                 <div id="emptyVariantsMsg" style="background:#F9FAFB;border:2px dashed #D1D5DB;border-radius:24px;padding:60px;text-align:center;">
                     <i data-lucide="package-plus" style="width:48px;height:48px;color:#9CA3AF;margin-bottom:15px;display:block;margin-left:auto;margin-right:auto;"></i>
-                    <p style="color:#6B7280;font-size:15px;font-weight:500;">Select colors above to start managing individual size stock and images.</p>
+                    <p style="color:#6B7280;font-size:15px;font-weight:500;">Select colors above to start managing strap fit stock and images.</p>
                 </div>
 
                 <div class="form-group" style="margin-top:40px;">
@@ -602,7 +621,7 @@
                 const variantId = `variant_${color}`;
                 const slots = uploadedImages.get(color) || [null, null, null, null, null];
                 const checkedSizes = activeSizes.get(color) || [];
-                const allSizes = ['S', 'M', 'L', 'XL', 'XXL'];
+                const allSizes = ['Standard', 'Compact', 'Large'];
                 const slotLabels = ['Main Banner', 'Preview 2', 'Preview 3', 'Preview 4', 'Preview 5'];
 
                 // Sizes
@@ -658,7 +677,7 @@
                         </div>
                         
                         <div style="margin-bottom:30px;">
-                            <label style="font-size:11px;font-weight:800;color:#9CA3AF;margin-bottom:12px;display:block;text-transform:uppercase;letter-spacing:0.5px;">1. Available Sizes & Stock</label>
+                            <label style="font-size:11px;font-weight:800;color:#9CA3AF;margin-bottom:12px;display:block;text-transform:uppercase;letter-spacing:0.5px;">1. Available Strap Fits & Stock</label>
                             <div class="size-selection-grid">${sizesHTML}</div>
                         </div>
 
@@ -796,3 +815,4 @@
     </script>
 </body>
 </html>
+

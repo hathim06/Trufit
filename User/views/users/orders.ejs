@@ -270,6 +270,88 @@
             text-transform: uppercase;
         }
 
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #F3F4F6;
+        }
+
+        .page-num {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6B7280;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+            text-decoration: none;
+        }
+
+        .page-num.active {
+            border-color: #E2E2E2;
+            color: #000000;
+        }
+
+        .page-num:hover {
+            background: #F3F4F6;
+            color: #000;
+        }
+
+        .page-nav {
+            padding: 0 20px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .page-nav:hover {
+            background: #F3F4F6;
+        }
+
+        .page-nav.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .orders-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .orders-status-filter {
+            width: 220px;
+            border: 1px solid #D1D5DB;
+            border-radius: 4px;
+            background: #FFF;
+            color: #111827;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+        }
+
+        .orders-status-filter:focus {
+            border-color: #111827;
+        }
+
         .stars {
             display: flex;
             gap: 2px;
@@ -296,6 +378,14 @@
 
             .profile-main-content {
                 padding: 20px;
+            }
+
+            .orders-toolbar {
+                justify-content: stretch;
+            }
+
+            .orders-status-filter {
+                width: 100%;
             }
 
             .order-header-row {
@@ -325,6 +415,32 @@
 
                             <div class="profile-main-content">
                                 <h1>My Orders</h1>
+
+
+                                <div class="orders-toolbar">
+                                    <select id="orderStatusFilter" class="orders-status-filter"
+                                        aria-label="Filter orders by status">
+                                        <option value="" <%=!status ? 'selected' : '' %>>All Orders</option>
+                                        <option value="Pending" <%=status==='Pending' ? 'selected' : '' %>>Pending
+                                        </option>
+                                        <option value="Confirmed" <%=status==='Confirmed' ? 'selected' : '' %>>Confirmed
+                                        </option>
+                                        <option value="Shipped" <%=status==='Shipped' ? 'selected' : '' %>>Shipped
+                                        </option>
+                                        <option value="Out for Delivery" <%=status==='Out for Delivery' ? 'selected'
+                                            : '' %>>Out for Delivery</option>
+                                        <option value="Delivered" <%=status==='Delivered' ? 'selected' : '' %>>Delivered
+                                        </option>
+                                        <option value="Cancelled" <%=status==='Cancelled' ? 'selected' : '' %>>Cancelled
+                                        </option>
+                                        <option value="Return Pending" <%=status==='Return Pending' ? 'selected' : '' %>
+                                            >Return Pending</option>
+                                        <option value="Returned" <%=status==='Returned' ? 'selected' : '' %>>Returned
+                                        </option>
+                                        <option value="Payment Failed" <%=status==='Payment Failed' ? 'selected' : '' %>
+                                            >Payment Failed</option>
+                                    </select>
+                                </div>
 
                                 <div class="orders-list">
                                     <% if (orders && orders.length> 0) { %>
@@ -380,36 +496,62 @@
                                                                         : 'N/A' %> | Qty : <%= item.quantity %>
                                                                 </div>
                                                                 <div class="item-status">
-                                                                    <% const itemStatus = order.paymentStatus === 'Failed' ? 'Payment Failed' : (['Cancelled', 'Return Pending', 'Returned'].includes(item.status) ? item.status : order.orderStatus); %>
-                                                                    <div class="status-dot <%= itemStatus.replace(/\s+/g, '-') %>">
-                                                                    </div>
-                                                                    <% if (itemStatus === 'Payment Failed') { %>
-                                                                        <span style="color:#EF4444;">
-                                                                            <%= itemStatus %>
-                                                                        </span>
-                                                                    <% } else if (itemStatus === 'Cancelled') { %>
-                                                                        <span style="color:#EF4444;">
-                                                                            <%= itemStatus %>
-                                                                        </span>
-                                                                    <% } else if (itemStatus === 'Return Pending') { %>
-                                                                        <span style="color:#F59E0B;">
-                                                                            <%= itemStatus %>
-                                                                        </span>
-                                                                    <% } else { %>
-                                                                        <span>
-                                                                            <%= itemStatus %>
-                                                                        </span>
-                                                                    <% } %>
-                                                                    <% if (item.status !== 'Cancelled' && (order.orderStatus==='Placed' ||
-                                                                        order.orderStatus==='Processing' ||
-                                                                        order.orderStatus==='Pending' ||
-                                                                        order.orderStatus==='Confirmed')) { %>
-                                                                        <button
-                                                                            onclick="cancelItem(event, '<%= order._id %>', '<%= item._id %>')"
-                                                                            style="background: #FEE2E2; color: #DC2626; border: none; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-left: 10px; cursor: pointer;">
-                                                                            CANCEL PRODUCT
-                                                                        </button>
-                                                                    <% } %>
+                                                                    <% const itemStatus=order.paymentStatus==='Failed'
+                                                                        ? 'Payment Failed' :
+                                                                        (['Cancelled', 'Return Pending' , 'Returned'
+                                                                        ].includes(item.status) ? item.status :
+                                                                        order.orderStatus); %>
+                                                                        <div
+                                                                            class="status-dot <%= itemStatus.replace(/\s+/g, '-') %>">
+                                                                        </div>
+                                                                        <% if (itemStatus==='Payment Failed' ) { %>
+                                                                            <span style="color:#EF4444;">
+                                                                                <%= itemStatus %>
+                                                                            </span>
+                                                                            <% } else if (itemStatus==='Cancelled' ) {
+                                                                                %>
+                                                                                <span style="color:#EF4444;">
+                                                                                    <%= itemStatus %>
+                                                                                </span>
+                                                                                <% } else if
+                                                                                    (itemStatus==='Return Pending' ) {
+                                                                                    %>
+                                                                                    <span style="color:#F59E0B;">
+                                                                                        <%= itemStatus %>
+                                                                                    </span>
+                                                                                    <% } else { %>
+                                                                                        <span>
+                                                                                            <%= itemStatus %>
+                                                                                        </span>
+                                                                                        <% } %>
+                                                                                            <% if (order.paymentStatus
+                                                                                                !=='Failed' &&
+                                                                                                item.status
+                                                                                                !=='Cancelled' &&
+                                                                                                (order.orderStatus==='Placed'
+                                                                                                ||
+                                                                                                order.orderStatus==='Processing'
+                                                                                                ||
+                                                                                                order.orderStatus==='Pending'
+                                                                                                ||
+                                                                                                order.orderStatus==='Confirmed'
+                                                                                                )) { %>
+                                                                                                <button
+                                                                                                    onclick="cancelItem(event, '<%= order._id %>', '<%= item._id %>')"
+                                                                                                    style="background: #EF4444; color: #FFF; border: none; padding: 6px 14px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.3px; transition: background 0.2s;"
+                                                                                                    onmouseover="this.style.background='#DC2626'"
+                                                                                                    onmouseout="this.style.background='#EF4444'">
+                                                                                                    CANCEL PRODUCT
+                                                                                                </button>
+                                                                                                <% } else if (typeof canReturnOrderItem === 'function' && canReturnOrderItem(order, item)) { %>
+                                                                                                <button
+                                                                                                    onclick="returnItem(event, '<%= order._id %>', '<%= item._id %>')"
+                                                                                                    style="background: #F59E0B; color: #FFF; border: none; padding: 6px 14px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.3px; transition: background 0.2s;"
+                                                                                                    onmouseover="this.style.background='#D97706'"
+                                                                                                    onmouseout="this.style.background='#F59E0B'">
+                                                                                                    RETURN PRODUCT
+                                                                                                </button>
+                                                                                                <% } %>
                                                                 </div>
                                                                 <div class="rate-product">
                                                                     RATE THIS PRODUCT
@@ -425,25 +567,87 @@
                                                         </div>
                                                         <% }) %>
                                                 </div>
-                                                <% if (order.orderStatus==='Placed' || order.orderStatus==='Processing' || order.orderStatus==='Pending' || order.orderStatus==='Confirmed') { %>
-                                                <div style="padding: 12px 20px; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end;">
-                                                    <button onclick="cancelOrder(event, '<%= order._id %>')"
-                                                        style="background: #1F2937; color: #FFF; border: none; padding: 8px 20px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; letter-spacing: 0.5px;">
-                                                        Cancel Entire Order
-                                                    </button>
-                                                </div>
-                                                <% } %>
-                                                <% if (typeof canRetryFailedOrder === 'function' && canRetryFailedOrder(order)) { %>
-                                                <div style="padding: 12px 20px; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end;">
-                                                    <button class="retry-payment-btn" onclick="retryPayment(event, '<%= order._id %>')">
-                                                        Retry Payment
-                                                    </button>
-                                                </div>
-                                                <% } %>
+                                                <% if (order.paymentStatus !=='Failed' && (order.orderStatus==='Placed'
+                                                    || order.orderStatus==='Processing' || order.orderStatus==='Pending'
+                                                    || order.orderStatus==='Confirmed' )) { %>
+                                                    <div
+                                                        style="padding: 12px 20px; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end;">
+                                                        <button onclick="cancelOrder(event, '<%= order._id %>')"
+                                                            style="background: #1F2937; color: #FFF; border: none; padding: 8px 20px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; letter-spacing: 0.5px;">
+                                                            Cancel Entire Order
+                                                        </button>
+                                                    </div>
+                                                    <% } %>
+                                                    <% if (typeof canReturnOrder === 'function' && canReturnOrder(order)) { %>
+                                                    <div
+                                                        style="padding: 12px 20px; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end;">
+                                                        <button onclick="returnOrder(event, '<%= order._id %>')"
+                                                            style="background: #F59E0B; color: #FFF; border: none; padding: 8px 20px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; letter-spacing: 0.5px;">
+                                                            Return Entire Order
+                                                        </button>
+                                                    </div>
+                                                    <% } %>
+                                                        <% if (typeof canRetryFailedOrder==='function' &&
+                                                            canRetryFailedOrder(order)) { %>
+                                                            <div
+                                                                style="padding: 12px 20px; border-top: 1px solid #F3F4F6; display: flex; justify-content: flex-end;">
+                                                                <button class="retry-payment-btn"
+                                                                    onclick="retryPayment(event, '<%= order._id %>')">
+                                                                    Retry Payment
+                                                                </button>
+                                                            </div>
+                                                            <% } %>
                                             </div>
                                             <% }) %>
-                                                <% } else { %>
-                                                    <div class="empty-state">
+
+                                            <!-- Pagination -->
+                                            <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+                                                <div class="pagination">
+                                                    <!-- Previous Button -->
+                                                    <% if (typeof page !== 'undefined' && page > 1) { %>
+                                                        <a href="/profile/orders?<%= new URLSearchParams({...query, page: page - 1}).toString() %>" class="page-nav">← Prev</a>
+                                                    <% } else { %>
+                                                        <span class="page-nav disabled">← Prev</span>
+                                                    <% } %>
+
+                                                    <!-- Page Numbers -->
+                                                    <% 
+                                                        let startPage = Math.max(1, page - 2);
+                                                        let endPage = Math.min(totalPages, page + 2);
+                                                    %>
+                                                    <% if (startPage > 1) { %>
+                                                        <a href="/profile/orders?<%= new URLSearchParams({...query, page: 1}).toString() %>" class="page-num">1</a>
+                                                        <% if (startPage > 2) { %>
+                                                            <span style="color:#9CA3AF;">...</span>
+                                                        <% } %>
+                                                    <% } %>
+
+                                                    <% for (let i = startPage; i <= endPage; i++) { %>
+                                                        <% if (i == page) { %>
+                                                            <div class="page-num active"><%= i %></div>
+                                                        <% } else { %>
+                                                            <a href="/profile/orders?<%= new URLSearchParams({...query, page: i}).toString() %>" class="page-num"><%= i %></a>
+                                                        <% } %>
+                                                    <% } %>
+
+                                                    <% if (endPage < totalPages) { %>
+                                                        <% if (endPage < totalPages - 1) { %>
+                                                            <span style="color:#9CA3AF;">...</span>
+                                                        <% } %>
+                                                        <a href="/profile/orders?<%= new URLSearchParams({...query, page: totalPages}).toString() %>" class="page-num"><%= totalPages %></a>
+                                                    <% } %>
+
+                                                    <!-- Next Button -->
+                                                    <% if (typeof page !== 'undefined' && page < totalPages) { %>
+                                                        <a href="/profile/orders?<%= new URLSearchParams({...query, page: Number(page) + 1}).toString() %>" class="page-nav">Next →</a>
+                                                    <% } else { %>
+                                                        <span class="page-nav disabled">Next →</span>
+                                                    <% } %>
+                                                </div>
+                                            <% } %>
+
+                                        <% } else { %>
+                                            <div class="empty-state">
                                                         <i data-lucide="package-open"
                                                             style="width: 64px; height: 64px; margin: 0 auto 20px;"></i>
                                                         <p>You haven't placed any orders yet.</p>
@@ -465,7 +669,80 @@
                 <script>
                     lucide.createIcons();
 
-                    // Dynamic Rating Logic
+                    const orderStatusFilter = document.getElementById('orderStatusFilter');
+                    if (orderStatusFilter) {
+                        orderStatusFilter.addEventListener('change', () => {
+                            const params = new URLSearchParams(window.location.search);
+                            if (orderStatusFilter.value) {
+                                params.set('status', orderStatusFilter.value);
+                            } else {
+                                params.delete('status');
+                            }
+                            const query = params.toString();
+                            window.location.href = query ? `/profile/orders?${query}` : '/profile/orders';
+                        });
+                    }
+
+                    const cancellationReasons = [
+                        'Ordered by mistake',
+                        'Need to change size or color',
+                        'Found a better price elsewhere',
+                        'Delivery will take too long',
+                        'Payment or address issue',
+                        'Others'
+                    ];
+                    const returnReasons = [
+                        'Received damaged product',
+                        'Wrong item delivered',
+                        'Size or fit issue',
+                        'Product is not as expected',
+                        'Quality issue',
+                        'Others'
+                    ];
+
+                    async function promptOrderReason(type, target) {
+                        const reasons = type === 'return' ? returnReasons : cancellationReasons;
+                        const title = (type === 'return' ? 'Return ' : 'Cancel ') + target + '?';
+                        const label = type === 'return' ? 'Reason for return' : 'Reason for cancellation';
+                        const confirmText = type === 'return' ? 'Submit Return' : 'Confirm Cancellation';
+                        const options = reasons.map(reason => '<option value="' + reason + '">' + reason + '</option>').join('');
+
+                        const result = await Swal.fire({
+                            title,
+                            html: '<label for="reasonSelect" style="display:block;text-align:left;font-size:13px;font-weight:700;margin-bottom:8px;">' + label + '</label>' +
+                                '<select id="reasonSelect" class="swal2-input" style="width:100%;margin:0 0 12px 0;box-sizing:border-box;">' +
+                                '<option value="">Select a reason</option>' + options + '</select>' +
+                                '<textarea id="otherReason" class="swal2-textarea" placeholder="Type your reason" style="display:none;width:100%;margin:0;box-sizing:border-box;"></textarea>',
+                            showCancelButton: true,
+                            confirmButtonColor: type === 'return' ? '#F59E0B' : '#EF4444',
+                            cancelButtonColor: '#6B7280',
+                            confirmButtonText: confirmText,
+                            didOpen: () => {
+                                const select = document.getElementById('reasonSelect');
+                                const other = document.getElementById('otherReason');
+                                select.addEventListener('change', () => {
+                                    other.style.display = select.value === 'Others' ? 'block' : 'none';
+                                    if (select.value !== 'Others') other.value = '';
+                                });
+                            },
+                            preConfirm: () => {
+                                const selected = document.getElementById('reasonSelect').value;
+                                const other = document.getElementById('otherReason').value.trim();
+                                if (!selected) {
+                                    Swal.showValidationMessage('Please select a reason');
+                                    return false;
+                                }
+                                if (selected === 'Others' && !other) {
+                                    Swal.showValidationMessage('Please type your reason');
+                                    return false;
+                                }
+                                return selected === 'Others' ? other : selected;
+                            }
+                        });
+                        return result.value;
+                    }
+
+
                     document.querySelectorAll('.stars').forEach(starContainer => {
                         const stars = Array.from(starContainer.querySelectorAll('.star-icon'));
 
@@ -507,21 +784,14 @@
                     async function cancelOrder(event, orderId) {
                         event.stopPropagation();
 
-                        const result = await Swal.fire({
-                            title: 'Cancel Entire Order?',
-                            text: "This will cancel all active items in this order.",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonColor: '#EF4444',
-                            cancelButtonColor: '#6B7280',
-                            confirmButtonText: 'Yes, Cancel Order!'
-                        });
+                        const reason = await promptOrderReason('cancel', 'Entire Order');
 
-                        if (result.isConfirmed) {
+                        if (reason) {
                             try {
-                                const response = await fetch(`/profile/orders/${orderId}/cancel`, {
+                                const response = await fetch('/profile/orders/' + orderId + '/cancel', {
                                     method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' }
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ reason })
                                 });
                                 const data = await response.json();
                                 if (data.success) {
@@ -540,26 +810,68 @@
                     async function cancelItem(event, orderId, itemId) {
                         event.stopPropagation();
 
-                        const result = await Swal.fire({
-                            title: 'Cancel Product?',
-                            text: "Are you sure you want to cancel this product?",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonColor: '#EF4444',
-                            cancelButtonColor: '#6B7280',
-                            confirmButtonText: 'Yes, Cancel it!'
-                        });
+                        const reason = await promptOrderReason('cancel', 'Product');
 
-                        if (result.isConfirmed) {
+                        if (reason) {
                             try {
-                                const response = await fetch(`/profile/orders/${orderId}/cancel-item`, {
+                                const response = await fetch('/profile/orders/' + orderId + '/cancel-item', {
                                     method: 'PATCH',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ itemId })
+                                    body: JSON.stringify({ itemId, reason })
                                 });
                                 const data = await response.json();
                                 if (data.success) {
                                     await Swal.fire('Cancelled!', data.message, 'success');
+                                    location.reload();
+                                } else {
+                                    Swal.fire('Error', data.message, 'error');
+                                }
+                            } catch (error) {
+                                Swal.fire('Error', 'Something went wrong', 'error');
+                            }
+                        }
+                    }
+
+                    async function returnOrder(event, orderId) {
+                        event.stopPropagation();
+
+                        const reason = await promptOrderReason('return', 'Entire Order');
+
+                        if (reason) {
+                            try {
+                                const response = await fetch('/profile/orders/' + orderId + '/return', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ reason })
+                                });
+                                const data = await response.json();
+                                if (data.success) {
+                                    await Swal.fire('Return Initiated!', data.message, 'success');
+                                    location.reload();
+                                } else {
+                                    Swal.fire('Error', data.message, 'error');
+                                }
+                            } catch (error) {
+                                Swal.fire('Error', 'Something went wrong', 'error');
+                            }
+                        }
+                    }
+
+                    async function returnItem(event, orderId, itemId) {
+                        event.stopPropagation();
+
+                        const reason = await promptOrderReason('return', 'Product');
+
+                        if (reason) {
+                            try {
+                                const response = await fetch('/profile/orders/' + orderId + '/return-item', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ itemId, reason })
+                                });
+                                const data = await response.json();
+                                if (data.success) {
+                                    await Swal.fire('Return Initiated!', data.message, 'success');
                                     location.reload();
                                 } else {
                                     Swal.fire('Error', data.message, 'error');
@@ -617,3 +929,7 @@
     </body>
 
 </html>
+
+
+
+

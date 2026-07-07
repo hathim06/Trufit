@@ -117,6 +117,25 @@
             opacity: 0.9;
         }
 
+        .btn:disabled {
+            background: #D1D5DB;
+            color: #6B7280;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 1;
+        }
+
+        .stock-pill {
+            display: inline-flex;
+            margin-top: 10px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: #FEE2E2;
+            color: #991B1B;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
         /* Footer */
         
 
@@ -193,10 +212,16 @@
         <section class="wishlist-page">
             <h1 class="wishlist-title">WISHLIST</h1>
             <div class="wishlist-header">PRODUCTS</div>
+            <div>
+                <button class="btn" onclick="clearWishlist(event)">Clear Wishlist</button>
+            </div>
             
             <div class="wishlist-list">
                 <% if (typeof wishlist !== 'undefined' && wishlist.length > 0) { %>
                     <% wishlist.forEach(item => { %>
+                        <% const unavailableReason = item.unavailableReason || null; %>
+                        <% const isOutOfStock = Number(item.productId.totalStock || 0) <= 0; %>
+                        <% const isUnavailable = Boolean(unavailableReason); %>
                         <div class="wishlist-item">
                             <div class="item-image">
                                 <% if (item.productId.image && item.productId.image.length > 0) { %>
@@ -209,18 +234,21 @@
                                 <h3 class="item-name"><%= item.productId.name %></h3>
                                 <div class="item-price">
                                     <% if (item.productId.offerPrice && item.productId.offerPrice < item.productId.price) { %>
-                                        <span class="discounted">₹<%= item.productId.offerPrice %></span>
-                                        <span class="old-price">₹<%= item.productId.price %></span>
+                                        <span class="discounted">?<%= item.productId.offerPrice %></span>
+                                        <span class="old-price">?<%= item.productId.price %></span>
                                         <% let discount = Math.round(((item.productId.price - item.productId.offerPrice) / item.productId.price) * 100); %>
                                         <span class="discount-tag"><%= discount %>% off</span>
                                     <% } else { %>
-                                        <span class="discounted">₹<%= item.productId.price %></span>
+                                        <span class="discounted">?<%= item.productId.price %></span>
                                     <% } %>
                                 </div>
+                                <% if (isOutOfStock) { %>
+                                    <span class="stock-pill">Out of Stock</span>
+                                <% } %>
                             </div>
                             <div class="item-actions">
                                 <button class="btn btn-remove" onclick="removeFromWishlist(event, '<%= item.productId._id %>')">Remove</button>
-                                <button class="btn btn-add" onclick="addToCart(event, '<%= item.productId._id %>')">Add to cart</button>
+                                <button class="btn btn-add" onclick="addToCart(event, '<%= item.productId._id %>')" <%= isUnavailable ? 'disabled title="Unavailable"' : '' %>><%= isUnavailable ? 'Unavailable' : 'Add to cart' %></button>
                             </div>
                         </div>
                     <% }); %>
@@ -290,6 +318,41 @@
             }
         }
 
+        async function clearWishlist(event){
+            event.preventDefault();
+            const btn = event.currentTarget;
+            const itemRow = btn.closest('.wishlist-item');
+            const result = await Swal.fire({
+                title: 'Clear Wishlist?',
+                text: 'Are you sure you want to clear your entire wishlist?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                confirmButtonText: 'Yes, clear it!'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                const response = await fetch('/wishlist/clear', { method: 'POST' });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    document.querySelector('.wishlist-list').innerHTML = `
+                        <div id="empty-wishlist" style="padding: 50px 0; text-align: center; color: #6B7280;">
+                            <p style="font-size: 18px;">Your wishlist is currently empty.</p>
+                            <a href="/shop" class="btn" style="background:#000; color:#fff; display:inline-block; margin-top:20px;">Explore Products</a>
+                        </div>`;
+                    if (typeof updateHeaderCounts === 'function') updateHeaderCounts();
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to clear wishlist', 'error');
+                }
+            } catch (error) {
+                console.error('Clear Wishlist Error:', error);
+                Swal.fire('Error', 'Something went wrong!', 'error');
+            }
+        }
+
         async function addToCart(event, productId) {
             event.preventDefault();
             const btn = event.currentTarget;
@@ -345,3 +408,5 @@
 </body>
 
 </html>
+
+

@@ -42,6 +42,10 @@ const orderSchema = new mongoose.Schema({
         },
         returnReason: {
             type: String
+        },
+        deliveredAt: {
+            type: Date,
+            default: null
         }
     }],
     shippingAddress: {
@@ -96,6 +100,15 @@ const orderSchema = new mongoose.Schema({
         enum: ['Pending', 'Approved', 'Rejected'],
         default: 'Pending'
     },
+    deliveredAt: {
+        type: Date,
+        default: null
+    },
+    failedPaymentExpiresAt: {
+        type: Date,
+        default: null,
+        index: { expireAfterSeconds: 0 }
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -107,3 +120,5 @@ const orderSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 export default mongoose.model('Order', orderSchema);
+
+

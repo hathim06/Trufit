@@ -131,12 +131,6 @@ const isCouponApplicable = (coupon, userId, subtotal) => {
     return getCouponUserUsageCount(coupon, userId) < perUserLimit;
 };
 
-const calculateCouponDiscount = (coupon, subtotal) => {
-    const percentageDiscount = Math.round(Number(subtotal) * (Number(coupon.discountPercentage) / 100));
-    const maxDiscount = Number(coupon.maxDiscountAmount) || percentageDiscount;
-    return Math.min(percentageDiscount, maxDiscount);
-};
-
 const loadCheckout = async (req, res) => {
     try {
         const userId = req.session.user;
@@ -210,10 +204,7 @@ const loadCheckout = async (req, res) => {
         if (req.session.appliedCoupon) {
             const sessCoupon = req.session.appliedCoupon;
             if (subtotal >= sessCoupon.minPurchase) {
-                discountAmount = Math.min(
-                    Math.round(subtotal * (sessCoupon.percentage / 100)),
-                    Number(sessCoupon.maxDiscountAmount) || Number.MAX_SAFE_INTEGER
-                );
+                discountAmount = Math.round(subtotal * (sessCoupon.percentage / 100));
                 appliedCoupon = sessCoupon;
             } else {
                 delete req.session.appliedCoupon;
@@ -263,7 +254,7 @@ const applyCoupon = async (req, res) => {
             return res.json({ success: false, message: `Minimum purchase of â‚¹${coupon.minPurchase} is required` });
         }
 
-        const discount = calculateCouponDiscount(coupon, subtotal);
+        const discount = Math.round(subtotal * (coupon.discountPercentage / 100));
 
         req.session.appliedCoupon = {
             code: coupon.couponCode,
@@ -339,14 +330,6 @@ const retryPayment = async (req, res) => {
 
         if (!order || order.userId.toString() !== req.session.user.toString() || !canRetryFailedOrder(order)) {
             return res.status(STATUS_CODES.BAD_REQUEST).json({ success: false, message: 'Invalid order for retry' });
-        }
-
-        const payableItems = order.items.filter(item => item.status !== 'Cancelled');
-        if (payableItems.length === 0 || Number(order.totalAmount) <= 0) {
-            return res.status(STATUS_CODES.BAD_REQUEST).json({
-                success: false,
-                message: 'There are no active items left in this order to retry payment.'
-            });
         }
 
         const options = {
@@ -602,8 +585,4 @@ export default {
     verifyPayment,
     retryPayment
 };
-
-
-
-
 

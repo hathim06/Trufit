@@ -9,4 +9,6 @@ router.post('/wishlist/remove/:id', userAuth.isLoggedIn, wishlistController.remo
 
 router.post('/wishlist/toggle', userAuth.isLoggedIn, wishlistController.toggleWishlist);
 
+router.post('/wishlist/clear', userAuth.isLoggedIn, wishlistController.clearWishlist);
+
 export default router;

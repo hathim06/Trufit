@@ -147,7 +147,7 @@
                     <div class="form-group">
                         <label>First Name</label>
                         <span id="firstName-error" class="error-message"></span>
-                        <input type="text" name="firstName" id="firstName" placeholder="First Name" required
+                        <input type="text" name="firstName" id="firstName" placeholder="First Name"
                             value="<%= (typeof formData !== 'undefined' && formData && formData.firstName) ? formData.firstName : '' %>">
                         <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('first name')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
@@ -156,7 +156,7 @@
                     <div class="form-group">
                         <label>Last Name</label>
                         <span id="lastName-error" class="error-message"></span>
-                        <input type="text" name="lastName" id="lastName" placeholder="Last Name" required
+                        <input type="text" name="lastName" id="lastName" placeholder="Last Name"
                             value="<%= (typeof formData !== 'undefined' && formData && formData.lastName) ? formData.lastName : '' %>">
                         <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('last name')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
@@ -165,7 +165,7 @@
                     <div class="form-group full-width">
                         <label>Email Address</label>
                         <span id="email-error" class="error-message"></span>
-                        <input type="email" name="email" id="email" placeholder="Enter your email" required
+                        <input type="email" name="email" id="email" placeholder="Enter your email"
                             value="<%= (typeof formData !== 'undefined' && formData && formData.email) ? formData.email : '' %>">
                         <% if (typeof message !== 'undefined' && message && message.toLowerCase().includes('email')) { %>
                             <small style="color:red; font-size: 11px;"><%= message %></small>
@@ -175,7 +175,7 @@
                         <label>Password</label>
                         <span id="password-error" class="error-message"></span>
                         <div class="password-wrapper">
-                            <input type="password" name="password" id="password" placeholder="Create a password" required>
+                            <input type="password" name="password" id="password" placeholder="Create a password">
                             <span class="toggle-password" onclick="togglePassword('password')">
                                 <i data-lucide="eye"></i>
                             </span>
@@ -188,7 +188,7 @@
                         <label>Confirm Password</label>
                         <span id="confirmPassword-error" class="error-message"></span>
                         <div class="password-wrapper">
-                            <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm password" required>
+                            <input type="password" name="confirmPassword" id="confirmPassword" placeholder="Confirm password">
                             <span class="toggle-password" onclick="togglePassword('confirmPassword')">
                                 <i data-lucide="eye"></i>
                             </span>

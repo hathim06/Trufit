@@ -73,7 +73,7 @@
                         <div class="stat-card">
                             <div class="stat-info">
                                 <h3>Total Customers</h3>
-                                <div class="value">
+                                <div class="value" id="totalAllUsers">
                                     <%= totalAllUsers %>
                                 </div>
                             </div>
@@ -85,7 +85,7 @@
                      <div class="stat-card">
                         <div class="stat-info">\
                             <h3>Active customers</h3>
-                            <div class="value"><%= totalActiveUsers %></div>
+                            <div class="value" id="totalActiveUsers"><%= totalActiveUsers %></div>
                         </div>
                         <div class="stat-icon" style="background: #DCFCE7; color: #166534;">
                             <i data-lucide="users" style="color: #166534;"></i>
@@ -143,7 +143,7 @@
                             </thead>
                             <tbody>
                                 <% users.forEach(user=> { %>
-                                    <tr id="user-row-<%= user._id %>">
+                                    <tr id="user-row-<%= user._id %>" data-deleted="<%= user.isDeleted ? 'true' : 'false' %>" data-blocked="<%= user.isBlocked ? 'true' : 'false' %>">
                                         <td>
                                             <%= user._id %>
                                         </td>
@@ -237,6 +237,34 @@
 
             <script>
                 lucide.createIcons();
+                function changeCounter(id, delta) {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    const nextValue = Math.max((parseInt(el.textContent, 10) || 0) + delta, 0);
+                    el.textContent = nextValue;
+                }
+
+                function updateUserCounters(row, action) {
+                    if (!row) return;
+                    const isDeleted = row.dataset.deleted === 'true';
+                    const isBlocked = row.dataset.blocked === 'true';
+                    const isActive = !isDeleted && !isBlocked;
+
+                    if (action === 'block' && isActive) changeCounter('totalActiveUsers', -1);
+                    if (action === 'unblock' && !isDeleted && isBlocked) changeCounter('totalActiveUsers', 1);
+                    if (action === 'soft-delete') {
+                        if (!isDeleted) changeCounter('totalAllUsers', -1);
+                        if (isActive) changeCounter('totalActiveUsers', -1);
+                    }
+                    if (action === 'restore') {
+                        if (isDeleted) changeCounter('totalAllUsers', 1);
+                        if (isDeleted && !isBlocked) changeCounter('totalActiveUsers', 1);
+                    }
+                    if (action === 'hard-delete') {
+                        if (!isDeleted) changeCounter('totalAllUsers', -1);
+                        if (isActive) changeCounter('totalActiveUsers', -1);
+                    }
+                }
 
                 async function toggleBlock(id, isBlocked) {
                     isBlocked = (isBlocked === "true");
@@ -263,8 +291,12 @@
 
                                 // Update DOM dynamically
                                 const newIsBlocked = !isBlocked;
+                                const row = document.getElementById(`user-row-${id}`);
                                 const badge = document.getElementById(`status-badge-${id}`);
                                 const btn = document.getElementById(`block-btn-${id}`);
+
+                                updateUserCounters(row, newIsBlocked ? 'block' : 'unblock');
+                                if (row) row.dataset.blocked = String(newIsBlocked);
 
                                 if (badge) {
                                     badge.className = `status-badge ${newIsBlocked ? 'status-blocked' : 'status-active'}`;
@@ -308,6 +340,7 @@
                             if (data.success) {
                                 await Swal.fire('Soft Deleted!', data.message || 'User has been soft deleted.', 'success');
                                 const row = document.getElementById(`user-row-${id}`);
+                                updateUserCounters(row, 'soft-delete');
                                 if (row) row.remove();
                             } else {
                                 Swal.fire('Error!', data.message || 'Failed to soft delete user.', 'error');
@@ -340,6 +373,7 @@
                             if (data.success) {
                                 await Swal.fire('Restored!', data.message || 'User has been restored.', 'success');
                                 const row = document.getElementById(`user-row-${id}`);
+                                updateUserCounters(row, 'restore');
                                 if (row) row.remove();
                             } else {
                                 Swal.fire('Error!', data.message || 'Failed to restore user.', 'error');
@@ -372,6 +406,7 @@
                             if (data.success) {
                                 await Swal.fire('Permanently Deleted!', data.message || 'User has been permanently removed.', 'success');
                                 const row = document.getElementById(`user-row-${id}`);
+                                updateUserCounters(row, 'hard-delete');
                                 if (row) row.remove();
                             } else {
                                 Swal.fire('Error!', data.message || 'Failed to delete user.', 'error');
@@ -408,3 +443,4 @@
     </body>
 
     </html>
+

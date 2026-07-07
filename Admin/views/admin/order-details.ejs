@@ -17,11 +17,11 @@
             </div>
         </header>
 
-        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 30px;">
-            <!-- Left Column: Items and Info -->
+        <div style="display: flex; flex-direction: column; gap: 30px;">
+            <!-- Full-width Items Section -->
             <div style="display: flex; flex-direction: column; gap: 30px;">
                 <!-- Items Table -->
-                <div class="table-container">
+                <div class="table-container" style="overflow-x: auto;">
                     <h2 style="font-size: 18px; margin-bottom: 20px;">Ordered Items</h2>
                     <table>
                         <thead>
@@ -38,6 +38,7 @@
                         </thead>
                         <tbody>
                             <% order.items.forEach(item => { %>
+
                                 <tr id="item-row-<%= item._id %>">
                                     <td>
                                         <div style="display: flex; align-items: center; gap: 15px;">
@@ -71,14 +72,28 @@
                                     <td>
                                         <% if (item.status === 'Return Pending') { %>
                                             <span style="color: #F59E0B; font-size: 12px; font-weight: 700;">Awaiting approval</span>
-                                        <% } else if (item.status !== 'Cancelled' && item.status !== 'Delivered' && item.status !== 'Returned' && order.orderStatus !== 'Cancelled' && order.orderStatus !== 'Delivered' && order.orderStatus !== 'Return Pending') { %>
-                                            <button
-                                                onclick="cancelItem('<%= order._id %>', '<%= item._id %>', '<%= item.name %>')"
-                                                id="cancel-btn-<%= item._id %>"
-                                                style="background: #EF4444; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;"
-                                                onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                                Cancel Item
-                                            </button>
+                                        <% } else if (item.status !== 'Cancelled' && item.status !== 'Returned') { %>
+                                            <div style="display: flex; gap: 8px;">
+                                                <select onchange="updateItemStatus('<%= order._id %>', '<%= item._id %>', this.value)" style="padding: 4px; border: 1px solid #D1D5DB; border-radius: 4px; font-size: 12px; background: white;">
+                                                    <% if (item.status === 'Pending') { %>
+                                                        <option value="Pending" selected>Pending</option>
+                                                        <option value="Confirmed">Confirmed</option>
+                                                    <% } else if (item.status === 'Confirmed') { %>
+                                                        <option value="Confirmed" selected>Confirmed</option>
+                                                        <option value="Shipped">Shipped</option>
+                                                    <% } else if (item.status === 'Shipped') { %>
+                                                        <option value="Shipped" selected>Shipped</option>
+                                                        <option value="Out for Delivery">Out for Delivery</option>
+                                                    <% } else if (item.status === 'Out for Delivery') { %>
+                                                        <option value="Out for Delivery" selected>Out for Delivery</option>
+                                                        <option value="Delivered">Delivered</option>
+                                                    <% } else if (item.status === 'Delivered') { %>
+                                                        <option value="Delivered" selected>Delivered</option>
+                                                    <% } else { %>
+                                                        <option value="<%= item.status %>" selected><%= item.status %></option>
+                                                    <% } %>
+                                                </select>
+                                            </div>
                                         <% } else { %>
                                             <span style="color: #9CA3AF; font-size: 12px;">—</span>
                                         <% } %>
@@ -122,8 +137,8 @@
                 </div>
             </div>
 
-            <!-- Right Column: User and Shipping -->
-            <div style="display: flex; flex-direction: column; gap: 30px;">
+            <!-- Info Cards Row -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
                 <!-- User Details -->
                 <div class="table-container">
                     <h2 style="font-size: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
@@ -201,6 +216,25 @@
         lucide.createIcons();
 
         let pendingCancelData = null;
+
+        async function updateItemStatus(orderId, itemId, status) {
+            try {
+                const response = await fetch(`/admin/orders/item-status/${orderId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ itemId, status })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Item status updated successfully', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast(data.message || 'Failed to update item status', 'error');
+                }
+            } catch (err) {
+                showToast('Something went wrong', 'error');
+            }
+        }
 
         function cancelItem(orderId, itemId, itemName) {
             pendingCancelData = { orderId, itemId };

@@ -163,34 +163,34 @@
                     <th class="text-right">Qty</th>
                     <th class="text-right">Unit Price</th>
                     <th class="text-right">Tax (0%)</th>
+                    <th class="text-right">Status</th>
                     <th class="text-right">Total</th>
                 </tr>
             </thead>
             <tbody>
                 <% order.items.forEach(item => { %>
-                    <% if (item.status !== 'Cancelled') { %>
-                        <tr>
-                            <td style="width: 60px;">
-                                <% 
-                                    let itemImage = '/public/placeholder.png';
-                                    if (item.variantId && item.variantId.image && item.variantId.image.length > 0) {
-                                        itemImage = item.variantId.image[0].replace(/\\/g, '/');
-                                        if (!itemImage.startsWith('http') && !itemImage.startsWith('/')) itemImage = '/' + itemImage;
-                                    } else if (item.productId && item.productId.image && item.productId.image.length > 0) {
-                                        itemImage = item.productId.image[0].replace(/\\/g, '/');
-                                        if (!itemImage.startsWith('http') && !itemImage.startsWith('/')) itemImage = '/' + itemImage;
-                                    }
-                                %>
-                                <img src="<%= itemImage %>" alt="<%= item.name %>" style="width: 50px; height: 50px; object-fit: contain;">
-                            </td>
-                            <td><%= item.name %></td>
-                            <td><%= item.variantId ? item.variantId.size : 'N/A' %></td>
-                            <td class="text-right"><%= item.quantity %></td>
-                            <td class="text-right">₹<%= item.price.toLocaleString() %></td>
-                            <td class="text-right">₹0</td>
-                            <td class="text-right">₹<%= (item.price * item.quantity).toLocaleString() %></td>
-                        </tr>
-                    <% } %>
+                    <tr>
+                        <td style="width: 60px;">
+                            <% 
+                                let itemImage = '/public/placeholder.png';
+                                if (item.variantId && item.variantId.image && item.variantId.image.length > 0) {
+                                    itemImage = item.variantId.image[0].replace(/\\/g, '/');
+                                    if (!itemImage.startsWith('http') && !itemImage.startsWith('/')) itemImage = '/' + itemImage;
+                                } else if (item.productId && item.productId.image && item.productId.image.length > 0) {
+                                    itemImage = item.productId.image[0].replace(/\\/g, '/');
+                                    if (!itemImage.startsWith('http') && !itemImage.startsWith('/')) itemImage = '/' + itemImage;
+                                }
+                            %>
+                            <img src="<%= itemImage %>" alt="<%= item.name %>" style="width: 50px; height: 50px; object-fit: contain;">
+                        </td>
+                        <td><%= item.name %></td>
+                        <td><%= item.variantId ? item.variantId.size : 'N/A' %></td>
+                        <td class="text-right"><%= item.quantity %></td>
+                        <td class="text-right">₹<%= item.price.toLocaleString() %></td>
+                        <td class="text-right">₹0</td>
+                        <td class="text-right"><%= item.status %></td>
+                        <td class="text-right">₹<%= (['Cancelled', 'Returned'].includes(item.status)) ? 0 : (item.price * item.quantity).toLocaleString() %></td>
+                    </tr>
                 <% }) %>
             </tbody>
         </table>

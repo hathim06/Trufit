@@ -408,6 +408,19 @@
                                         hideError(id);
                                     }
                                 }
+                                if(id===firstName){
+                                    if(!/^[a-zA-Z\s]+$/.test(el.value)){
+                                        showError(id, 'First name can only contain letters and spaces');
+                                    } else {
+                                        hideError(id);
+                                    }
+                                }else if(id===lastName){
+                                    if(!/^[a-zA-Z\s]+$/.test(el.value)){
+                                        showError(id,'Last name can only contain letters and spaces');
+                                    } else {
+                                        hideError(id);
+                                    }
+                                }
                             });
                         }
                     });

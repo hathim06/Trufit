@@ -12,7 +12,7 @@ const getProductDetailsByIdService = async (productId) => {
             path: 'categoryId',
             populate: { path: 'offerId' }
         });
-    if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) {
+    if (!product || product.isDeleted) {
         throw new Error(MESSAGES.PRODUCT_NOT_FOUND);
     }
     
@@ -44,8 +44,7 @@ const getRelatedProductsService = async (productId) => {
         const relatedProducts = await productModel.find({
             _id: { $ne: productId },
             categoryId: currentProduct.categoryId,
-            isDeleted: false,
-            status: { $regex: /^active$/i }
+            isDeleted: false
         })
             .limit(4)
             .populate('offerId')
@@ -75,7 +74,6 @@ const getShopProductsService = async (filters = {}, page = 1) => {
 
     let query = {
         isDeleted: { $ne: true }, 
-        status: { $regex: /^active$/i },
         categoryId: { $in: activeCategoryIds }
     };
 
@@ -187,7 +185,6 @@ const getSearchSuggestionsService = async (searchTerm) => {
     if (!searchTerm || searchTerm.trim() === '') {
         const latestProducts = await productModel.find({
             isDeleted: { $ne: true },
-            status: { $regex: /^active$/i },
             categoryId: { $in: activeCategoryIds }
         })
             .select('name')
@@ -206,7 +203,6 @@ const getSearchSuggestionsService = async (searchTerm) => {
     const products = await productModel.find({
         name: { $regex: query, $options: 'i' },
         isDeleted: { $ne: true },
-        status: { $regex: /^active$/i },
         categoryId: { $in: activeCategoryIds }
     })
         .select('name')

@@ -1,6 +1,8 @@
 import { MESSAGES } from '../../utils/messages.js';
 import wishlistModel from '../models/wishlistModel.js';
 import productModel from '../models/productModel.js';
+import variantModel from '../models/variants.js';
+import { attachEffectiveOffer } from '../utils/offerPricing.js';
 
 const getWishlistService = async (userId) => {
     const wishlist = await wishlistModel.findOne({ userId })
@@ -13,12 +15,32 @@ const getWishlistService = async (userId) => {
 
     const activeItems = wishlist.items.filter(item => {
         const product = item.productId;
-        if (!product || product.isDeleted || (product.status && product.status.toLowerCase() !== 'active')) return false;
-        if (product.categoryId && !product.categoryId.isListed) return false;
+        if (!product || product.isDeleted) return false;
         return true;
     });
 
-    return activeItems;
+    return await Promise.all(activeItems.map(async (item) => {
+        const product = item.productId;
+        let unavailableReason = null;
+        
+        if (product.status && product.status.toLowerCase() !== 'active') {
+            unavailableReason = "Product Unavailable";
+        }
+        if (product.categoryId && !product.categoryId.isListed) {
+            unavailableReason = "Category Unavailable";
+        }
+
+        const variants = await variantModel.find({ productId: product._id, isDeleted: false });
+        const productObj = attachEffectiveOffer(product);
+        productObj.totalStock = variants.reduce((sum, variant) => sum + (Number(variant.quantity) || 0), 0);
+        
+        const itemObj = item.toObject ? item.toObject() : item;
+        itemObj.productId = productObj;
+        if (unavailableReason) {
+            itemObj.unavailableReason = unavailableReason;
+        }
+        return itemObj;
+    }));
 };
 
 const addToWishlistService = async (userId, productId) => {
@@ -60,6 +82,15 @@ const removeFromWishlistService = async (userId, productId) => {
     await wishlist.save();
 };
 
+const removeAllProductsFromWishlistService = async (userId) => {
+    const wishlist = await wishlistModel.findOne({userId});
+    if (!wishlist) throw new Error("Wishlist not found");
+    const itemsCount = wishlist.items.length;
+    if (itemsCount === 0) throw new Error("Wishlist is already empty");
+    wishlist.items = [];
+    await wishlist.save();
+}
+
 const toggleWishlistService = async (userId, productId) => {
     let wishlist = await wishlistModel.findOne({ userId });
 
@@ -86,5 +117,8 @@ export default {
     getWishlistService,
     addToWishlistService,
     removeFromWishlistService,
-    toggleWishlistService
+    toggleWishlistService,
+    removeAllProductsFromWishlistService
 };
+
+

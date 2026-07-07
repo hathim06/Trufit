@@ -48,6 +48,8 @@ const getDashboardDataService = async () => {
         { $sort: { "_id": 1 } }
     ]);
 
+
+
     const topProducts = await orderModel.aggregate([
         { $unwind: "$items" },
         { $group: { _id: "$items.productId", totalSold: { $sum: "$items.quantity" } } },
