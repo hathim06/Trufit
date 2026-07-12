@@ -88,9 +88,7 @@ app.get('/', async (req, res) => {
             status: 'Active'
         }).sort({ order: 1 });
 
-        const reviews = await reviewModel.find({
-            isVerified: true
-        })
+        const reviews = await reviewModel.find({})
             .sort({ createdAt: -1 })
             .limit(6)
             .select('userName userProfilePicture comment rating createdAt');

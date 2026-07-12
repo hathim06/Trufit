@@ -216,6 +216,28 @@
                 position: relative;
             }
 
+            .disabled-product-overlay {
+                position: absolute;
+                inset: 0;
+                background: rgba(255, 255, 255, 0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+            }
+
+            .disabled-badge {
+                background: rgba(0, 0, 0, 0.8);
+                color: #fff;
+                padding: 10px 20px;
+                border-radius: 30px;
+                font-size: 14px;
+                font-weight: 600;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                backdrop-filter: blur(4px);
+            }
+
             .product-card:hover {
                 transform: translateY(-5px);
             }
@@ -506,21 +528,21 @@
                             <% products.forEach(product=> { %>
                                 <% const isBlocked = product.status && product.status.toLowerCase() !== 'active'; %>
                                 <% const isOutOfStock = Number(product.totalStock || 0) <= 0; %>
-                                <div class="product-card">
+                                <% const isDisabled = isBlocked || isOutOfStock; %>
+                                <div class="product-card" style="<%= isDisabled ? 'opacity: 0.8;' : '' %>">
                                     <a href="/product/<%= product._id %>"
-                                        style="text-decoration: none; color: inherit;">
+                                        style="text-decoration: none; color: inherit; <%= isDisabled ? 'pointer-events: none;' : '' %>">
                                         <div class="product-image">
+                                            <% if (isDisabled) { %>
+                                                <div class="disabled-product-overlay">
+                                                    <span class="disabled-badge"><%= isBlocked ? 'Unavailable' : 'Out of Stock' %></span>
+                                                </div>
+                                            <% } %>
                                             <% if (product.image && product.image.length> 0) { %>
                                                 <img src="<%= product.image[0] %>" alt="<%= product.name %>">
                                                 <% } else { %>
                                                     <img src="/public/placeholder.png" alt="No Image">
                                                     <% } %>
-
-                                                        <% if (isBlocked) { %>
-                                                            <span class="stock-badge" style="background: #FEE2E2; color: #991B1B;">Unavailable</span>
-                                                        <% } else if (isOutOfStock) { %>
-                                                            <span class="stock-badge">Out of Stock</span>
-                                                        <% } %>
 
                                                         <div class="card-actions">
                                                             <div class="heart-btn <%= (typeof wishlistProductIds !== 'undefined' && wishlistProductIds.includes(product._id.toString())) ? 'active' : '' %>"
