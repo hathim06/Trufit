@@ -1146,7 +1146,7 @@
                         </div>
                         <div class="testimonial-grid stagger-children" id="testimonialGrid">
                             <% if (typeof reviews !== 'undefined' && reviews.length > 0) { %>
-                                <% reviews.slice(0, 2).forEach((review, idx) => { %>
+                                <% reviews.slice(0, 6).forEach((review, idx) => { %>
                                     <% const animClass = idx % 2 === 0 ? 'anim-slide-left' : 'anim-slide-right'; %>
                                     <div class="testimonial-card <%= animClass %>">
                                         <div class="user-img">

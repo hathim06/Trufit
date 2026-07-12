@@ -136,6 +136,44 @@
             font-weight: 700;
         }
 
+        .wishlist-item.is-unavailable {
+            opacity: 0.65;
+            pointer-events: none;
+            position: relative;
+        }
+        .wishlist-item.is-unavailable .item-actions {
+            pointer-events: all;
+        }
+
+        .unavailable-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.45);
+            z-index: 5;
+            pointer-events: none;
+            border-radius: 12px;
+        }
+
+        .unavailable-badge {
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            backdrop-filter: blur(4px);
+        }
+
+        .item-image.grayed img {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+
         /* Footer */
         
 
@@ -222,8 +260,14 @@
                         <% const unavailableReason = item.unavailableReason || null; %>
                         <% const isOutOfStock = Number(item.productId.totalStock || 0) <= 0; %>
                         <% const isUnavailable = Boolean(unavailableReason); %>
-                        <div class="wishlist-item">
-                            <div class="item-image">
+                        <% const isDisabled = isUnavailable || isOutOfStock; %>
+                        <div class="wishlist-item <%= isDisabled ? 'is-unavailable' : '' %>">
+                            <% if (isDisabled) { %>
+                                <div class="unavailable-overlay">
+                                    <span class="unavailable-badge"><%= isUnavailable ? unavailableReason : 'Out of Stock' %></span>
+                                </div>
+                            <% } %>
+                            <div class="item-image <%= isDisabled ? 'grayed' : '' %>">
                                 <% if (item.productId.image && item.productId.image.length > 0) { %>
                                     <img src="<%= item.productId.image[0] %>" alt="<%= item.productId.name %>">
                                 <% } else { %>
@@ -234,21 +278,24 @@
                                 <h3 class="item-name"><%= item.productId.name %></h3>
                                 <div class="item-price">
                                     <% if (item.productId.offerPrice && item.productId.offerPrice < item.productId.price) { %>
-                                        <span class="discounted">?<%= item.productId.offerPrice %></span>
-                                        <span class="old-price">?<%= item.productId.price %></span>
+                                        <span class="discounted">₹<%= item.productId.offerPrice %></span>
+                                        <span class="old-price">₹<%= item.productId.price %></span>
                                         <% let discount = Math.round(((item.productId.price - item.productId.offerPrice) / item.productId.price) * 100); %>
                                         <span class="discount-tag"><%= discount %>% off</span>
                                     <% } else { %>
-                                        <span class="discounted">?<%= item.productId.price %></span>
+                                        <span class="discounted">₹<%= item.productId.price %></span>
                                     <% } %>
                                 </div>
-                                <% if (isOutOfStock) { %>
+                                <% if (isOutOfStock && !isUnavailable) { %>
                                     <span class="stock-pill">Out of Stock</span>
+                                <% } %>
+                                <% if (isUnavailable) { %>
+                                    <span class="stock-pill" style="background: #FEF3C7; color: #92400E;">Unavailable</span>
                                 <% } %>
                             </div>
                             <div class="item-actions">
                                 <button class="btn btn-remove" onclick="removeFromWishlist(event, '<%= item.productId._id %>')">Remove</button>
-                                <button class="btn btn-add" onclick="addToCart(event, '<%= item.productId._id %>')" <%= isUnavailable ? 'disabled title="Unavailable"' : '' %>><%= isUnavailable ? 'Unavailable' : 'Add to cart' %></button>
+                                <button class="btn btn-add" onclick="addToCart(event, '<%= item.productId._id %>')" <%= isDisabled ? 'disabled title="This product is currently unavailable"' : '' %>><%= isDisabled ? (isUnavailable ? 'Unavailable' : 'Out of Stock') : 'Add to cart' %></button>
                             </div>
                         </div>
                     <% }); %>
