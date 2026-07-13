@@ -117,6 +117,7 @@
             align-items: center;
             justify-content: center;
         }
+        .scene-fallback-image { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; display: block; object-fit: cover; }
         /* Canvas rendering the watch frames — true full viewport */
         .scene-canvas {
             position: absolute;
@@ -924,7 +925,8 @@
                              PRODUCT STAGE — HTML5 canvas rendering
                              ════════════════════════════════════ -->
                         <div class="product-stage">
-                            <canvas id="watchCanvas" class="scene-canvas"></canvas>
+                            <img id="watchFallbackImage" class="scene-fallback-image" src="/public/banner/watch1/ezgif-frame-001.png" alt="Trufit smartwatch">
+                            <img id="watchCanvas" class="scene-canvas" src="/public/banner/watch1/ezgif-frame-001.png" alt="Animated Trufit smartwatch">
                         </div>
 
                         <!-- ════════════════════════════════════
@@ -1085,7 +1087,7 @@
                                                 <% if (product.image && product.image.length> 0) { %>
                                                     <img src="<%= product.image[0] %>" alt="<%= product.name %>">
                                                     <% } else { %>
-                                                        <img src="public/placeholder.png" alt="No Image Available">
+                                                        <img src="/public/apple_smart_2.png" alt="No Image Available">
                                                         <% } %>
 
                                                             <div class="card-actions">
@@ -1150,7 +1152,7 @@
                                     <% const animClass = idx % 2 === 0 ? 'anim-slide-left' : 'anim-slide-right'; %>
                                     <div class="testimonial-card <%= animClass %>">
                                         <div class="user-img">
-                                            <img src="<%= review.userProfilePicture || '/public/placeholder.png' %>" alt="<%= review.userName %>" onerror="this.src='/public/placeholder.png'">
+                                            <img src="<%= review.userProfilePicture || '/public/apple_smart_2.png' %>" alt="<%= review.userName %>" onerror="this.src='/public/apple_smart_2.png'">
                                         </div>
                                         <div class="testimonial-content">
                                             <h3><%= review.userName %></h3>
@@ -1166,7 +1168,7 @@
                             <% } else { %>
                                 <div class="testimonial-card anim-slide-left">
                                     <div class="user-img">
-                                        <img src="/public/placeholder.png" alt="Hamza Faizi">
+                                        <img src="/public/apple_smart_2.png" alt="Hamza Faizi">
                                     </div>
                                     <div class="testimonial-content">
                                         <h3>Hamza Faizi</h3>
@@ -1182,7 +1184,7 @@
                                 </div>
                                 <div class="testimonial-card anim-slide-right">
                                     <div class="user-img">
-                                        <img src="/public/placeholder.png" alt="Hafiz Huzaifa">
+                                        <img src="/public/apple_smart_2.png" alt="Hafiz Huzaifa">
                                     </div>
                                     <div class="testimonial-content">
                                         <h3>Hafiz Huzaifa</h3>
@@ -1266,6 +1268,7 @@
                         // ── DOM refs ──────────────────────────────────
                         const section   = document.getElementById('watchScrollSection');
                         const canvas    = document.getElementById('watchCanvas');
+                        const fallbackImage = document.getElementById('watchFallbackImage');
                         const panel1    = document.getElementById('textPanel1');
                         const panel2    = document.getElementById('textPanel2');
                         const panel3    = document.getElementById('textPanel3');
@@ -1342,9 +1345,8 @@
                         scenesConfig.forEach((scene, sceneIdx) => {
                             const img = scene.images[0];
                             img.onload = () => {
-                                if (sceneIdx === 0) {
-                                    renderActiveFrame();
-                                }
+                                // Repaint when any scene's first frame finishes loading.
+                                renderActiveFrame();
                             };
                             img.src = getFrameUrl(sceneIdx, 1);
                         });
@@ -1366,13 +1368,15 @@
                                     if (i === 1) continue; // Already loaded in Phase 1
                                     totalKeyframes++;
                                     const img = scene.images[i - 1];
-                                    img.onload = () => {
+                                    const frameLoaded = () => {
                                         loadedCount++;
                                         if (loadedCount === totalKeyframes) {
                                             // Keyframes loaded, start loading remaining frames
                                             loadRemainingFrames();
                                         }
                                     };
+                                    img.onload = frameLoaded;
+                                    img.onerror = frameLoaded;
                                     img.src = getFrameUrl(sceneIdx, i);
                                 }
                             });
@@ -1443,38 +1447,14 @@
                         }
 
                         function drawFrame(img) {
-                            if (!img) return;
-                            const ctx = canvas.getContext('2d');
-                            const cw = canvas.width;
-                            const ch = canvas.height;
+                            if (!img || !img.complete || img.naturalWidth === 0) return;
 
-                            // Reset transform so we draw in physical pixel coordinates
-                            ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-                            ctx.clearRect(0, 0, cw, ch);
-
-                            const iw = img.naturalWidth || img.width;
-                            const ih = img.naturalHeight || img.height;
-                            if (!iw || !ih) return;
-
-                            const aspect = iw / ih;
-                            let dw = cw;
-                            let dh = ch;
-                            let dx = 0;
-                            let dy = 0;
-
-                            // Cover aspect ratio scaling (Full Width & Height, cropped to fit)
-                            if (cw / ch > aspect) {
-                                dw = cw;
-                                dh = cw / aspect;
-                                dy = (ch - dh) / 2;
-                            } else {
-                                dw = ch * aspect;
-                                dh = ch;
-                                dx = (cw - dw) / 2;
+                            // Render the loaded frame directly. This avoids a blank canvas
+                            // when the browser fails to repaint a large canvas during scroll.
+                            if (canvas.src !== img.src) {
+                                canvas.src = img.src;
                             }
-
-                            ctx.drawImage(img, dx, dy, dw, dh);
+                            fallbackImage.style.visibility = 'hidden';
                         }
 
                         function renderActiveFrame() {

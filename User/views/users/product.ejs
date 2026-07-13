@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <%- include('partials/head') %>
@@ -791,7 +791,7 @@
                                 <% if (product.image && product.image.length> 0) { %>
                                     <img src="<%= product.image[0] %>" alt="<%= product.name %>" id="mainProductImage">
                                     <% } else { %>
-                                        <img src="../../public/placeholder.png" alt="No Image" id="mainProductImage">
+                                        <img src="../../public/apple_smart_2.png" alt="No Image" id="mainProductImage">
                                         <% } %>
                                             <div class="zoom-lens" id="zoomLens"></div>
                             </div>
@@ -799,7 +799,7 @@
                                 <% if (product.image && product.image.length> 0) { %>
                                     <img src="<%= product.image[0] %>" alt="<%= product.name %>" id="zoomImage">
                                     <% } else { %>
-                                        <img src="../../public/placeholder.png" alt="No Image" id="zoomImage">
+                                        <img src="../../public/apple_smart_2.png" alt="No Image" id="zoomImage">
                                         <% } %>
                             </div>
                         </div>
@@ -826,8 +826,8 @@
                         </h1>
                         <div class="price-row">
                             <% if (product.effectiveDiscount && product.effectivePrice < product.price) { %>
-                                <span class="current-price">₹<%= product.effectivePrice %></span>
-                                <span class="old-price">₹<%= product.price %></span>
+                                <span class="current-price">?<%= product.effectivePrice %></span>
+                                <span class="old-price">?<%= product.price %></span>
                                 <span class="discount">
                                     <%= product.effectiveDiscount %>% off
                                     <% if (product.effectiveOfferName) { %>
@@ -835,7 +835,7 @@
                                     <% } %>
                                 </span>
                                 <% } else { %>
-                                    <span class="current-price">₹<%= product.price %></span>
+                                    <span class="current-price">?<%= product.price %></span>
                                     <% } %>
                         </div>
 
@@ -1010,13 +1010,13 @@
                                 </tr>
                                 <tr>
                                     <th>Base Price</th>
-                                    <td>₹<%= product.price %>
+                                    <td>?<%= product.price %>
                                     </td>
                                 </tr>
                                 <% if (product.effectiveDiscount && product.effectivePrice < product.price) { %>
                                     <tr>
                                         <th>Offer Price</th>
-                                        <td>₹<%= product.effectivePrice %>
+                                        <td>?<%= product.effectivePrice %>
                                         </td>
                                     </tr>
                                     <tr>
@@ -1075,7 +1075,7 @@
                                     <% if (relatedProduct.image && relatedProduct.image.length> 0) { %>
                                         <img src="<%= relatedProduct.image[0] %>" alt="<%= relatedProduct.name %>">
                                         <% } else { %>
-                                            <img src="../../public/placeholder.png" alt="No Image">
+                                            <img src="../../public/apple_smart_2.png" alt="No Image">
                                             <% } %>
                                                 <h3>
                                                     <%= relatedProduct.name %>
@@ -1083,11 +1083,11 @@
                                                 <div class="related-price">
                                                     <% if (relatedProduct.effectiveDiscount && relatedProduct.effectivePrice <
                                                         relatedProduct.price) { %>
-                                                        <span class="related-old-price">₹<%= relatedProduct.price %>
+                                                        <span class="related-old-price">?<%= relatedProduct.price %>
                                                         </span>
-                                                        <span>₹<%= relatedProduct.effectivePrice %></span>
+                                                        <span>?<%= relatedProduct.effectivePrice %></span>
                                                         <% } else { %>
-                                                            <span>₹<%= relatedProduct.price %></span>
+                                                            <span>?<%= relatedProduct.price %></span>
                                                             <% } %>
                                                 </div>
                                                 <% if (isRelatedOutOfStock) { %>
@@ -1119,11 +1119,11 @@
                                         (1-5)</label>
                                     <select id="reviewRating"
                                         style="width: 100%; padding: 8px; border: 1px solid #D1D5DB; border-radius: 6px;">
-                                        <option value="5">â˜…â˜…â˜…â˜…â˜… Excellent</option>
-                                        <option value="4">â˜…â˜…â˜…â˜…â˜† Good</option>
-                                        <option value="3">â˜…â˜…â˜…â˜†â˜† Average</option>
-                                        <option value="2">â˜…â˜…â˜†â˜†â˜† Poor</option>
-                                        <option value="1">â˜…â˜†â˜†â˜†â˜† Very Poor</option>
+                                        <option value="5">★★★★★ Excellent</option>
+                                        <option value="4">★★★★☆ Good</option>
+                                        <option value="3">★★★☆☆ Average</option>
+                                        <option value="2">★★☆☆☆ Poor</option>
+                                        <option value="1">★☆☆☆☆ Very Poor</option>
                                     </select>
                                 </div>
 
@@ -1272,12 +1272,12 @@
                     const priceContainer = document.querySelector('.price-row');
                     if (productOffer.discount > 0 && productOffer.price < productOffer.basePrice) {
                         priceContainer.innerHTML = `
-                            <span class="current-price">₹${productOffer.price.toLocaleString()}</span>
-                            <span class="old-price">₹${productOffer.basePrice.toLocaleString()}</span>
+                            <span class="current-price">?${productOffer.price.toLocaleString()}</span>
+                            <span class="old-price">?${productOffer.basePrice.toLocaleString()}</span>
                             <span class="discount">${productOffer.discount}% off${productOffer.name ? ' - ' + productOffer.name : ''}</span>
                         `;
                     } else {
-                        priceContainer.innerHTML = `<span class="current-price">₹${variant.price.toLocaleString()}</span>`;
+                        priceContainer.innerHTML = `<span class="current-price">?${variant.price.toLocaleString()}</span>`;
                     }
 
                     // Update Stock
@@ -1632,7 +1632,7 @@
                             ? `<img src="${review.userProfilePicture}" alt="${review.userName}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; background: #F3F4F6;">`
                             : `<div style="width: 50px; height: 50px; border-radius: 50%; background: #0369A1; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px;">${initials}</div>`;
 
-                        const stars = 'â˜…'.repeat(review.rating) + 'â˜†'.repeat(5 - review.rating);
+                        const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
                         const currentUserId = '<%= typeof userId !== "undefined" && userId ? userId : "" %>';
                         const isOwner = currentUserId && currentUserId === review.userId.toString();
 
