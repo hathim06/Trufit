@@ -492,8 +492,7 @@
                                                                     <%= item.name %>
                                                                 </div>
                                                                 <div class="item-meta">
-                                                                    Size : <%= item.variantId ? item.variantId.size
-                                                                        : 'N/A' %> | Qty : <%= item.quantity %>
+                                                                    Color : <%= item.variantId ? item.variantId.color : 'N/A' %> | Qty : <%= item.quantity %>
                                                                 </div>
                                                                 <div class="item-status">
                                                                     <% const itemStatus=order.paymentStatus==='Failed'

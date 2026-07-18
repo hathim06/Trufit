@@ -5,11 +5,12 @@
         <%- include('./partials/adminHeader', { title: 'SALES REPORT' }) %>
 
         <section class="report-toolbar">
-            <form action="/admin/sales-report" method="GET" class="report-filter-form">
+            <form action="/admin/sales-report" method="GET" class="report-filter-form" novalidate>
                 <select name="filterType" onchange="toggleCustomDates(this.value)" aria-label="Report filter">
                     <option value="" disabled <%= !locals.filterType ? 'selected' : '' %>>Select Filter</option>
                     <option value="daily" <%= locals.filterType === 'daily' ? 'selected' : '' %>>Daily</option>
                     <option value="weekly" <%= locals.filterType === 'weekly' ? 'selected' : '' %>>Weekly</option>
+                    <option value="monthly" <%= locals.filterType === 'monthly' ? 'selected' : '' %>>Monthly</option>
                     <option value="yearly" <%= locals.filterType === 'yearly' ? 'selected' : '' %>>Yearly</option>
                     <option value="custom" <%= locals.filterType === 'custom' ? 'selected' : '' %>>Custom Range</option>
                 </select>
@@ -27,6 +28,10 @@
                 <a href="/admin/sales-report/download/excel?filterType=<%= locals.filterType || '' %>&startDate=<%= locals.startDate || '' %>&endDate=<%= locals.endDate || '' %>" class="btn btn-primary">Excel</a>
             </div>
         </section>
+
+        <% if (typeof validationMessage !== 'undefined' && validationMessage) { %>
+            <div class="validation-banner"><%= validationMessage %></div>
+        <% } %>
 
         <section class="report-summary">
             <div class="summary-panel">
@@ -110,6 +115,8 @@
         .report-toolbar select, .report-toolbar input { min-height: 40px; }
         .report-actions .btn { text-decoration: none; min-width: 76px; text-align: center; }
         .custom-dates-wrapper { display: none; }
+        .report-toolbar select:invalid { color: #9CA3AF; }
+        .report-toolbar option[value=""] { display: none; }
         .custom-dates-wrapper.visible { display: flex; }
         .report-summary {
             display: grid;
@@ -137,6 +144,15 @@
         }
         .summary-panel strong { font-size: 26px; }
         .summary-panel i { width: 34px; height: 34px; color: #34D399; }
+        .validation-banner {
+            margin: 0 0 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #FEF2F2;
+            color: #B91C1C;
+            border: 1px solid #FECACA;
+            font-weight: 600;
+        }
         .report-table { border-radius: 8px; overflow-x: auto; }
         .report-table .table-header span { color: #6B7280; font-size: 13px; font-weight: 600; }
         .report-table th { background: #F9FAFB; text-transform: uppercase; font-size: 12px; }
@@ -161,6 +177,31 @@
             const customDatesDiv = document.getElementById('customDates');
             customDatesDiv.classList.toggle('visible', value === 'custom');
         }
+
+        document.querySelector('.report-filter-form')?.addEventListener('submit', function (event) {
+            const filterType = this.querySelector('select[name="filterType"]').value;
+            const startDate = this.querySelector('input[name="startDate"]').value;
+            const endDate = this.querySelector('input[name="endDate"]').value;
+
+            if (filterType === 'custom') {
+                if (!startDate || !endDate) {
+                    event.preventDefault();
+                    alert('Please choose both start and end dates for a custom range.');
+                    return;
+                }
+                if (startDate > endDate) {
+                    event.preventDefault();
+                    alert('The start date cannot be after the end date.');
+                    return;
+                }
+                
+                const today = new Date().toISOString().split('T')[0];
+                if (endDate > today) {
+                    event.preventDefault();
+                    alert('The end date cannot be in the future.');
+                }
+            }
+        });
     </script>
 </body>
 </html>

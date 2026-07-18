@@ -89,18 +89,7 @@ const getShopProductsService = async (filters = {}, page = 1) => {
         query.name = { $regex: filters.search.trim(), $options: 'i' };
     }
 
-    if (filters.size && filters.size.trim() !== '') {
-        const productIdsWithSelectedSize = await variantModel.find({
-            size: filters.size,
-            isDeleted: false,
-            quantity: { $gt: 0 }
-        }).distinct('productId');
 
-        query.$or = [
-            { _id: { $in: productIdsWithSelectedSize } },
-            { size: filters.size }
-        ];
-    }
 
     if (filters.minPrice || filters.maxPrice) {
         const min = filters.minPrice ? Number(filters.minPrice) : 0;

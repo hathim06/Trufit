@@ -8,8 +8,10 @@ const notFoundHandler = (req, res) => {
             message: MESSAGES.NOT_FOUND
         });
     }
-
-    res.status(STATUS_CODES.NOT_FOUND).send(MESSAGES.NOT_FOUND);
+    res.status(STATUS_CODES.NOT_FOUND).render('users/404', {
+        title: '404 - Page Not Found',
+        message: MESSAGES.NOT_FOUND
+    });
 };
 
 export default notFoundHandler;

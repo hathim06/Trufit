@@ -826,8 +826,8 @@
                         </h1>
                         <div class="price-row">
                             <% if (product.effectiveDiscount && product.effectivePrice < product.price) { %>
-                                <span class="current-price">?<%= product.effectivePrice %></span>
-                                <span class="old-price">?<%= product.price %></span>
+                                <span class="current-price">&#8377;<%= product.effectivePrice %></span>
+                                <span class="old-price">&#8377;<%= product.price %></span>
                                 <span class="discount">
                                     <%= product.effectiveDiscount %>% off
                                     <% if (product.effectiveOfferName) { %>
@@ -835,7 +835,7 @@
                                     <% } %>
                                 </span>
                                 <% } else { %>
-                                    <span class="current-price">?<%= product.price %></span>
+                                    <span class="current-price">&#8377;<%= product.price %></span>
                                     <% } %>
                         </div>
 
@@ -880,36 +880,7 @@
                                 <p id="stockQtyDisplay"
                                     style="font-size:13px;color:#6B7280;margin-bottom:20px;margin-top:-10px;"></p>
 
-                                <% if (variants && variants.length> 0) { %>
-                                    <div class="option-group" id="sizeOptionGroup">
-                                        <p class="option-label">Size</p>
-                                        <div class="size-grid" id="sizeGrid">
-                                            <% 
-                                                // Show sizes for first color only initially
-                                                const firstColor = [...new Set(variants.map(v => v.color))][0];
-                                                const firstColorSizes = [...new Set(variants.filter(v => v.color === firstColor).map(v => v.size))];
-                                            %>
-                                                <% firstColorSizes.forEach(size=> { %>
-                                                    <div class="size-item" onclick="selectSize('<%= size %>', this)"
-                                                        data-size="<%= size %>">
-                                                        <%= size %>
-                                                    </div>
-                                                    <% }) %>
-                                        </div>
-                                    </div>
-                                    <% } else if (product.size && Array.isArray(product.size)) { %>
-                                        <div class="option-group">
-                                            <p class="option-label">Size</p>
-                                            <div class="size-grid">
-                                                <% product.size.forEach(size=> { %>
-                                                    <div class="size-item"
-                                                        onclick="selectManualAttribute('size', '<%= size %>', this)">
-                                                        <%= size %>
-                                                    </div>
-                                                    <% }) %>
-                                            </div>
-                                        </div>
-                                        <% } %>
+
 
                                             <% if (variants && variants.length> 0) { %>
                                                 <div class="option-group">
@@ -941,7 +912,7 @@
                                                     </div>
                                                     <% } %>
 
-                                                        <input type="hidden" id="selectedSize" name="selectedSize">
+
                                                         <input type="hidden" id="selectedColor" name="selectedColor">
                                                         <input type="hidden" id="selectedVariantId"
                                                             name="selectedVariantId">
@@ -1010,13 +981,13 @@
                                 </tr>
                                 <tr>
                                     <th>Base Price</th>
-                                    <td>?<%= product.price %>
+                                    <td>&#8377;<%= product.price %>
                                     </td>
                                 </tr>
                                 <% if (product.effectiveDiscount && product.effectivePrice < product.price) { %>
                                     <tr>
                                         <th>Offer Price</th>
-                                        <td>?<%= product.effectivePrice %>
+                                        <td>&#8377;<%= product.effectivePrice %>
                                         </td>
                                     </tr>
                                     <tr>
@@ -1083,11 +1054,11 @@
                                                 <div class="related-price">
                                                     <% if (relatedProduct.effectiveDiscount && relatedProduct.effectivePrice <
                                                         relatedProduct.price) { %>
-                                                        <span class="related-old-price">?<%= relatedProduct.price %>
+                                                        <span class="related-old-price">&#8377;<%= relatedProduct.price %>
                                                         </span>
-                                                        <span>?<%= relatedProduct.effectivePrice %></span>
+                                                        <span>&#8377;<%= relatedProduct.effectivePrice %></span>
                                                         <% } else { %>
-                                                            <span>?<%= relatedProduct.price %></span>
+                                                            <span>&#8377;<%= relatedProduct.price %></span>
                                                             <% } %>
                                                 </div>
                                                 <% if (isRelatedOutOfStock) { %>
@@ -1113,7 +1084,7 @@
                         <div style="background: #F9FAFB; padding: 30px; border-radius: 12px;">
                             <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 20px;">Write a Review</h3>
 
-                            <% if (typeof user !=='undefined' && user) { %>
+                            <% if (typeof user !=='undefined' && user && canReviewProduct) { %>
                                 <div style="margin-bottom: 20px;">
                                     <label style="font-weight: 600; display: block; margin-bottom: 8px;">Rating
                                         (1-5)</label>
@@ -1143,6 +1114,8 @@
                                 <button onclick="submitReview()"
                                     style="width: 100%; padding: 12px; background: #000; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Submit
                                     Review</button>
+                                <% } else if (typeof user !=='undefined' && user) { %>
+                                    <p style="color: #6B7280; text-align: center; padding: 20px;">You can rate this product after it has been delivered.</p>
                                 <% } else { %>
                                     <p style="color: #6B7280; text-align: center; padding: 20px;">Please <a
                                             href="/login" style="color: #0369A1; text-decoration: underline;">login</a>
@@ -1186,28 +1159,51 @@
                 document.querySelectorAll('.color-item').forEach(item => {
                     const colorName = item.dataset.color;
                     if (colorName) {
-                        item.style.backgroundColor = colorMap[colorName] || colorName;
+                        item.style.backgroundColor = colorMap[colorName] || colorName.toLowerCase();
                     }
                 });
-
-                // Auto-select first variant on load if available
+                lucide.createIcons();
+                
                 document.addEventListener('DOMContentLoaded', () => {
-                    const firstColorItem = document.querySelector('.color-grid .color-item');
-                    if (firstColorItem) {
-                        firstColorItem.click();
-                    } else if (variantsData.length === 0 && document.getElementById('selectedSize')) {
-                        // Product has no variants - set default values for non-variant products
-                        const sizeItem = document.querySelector('.size-grid .size-item');
-                        if (sizeItem) {
-                            sizeItem.click();
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const error = urlParams.get('error');
+                    const success = urlParams.get('success');
+
+                    if (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: decodeURIComponent(error),
+                            confirmButtonColor: '#000'
+                        });
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+
+                    if (success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: decodeURIComponent(success),
+                            confirmButtonColor: '#000',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                    
+                    if (variantsData.length > 0) {
+                        const firstColorItem = document.querySelector('.color-grid .color-item');
+                        if (firstColorItem) {
+                            firstColorItem.click();
                         }
+                    } else if (variantsData.length === 0 && document.getElementById('selectedColor')) {
+                        // Product has no variants - set default values for non-variant products
                         const colorItem = document.querySelector('.color-grid .color-item');
                         if (colorItem) {
                             colorItem.click();
                         }
                         // Set default values for non-variant products
                         document.getElementById('selectedVariantId').value = '';
-                        if (sizeItem) document.getElementById('selectedSize').value = sizeItem.dataset.size;
                         if (colorItem) document.getElementById('selectedColor').value = colorItem.dataset.color;
                     }
                     lucide.createIcons();
@@ -1224,7 +1220,6 @@
 
                 // Global state for selection
                 let currentSelectedColor = '';
-                let currentSelectedSize = '';
                 const variantsData = JSON.parse(document.getElementById('variantData').dataset.variants || '[]');
                 const productOffer = {
                     discount: Number('<%= product.effectiveDiscount || 0 %>'),
@@ -1270,14 +1265,21 @@
 
                     // Update Price
                     const priceContainer = document.querySelector('.price-row');
-                    if (productOffer.discount > 0 && productOffer.price < productOffer.basePrice) {
+                    const variantBasePrice = Number(variant.price);
+                    if (productOffer.discount > 0) {
+                        let offerPrice = productOffer.price;
+                        // Only recalculate if this specific variant has a different base price
+                        if (variantBasePrice !== productOffer.basePrice) {
+                            offerPrice = Math.round((variantBasePrice - (variantBasePrice * productOffer.discount / 100)) * 100) / 100;
+                        }
+                        
                         priceContainer.innerHTML = `
-                            <span class="current-price">?${productOffer.price.toLocaleString()}</span>
-                            <span class="old-price">?${productOffer.basePrice.toLocaleString()}</span>
+                            <span class="current-price">₹${offerPrice.toLocaleString()}</span>
+                            <span class="old-price">₹${variantBasePrice.toLocaleString()}</span>
                             <span class="discount">${productOffer.discount}% off${productOffer.name ? ' - ' + productOffer.name : ''}</span>
                         `;
                     } else {
-                        priceContainer.innerHTML = `<span class="current-price">?${variant.price.toLocaleString()}</span>`;
+                        priceContainer.innerHTML = `<span class="current-price">₹${variantBasePrice.toLocaleString()}</span>`;
                     }
 
                     // Update Stock
@@ -1291,7 +1293,7 @@
                     if (variant.quantity > 0) {
                         stockStatus.innerText = 'In Stock';
                         stockStatus.style.color = '#10B981';
-                        if (stockQtyDisplay) stockQtyDisplay.innerText = `${variant.quantity} units available for ${variant.size} / ${variant.color}`;
+                        if (stockQtyDisplay) stockQtyDisplay.innerText = `${variant.quantity} units available for ${variant.color}`;
                         if (stockRemainingLabel) stockRemainingLabel.innerText = `Only ${variant.quantity} items left!`;
                         if (cartBtn) cartBtn.disabled = false;
                         if (buyBtn) buyBtn.disabled = false;
@@ -1299,7 +1301,7 @@
                     } else {
                         stockStatus.innerText = 'Out of Stock';
                         stockStatus.style.color = '#EF4444';
-                        if (stockQtyDisplay) stockQtyDisplay.innerText = `No stock for ${variant.size} / ${variant.color}`;
+                        if (stockQtyDisplay) stockQtyDisplay.innerText = `No stock for ${variant.color}`;
                         if (stockRemainingLabel) stockRemainingLabel.innerText = '';
                         if (cartBtn) cartBtn.disabled = true;
                         if (buyBtn) buyBtn.disabled = true;
@@ -1309,7 +1311,6 @@
 
                     document.getElementById('selectedColorName').innerText = variant.color;
                     document.getElementById('selectedColor').value = variant.color;
-                    document.getElementById('selectedSize').value = variant.size;
                     document.getElementById('selectedVariantId').value = variant._id;
 
                     // Update Color Pills
@@ -1317,50 +1318,14 @@
                         item.classList.toggle('active', item.dataset.color === variant.color);
                     });
 
-                    // Update Size Grid dynamically for this color
-                    const sizeGrid = document.getElementById('sizeGrid');
-                    if (sizeGrid) {
-                        const sizesForColor = variantsData
-                            .filter(v => v.color === variant.color)
-                            .map(v => ({ size: v.size, qty: v.quantity }));
-
-                        sizeGrid.innerHTML = '';
-                        sizesForColor.forEach(({ size, qty }) => {
-                            const div = document.createElement('div');
-                            div.className = 'size-item' + (size === variant.size ? ' active' : '');
-                            div.setAttribute('data-size', size);
-                            div.onclick = function () { selectSize(size, this); };
-                            div.innerText = size;
-                            if (qty <= 0) {
-                                div.style.opacity = '0.4';
-                                div.style.pointerEvents = 'none';
-                                div.title = 'Out of Stock';
-                            }
-                            sizeGrid.appendChild(div);
-                        });
-                    }
-
                     currentSelectedColor = variant.color;
-                    currentSelectedSize = variant.size;
                 }
 
                 function selectColor(color, element) {
-                    // Try to find a variant with same size, or fallback to first available size
-                    let match = variantsData.find(v => v.color === color && v.size === currentSelectedSize && v.quantity > 0);
-                    if (!match) match = variantsData.find(v => v.color === color && v.quantity > 0);
+                    let match = variantsData.find(v => v.color === color && v.quantity > 0);
                     if (!match) match = variantsData.find(v => v.color === color);
 
                     if (match) updateProductUI(match);
-                }
-
-                function selectSize(size, element) {
-                    let match = variantsData.find(v => v.size === size && v.color === currentSelectedColor && v.quantity > 0);
-                    if (match) updateProductUI(match);
-                }
-
-                function selectVariantBySize(size, element) {
-                    // Legacy support
-                    selectSize(size, element);
                 }
 
                 function decrementQty() {
@@ -1387,11 +1352,7 @@
                 }
 
                 function selectManualAttribute(type, value, element) {
-                    if (type === 'size') {
-                        document.getElementById('selectedSize').value = value;
-                        document.querySelectorAll('.size-item').forEach(item => item.classList.remove('active'));
-                        element.classList.add('active');
-                    } else if (type === 'color') {
+                    if (type === 'color') {
                         document.getElementById('selectedColor').value = value;
                         const label = document.getElementById('selectedColorName') || document.getElementById('selectedColorNameManual');
                         if (label) label.innerText = value;

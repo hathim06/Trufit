@@ -51,7 +51,6 @@ router.get('/address/set-default/:id', userAuth.isLoggedIn, userController.setDe
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), userController.googleAuthCallback);
 
-// API for User Counts (Cart/Wishlist)
 router.get('/api/user/counts', userController.getUserCounts);
 
 export default router;

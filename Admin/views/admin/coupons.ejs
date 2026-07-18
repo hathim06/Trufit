@@ -47,7 +47,7 @@
                             <tr>
                                 <td><%= index + 1 + (currentPage - 1) * limit %></td>
                                 <td><strong><%= coupon.couponCode %></strong><br><small><%= coupon.description %></small></td>
-                                <td><%= coupon.discountPercentage %>% (Min: Rs. <%= coupon.minPurchase %>)</td>
+                                <td><%= coupon.discountType === 'flat' ? `Rs. ${Number(coupon.discountValue ?? coupon.discountPercentage ?? 0).toLocaleString()} Off` : `${coupon.discountPercentage ?? coupon.discountValue ?? 0}% Off` %> (Min: Rs. <%= coupon.minPurchase %>)</td>
                                 <td><%= new Date(coupon.startDate).toLocaleDateString() %></td>
                                 <td><%= new Date(coupon.expiryDate).toLocaleDateString() %></td>
                                 <td>

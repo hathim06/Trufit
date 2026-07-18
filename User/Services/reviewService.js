@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import reviewModel from '../models/reviewModel.js';
 import productModel from '../models/productModel.js';
 import userModel from '../models/userModel.js';
+import orderModel from '../models/orderModel.js';
 
 const addReviewService = async (productId, userId, reviewData) => {
     if (!mongoose.Types.ObjectId.isValid(productId) || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -14,6 +15,12 @@ const addReviewService = async (productId, userId, reviewData) => {
 
     const product = await productModel.findById(productId);
     if (!product) throw new Error(MESSAGES.PRODUCT_NOT_FOUND);
+
+    const deliveredOrder = await orderModel.exists({
+        userId,
+        items: { $elemMatch: { productId, status: 'Delivered' } }
+    });
+    if (!deliveredOrder) throw new Error('You can rate a product only after it has been delivered.');
 
     const review = new reviewModel({
         productId,

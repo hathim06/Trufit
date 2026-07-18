@@ -64,12 +64,22 @@
 
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>DISCOUNT PERCENTAGE</label>
-                        <input type="number" name="discount" value="<%= formData.discount || coupon.discountPercentage %>" placeholder="Enter percentage" required min="1" max="100" step="0.01">
+                        <label>DISCOUNT TYPE</label>
+                        <select name="discountType" id="discountType">
+                            <option value="percentage" <%= (formData.discountType || coupon.discountType || 'percentage') === 'percentage' ? 'selected' : '' %>>Percentage</option>
+                            <option value="flat" <%= (formData.discountType || coupon.discountType || 'percentage') === 'flat' ? 'selected' : '' %>>Flat Amount</option>
+                        </select>
                     </div>
                     <div class="form-group">
+                        <label id="discountLabel">DISCOUNT VALUE</label>
+                        <input type="number" id="discountValue" name="discountValue" value="<%= formData.discountValue || formData.discount || coupon.discountValue || coupon.discountPercentage || '' %>" placeholder="Enter value" required min="1" step="0.01">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
                         <label>MAX DISCOUNT LIMIT</label>
-                        <input type="number" name="maxDiscountAmount" value="<%= formData.maxDiscountAmount || coupon.maxDiscountAmount || '' %>" placeholder="Enter max amount" required min="1" step="0.01">
+                        <input type="number" name="maxDiscountAmount" value="<%= formData.maxDiscountAmount || coupon.maxDiscountAmount || '' %>" placeholder="Enter max amount" required min="0" step="0.01">
                     </div>
                 </div>
 
@@ -93,6 +103,22 @@
 
     <script>
         lucide.createIcons();
+
+        const discountType = document.getElementById('discountType');
+        const discountLabel = document.getElementById('discountLabel');
+        const discountValue = document.getElementById('discountValue');
+
+        function syncDiscountLabel() {
+            const isFlat = discountType.value === 'flat';
+            discountLabel.textContent = isFlat ? 'DISCOUNT AMOUNT' : 'DISCOUNT VALUE';
+            discountValue.placeholder = isFlat ? 'Enter flat amount' : 'Enter percentage';
+            discountValue.setAttribute('max', isFlat ? '' : '90');
+        }
+
+        if (discountType) {
+            discountType.addEventListener('change', syncDiscountLabel);
+            syncDiscountLabel();
+        }
     </script>
 </body>
 </html>

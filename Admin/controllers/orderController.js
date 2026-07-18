@@ -53,6 +53,21 @@ const getOrderTotal = (order) => {
     return subtotalTotal || storedTotal || itemTotal;
 };
 
+const recalculateOrderTotals = (order) => {
+    const activeItems = (order.items || []).filter(item => !['Cancelled', 'Returned'].includes(item.status));
+    const activeSubtotal = activeItems.reduce((sum, item) => sum + getItemTotal(item), 0);
+    const originalSubtotal = Number(order.subtotal) || 0;
+    const originalDiscount = Number(order.discountAmount) || 0;
+    const activeDiscount = originalSubtotal > 0 && originalDiscount > 0
+        ? Math.max(0, Math.round((activeSubtotal / originalSubtotal) * originalDiscount))
+        : 0;
+
+    order.subtotal = activeSubtotal;
+    order.discountAmount = activeDiscount;
+    order.totalAmount = Math.max(0, activeSubtotal - activeDiscount);
+    return order;
+};
+
 const refundToWallet = async (userId, amount, description) => {
     if (amount <= 0) return;
 
@@ -264,6 +279,7 @@ const updateOrderStatus = async (req, res) => {
                         });
                     }
                 }
+                recalculateOrderTotals(currentOrder);
                 refundAmount = refundAmount || getOrderTotal(currentOrder);
 
                 if (currentOrder.paymentStatus === 'Paid') {
@@ -317,19 +333,20 @@ const updateOrderStatus = async (req, res) => {
         }
 
         if (status === 'Cancelled' || status === 'Returned') {
-            for (const item of order.items) {
-                if (!alreadyCancelledIds.has(item._id.toString())) {
-                    if (item.variantId) {
-                        await variantModel.findByIdAndUpdate(item.variantId, {
-                            $inc: { quantity: item.quantity }
-                        });
-                    }
+            const affectedItems = order.items.filter(item => !alreadyCancelledIds.has(item._id.toString()));
+            const refundAmount = affectedItems.reduce((sum, item) => sum + getItemRefundTotal(item, order), 0);
+            for (const item of affectedItems) {
+                if (item.variantId) {
+                    await variantModel.findByIdAndUpdate(item.variantId, {
+                        $inc: { quantity: item.quantity }
+                    });
                 }
             }
+            recalculateOrderTotals(order);
             if (order.paymentStatus === 'Paid') {
                 await refundToWallet(
                     order.userId,
-                    getOrderTotal(order),
+                    refundAmount || getOrderTotal(order),
                     `Refund for admin cancelled/returned order ${order.orderId}`
                 );
                 order.paymentStatus = 'Refunded';
@@ -540,8 +557,9 @@ const verifyReturnRequest = async (req, res) => {
 
         if (action === 'Approve') {
             const pendingReturnItems = order.items.filter(item => item.status === 'Return Pending');
-            const refundAmount = pendingReturnItems.length > 0
-                ? (await Promise.all(pendingReturnItems.map(item => getItemRefundTotal(item, order))))
+            const refundCandidates = pendingReturnItems.length > 0 ? pendingReturnItems : order.items.filter(item => item.status !== 'Cancelled');
+            const refundAmount = refundCandidates.length > 0
+                ? (await Promise.all(refundCandidates.map(item => getItemRefundTotal(item, order))))
                     .reduce((sum, amount) => sum + amount, 0)
                 : getOrderTotal(order);
 
@@ -550,6 +568,7 @@ const verifyReturnRequest = async (req, res) => {
                 pendingReturnItems.forEach(item => {
                     item.status = 'Returned';
                 });
+                recalculateOrderTotals(order);
                 syncOrderStatusFromItems(order);
             } else {
                 order.orderStatus = 'Returned';
@@ -560,7 +579,7 @@ const verifyReturnRequest = async (req, res) => {
                 });
             }
 
-            for (const item of pendingReturnItems.length > 0 ? pendingReturnItems : order.items) {
+            for (const item of refundCandidates) {
                 if (item.variantId && item.status === 'Returned') {
                     await variantModel.findByIdAndUpdate(item.variantId, {
                         $inc: { quantity: item.quantity }

@@ -132,7 +132,15 @@ const isCouponApplicable = (coupon, userId, subtotal) => {
 };
 
 const calculateCouponDiscount = (coupon, subtotal) => {
-    const percentageDiscount = Math.round(Number(subtotal) * (Number(coupon.discountPercentage) / 100));
+    const normalizedSubtotal = Number(subtotal) || 0;
+    const discountType = String(coupon.discountType || 'percentage').toLowerCase();
+    const discountValue = Number(coupon.discountValue ?? coupon.discountPercentage ?? 0);
+
+    if (discountType === 'flat') {
+        return Math.max(0, Math.min(discountValue, normalizedSubtotal));
+    }
+
+    const percentageDiscount = Math.round(normalizedSubtotal * (discountValue / 100));
     const maxDiscount = Number(coupon.maxDiscountAmount) || percentageDiscount;
     return Math.min(percentageDiscount, maxDiscount);
 };
@@ -184,7 +192,7 @@ const loadCheckout = async (req, res) => {
             const missingIds = itemsMissingVariant.map(i => i._id.toString());
             cart.items = cart.items.filter(item => !missingIds.includes(item._id.toString()));
             await cart.save();
-            return res.redirect('/cart?error=' + encodeURIComponent(`"${names}" was removed from your cart because no size/color variant was selected. Please add it again and choose a variant.`));
+            return res.redirect('/cart?error=' + encodeURIComponent(`"${names}" was removed from your cart because no color variant was selected. Please add it again and choose a variant.`));
         }
 
         const addresses = await addressModel.find({ userId });
@@ -210,10 +218,7 @@ const loadCheckout = async (req, res) => {
         if (req.session.appliedCoupon) {
             const sessCoupon = req.session.appliedCoupon;
             if (subtotal >= sessCoupon.minPurchase) {
-                discountAmount = Math.min(
-                    Math.round(subtotal * (sessCoupon.percentage / 100)),
-                    Number(sessCoupon.maxDiscountAmount) || Number.MAX_SAFE_INTEGER
-                );
+                discountAmount = calculateCouponDiscount(sessCoupon, subtotal);
                 appliedCoupon = sessCoupon;
             } else {
                 delete req.session.appliedCoupon;
@@ -260,15 +265,17 @@ const applyCoupon = async (req, res) => {
             return res.json({ success: false, message: 'Coupon is not applicable or usage limit reached' });
         }
         if (subtotal < coupon.minPurchase) {
-            return res.json({ success: false, message: `Minimum purchase of â‚¹${coupon.minPurchase} is required` });
+            return res.json({ success: false, message: `Minimum purchase of ₹${coupon.minPurchase} is required` });
         }
 
         const discount = calculateCouponDiscount(coupon, subtotal);
 
         req.session.appliedCoupon = {
             code: coupon.couponCode,
-            percentage: coupon.discountPercentage,
+            discountType: coupon.discountType || 'percentage',
+            discountValue: coupon.discountValue ?? coupon.discountPercentage ?? 0,
             minPurchase: coupon.minPurchase,
+            maxDiscountAmount: coupon.maxDiscountAmount,
             discount
         };
 

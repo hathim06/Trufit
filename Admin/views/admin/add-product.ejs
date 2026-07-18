@@ -51,52 +51,22 @@
             border-bottom: 1px solid #F3F4F6;
         }
 
-        /* ── Size Selection Pills ── */
-        .size-selection-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 30px;
-        }
-
-        .size-pill {
-            position: relative;
-            padding: 10px 20px;
-            background: #fff;
-            border: 1.5px solid #E5E7EB;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 700;
-            color: #374151;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        /* ── Stock Input ── */
+        .stock-input-wrapper {
             display: flex;
             align-items: center;
             gap: 10px;
-            min-width: 80px;
-            justify-content: center;
+            margin-bottom: 30px;
         }
 
-        .size-pill:hover {
-            border-color: #000;
-            background: #F9FAFB;
-        }
-
-        .size-pill.active {
-            background: #000;
-            color: #fff;
-            border-color: #000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .qty-input-wrapper {
-            display: none;
-            align-items: center;
-            margin-top: 5px;
-        }
-
-        .size-pill.active+.qty-input-wrapper {
-            display: flex;
+        .stock-input {
+            width: 100px;
+            padding: 10px 15px;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
         }
 
         .qty-field {
@@ -207,22 +177,21 @@
         }
 
         /* ── Cropper Modal ── */
-        #cropperModal.cropper-modal {
+        #cropperModal.custom-cropper-modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(6px);
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(8px);
             z-index: 2147483647;
             justify-content: center;
             align-items: center;
-            padding: 40px;
+            padding: 24px;
         }
 
-        #cropperModal.cropper-modal.active {
+        #cropperModal.custom-cropper-modal.active {
             display: flex !important;
         }
 
@@ -542,7 +511,7 @@
                 <div id="colors-data" data-colors='<%- JSON.stringify(colors || []) %>' style="display:none;"></div>
 
                 <!-- CROPPER MODAL -->
-                <div id="cropperModal" class="cropper-modal">
+                <div id="cropperModal" class="custom-cropper-modal">
                     <div class="cropper-panel">
                         <div
                             style="padding:20px 30px;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center;">
@@ -569,7 +538,6 @@
                 let currentImageInput = null;
                 const uploadedImages = new Map();
                 const persistentQuantities = new Map();
-                const activeSizes = new Map();
                 let selectedColors = [];
                 const colors = JSON.parse(document.getElementById('colors-data').getAttribute('data-colors'));
                 const colorMap = {};
@@ -618,6 +586,7 @@
                     if (stockEl) stockEl.value = total || '';
                 }
 
+
                 async function toggleColorVariant(color) {
                     const cb = document.getElementById(`color-${color}`);
                     if (cb.checked) {
@@ -643,26 +612,14 @@
                     }
                 }
 
-                function toggleSize(color, size) {
-                    let current = activeSizes.get(color) || [];
-                    if (current.includes(size)) {
-                        current = current.filter(s => s !== size);
-                    } else {
-                        current.push(size);
-                    }
-                    activeSizes.set(color, current);
-                    renderVariants();
-                }
-
                 function renderVariants() {
                     const container = document.getElementById('variantsContainer');
                     const emptyMsg = document.getElementById('emptyVariantsMsg');
 
-                    // Save current typed quantities before re-rendering
+                    // Save current typed quantities and sizes before re-rendering
                     document.querySelectorAll('.qty-field').forEach(inp => {
                         const color = inp.getAttribute('data-color');
-                        const size = inp.getAttribute('data-size');
-                        persistentQuantities.set(`${color}_${size}`, inp.value);
+                        persistentQuantities.set(color, inp.value);
                     });
 
                     container.innerHTML = '';
@@ -676,29 +633,8 @@
                         const vNum = index + 1;
                         const variantId = `variant_${color}`;
                         const slots = uploadedImages.get(color) || [null, null, null, null, null];
-                        const checkedSizes = activeSizes.get(color) || [];
-                        const allSizes = ['Standard', 'Compact', 'Large'];
+                        const qty = persistentQuantities.get(color) || '';
                         const slotLabels = ['Main Banner', 'Preview 2', 'Preview 3', 'Preview 4', 'Preview 5'];
-
-                        // Sizes
-                        let sizesHTML = '';
-                        allSizes.forEach(size => {
-                            const isActive = checkedSizes.includes(size);
-                            const qty = persistentQuantities.get(`${color}_${size}`) || '';
-                            sizesHTML += `
-                        <div style="display:flex;flex-direction:column;gap:8px;">
-                            <div class="size-pill ${isActive ? 'active' : ''}" onclick="toggleSize('${color}', '${size}')">
-                                ${size}
-                            </div>
-                            <div class="qty-input-wrapper" style="${isActive ? 'display:flex' : 'display:none'}">
-                                <input type="number" class="qty-field" data-color="${color}" data-size="${size}" 
-                                       name="variantQuantity[]" value="${qty}" placeholder="Qty" ${isActive ? '' : 'disabled'}
-                                       oninput="recalculateTotalStock()">
-                                <input type="hidden" name="variantSize[]" value="${size}" ${isActive ? '' : 'disabled'}>
-                                <input type="hidden" name="variantColor[]" value="${color}" ${isActive ? '' : 'disabled'}>
-                            </div>
-                        </div>`;
-                        });
 
 
 
@@ -734,8 +670,11 @@
                         </div>
                         
                         <div style="margin-bottom:30px;">
-                            <label style="font-size:11px;font-weight:800;color:#9CA3AF;margin-bottom:12px;display:block;text-transform:uppercase;letter-spacing:0.5px;">1. Available Strap Fits & Stock</label>
-                            <div class="size-selection-grid">${sizesHTML}</div>
+                            <label style="font-size:11px;font-weight:800;color:#9CA3AF;margin-bottom:12px;display:block;text-transform:uppercase;letter-spacing:0.5px;">1. Available Stock</label>
+                            <div class="stock-input-wrapper">
+                                <input type="hidden" name="variantColor[]" value="${color}">
+                                <input type="number" class="qty-field" name="variantQuantity[]" data-color="${color}" value="${qty}" min="0" placeholder="Qty" oninput="recalculateTotalStock()" style="width: 100px; padding: 10px 15px; border: 1.5px solid #E5E7EB; border-radius: 12px; font-size: 14px; font-weight: 600; text-align: center;">
+                            </div>
                         </div>
 
                         <div>

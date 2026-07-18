@@ -1,6 +1,7 @@
 import { STATUS_CODES } from '../../utils/statusCodes.js';
 import productService from '../Services/productService.js';
 import wishlistModel from '../models/wishlistModel.js';
+import orderModel from '../models/orderModel.js';
 
 const loadProductDetails = async (req, res) => {
     try {
@@ -14,11 +15,16 @@ const loadProductDetails = async (req, res) => {
         const relatedProducts = await productService.getRelatedProductsService(req.params.id);
 
         let isInWishlist = false;
+        let canReviewProduct = false;
         if (req.session.user) {
             const wishlist = await wishlistModel.findOne({ userId: req.session.user });
             if (wishlist) {
                 isInWishlist = wishlist.items.some(item => item.productId.toString() === req.params.id);
             }
+            canReviewProduct = Boolean(await orderModel.exists({
+                userId: req.session.user,
+                items: { $elemMatch: { productId: product._id, status: 'Delivered' } }
+            }));
         }
 
         res.render('users/product', { 
@@ -26,6 +32,7 @@ const loadProductDetails = async (req, res) => {
             variants, 
             relatedProducts,
             userId: req.session.user || null,
+            canReviewProduct,
             isInWishlist
         });
     } catch (error) {
@@ -41,7 +48,6 @@ const loadShopPage = async (req, res) => {
             priceSort: req.query.priceSort || '',
             minPrice: req.query.minPrice || '',
             maxPrice: req.query.maxPrice || '',
-            size: req.query.size || '',
             category: req.query.category || '',
             search: req.query.search || ''
         };

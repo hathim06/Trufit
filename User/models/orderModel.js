@@ -92,6 +92,10 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    refundedAmount: {
+        type: Number,
+        default: 0
+    },
     returnReason: {
         type: String
     },

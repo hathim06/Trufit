@@ -30,8 +30,8 @@ const getOfferCandidates = (product) => {
         const offerPrice = Number(product.offerPrice);
         const basePrice = Number(product.price);
         candidates.push({
-            type: 'Product Offer',
-            name: 'Product Offer',
+            type: 'Sale Price',
+            name: '',
             discount: (1 - (offerPrice / basePrice)) * 100,
             offerPrice
         });

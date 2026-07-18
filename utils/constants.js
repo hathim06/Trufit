@@ -50,17 +50,6 @@ export const ITEM_STATUS = {
 export const ITEM_STATUS_VALUES = Object.values(ITEM_STATUS);
 
 
-export const SIZES = {
-    XS: 'XS',
-    S: 'S',
-    M: 'M',
-    L: 'L',
-    XL: 'XL',
-    XXL: 'XXL',
-    DEFAULT: 'M'
-};
-
-export const SIZES_VALUES = Object.values(SIZES).filter(s => s !== SIZES.DEFAULT);
 
 
 export const BOOLEAN_STRING = {
@@ -78,7 +67,7 @@ export const DEFAULT_VALUES = {
     PRODUCT_STATUS: PRODUCT_STATUS.ACTIVE,
     ORDER_STATUS: ORDER_STATUS.PENDING,
     PAYMENT_STATUS: PAYMENT_STATUS.PENDING,
-    SIZE: SIZES.M,
+
     DISCOUNT: 0,
     OFFER_PRICE: null,
     IS_VERIFIED: true,
@@ -112,7 +101,7 @@ export const PRODUCT_FIELDS = {
     CATEGORY_ID: 'categoryId',
     STATUS: 'status',
     QUANTITY: 'quantity',
-    SIZE: 'size',
+
     COLOR: 'color',
     IMAGE: 'image',
     SHOW_ON_HOMEPAGE: 'showOnHomepage',
@@ -286,7 +275,7 @@ export default {
     PAYMENT_STATUS,
     PAYMENT_METHOD,
     ITEM_STATUS,
-    SIZES,
+
     BOOLEAN_STRING,
     DEFAULT_VALUES,
     USER_FIELDS,

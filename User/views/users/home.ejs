@@ -644,6 +644,15 @@
             backdrop-filter: blur(4px);
         }
 
+        .product-card-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .product-card-link.disabled-link {
+            pointer-events: none;
+        }
+
         /* 7. Testimonials */
         .testimonial-grid {
             display: grid;
@@ -1075,9 +1084,9 @@
                                     <% const isBlocked = product.status && product.status.toLowerCase() !== 'active'; %>
                                     <% const isOutOfStock = Number(product.totalStock || 0) <= 0; %>
                                     <% const isDisabled = isBlocked || isOutOfStock; %>
-                                    <div class="product-card anim-scale-in" style="<%= isDisabled ? 'opacity: 0.8;' : '' %>">
+                                    <div class="product-card anim-scale-in" <% if (isDisabled) { %>style="opacity: 0.8;"<% } %>>
                                         <a href="/product/<%= product._id %>"
-                                            style="text-decoration: none; color: inherit; <%= isDisabled ? 'pointer-events: none;' : '' %>">
+                                            class="product-card-link<%= isDisabled ? ' disabled-link' : '' %>">
                                             <div class="product-image">
                                                 <% if (isDisabled) { %>
                                                     <div class="disabled-product-overlay">
@@ -1115,10 +1124,10 @@
                                                     <i data-lucide="star"></i>
                                                 </div>
                                                 <div class="price">
-                                                    <% if (product.offerPrice && product.offerPrice < product.price) {
+                                                    <% if (product.effectiveDiscount && product.effectivePrice < product.price) {
                                                         %>
                                                         <span class="old-price">₹<%= product.price %></span>
-                                                        <span class="new-price">₹<%= product.offerPrice %></span>
+                                                        <span class="new-price">₹<%= product.effectivePrice %></span>
                                                         <% } else { %>
                                                             <span class="new-price">₹<%= product.price %></span>
                                                             <% } %>
@@ -1479,25 +1488,20 @@
 
                             let img = scene.images[targetIdx];
                             if (!img.complete || img.naturalWidth === 0) {
+                                // Limit search to 30 neighbors to avoid blocking the main thread
+                                const maxSearch = Math.min(30, totalFrames);
                                 let found = false;
-                                for (let offset = 1; offset < totalFrames; offset++) {
+                                for (let offset = 1; offset <= maxSearch; offset++) {
                                     const prevIdx = targetIdx - offset;
                                     const nextIdx = targetIdx + offset;
-
                                     if (prevIdx >= 0 && scene.images[prevIdx].complete && scene.images[prevIdx].naturalWidth > 0) {
-                                        img = scene.images[prevIdx];
-                                        found = true;
-                                        break;
+                                        img = scene.images[prevIdx]; found = true; break;
                                     }
                                     if (nextIdx < totalFrames && scene.images[nextIdx].complete && scene.images[nextIdx].naturalWidth > 0) {
-                                        img = scene.images[nextIdx];
-                                        found = true;
-                                        break;
+                                        img = scene.images[nextIdx]; found = true; break;
                                     }
                                 }
-                                if (!found) {
-                                    img = scene.images[0];
-                                }
+                                if (!found) img = scene.images[0];
                             }
 
                             drawFrame(img);
@@ -1542,42 +1546,34 @@
                             renderActiveFrame();
                         }
 
-                        // ── Scroll handler ───────────────────────────
+                        // ── Scroll handler (reads only — writes deferred to rAF) ──
+                        let rafQueued = false;
                         function onScroll() {
-                            const vH     = window.innerHeight;
-                            const pct    = clamp((window.scrollY - sectionTop) / (sectionHeight - vH), 0, 1);
-
-                            // Progress bar
-                            progBar.style.width = (pct * 100) + '%';
-
-                            // Scroll hint
-                            hint.style.opacity = pct > 0.025 ? '0' : '1';
-
-                            tgtPct = pct;
-                            if (!rafId) {
-                                rafId = requestAnimationFrame(animateLoop);
-                            }
-                        }
-
-                        // ── Inertia/Lerp Animation Loop ──────────────
-                        function animateLoop() {
-                            const diff = tgtPct - curPct;
-                            if (Math.abs(diff) > 0.0002) {
-                                curPct = lerp(curPct, tgtPct, 0.07); // smooth damping (0.07 for high-end inertia feel)
-                                renderActiveFrame();
-                                rafId = requestAnimationFrame(animateLoop);
-                            } else {
-                                curPct = tgtPct;
-                                renderActiveFrame();
-                                rafId = null;
+                            const pct = clamp(
+                                (window.scrollY - sectionTop) / (sectionHeight - window.innerHeight),
+                                0, 1
+                            );
+                            curPct = pct;
+                            if (!rafQueued) {
+                                rafQueued = true;
+                                requestAnimationFrame(() => {
+                                    // All DOM writes batched here
+                                    progBar.style.width  = (curPct * 100) + '%';
+                                    hint.style.opacity   = curPct > 0.025 ? '0' : '1';
+                                    renderActiveFrame();
+                                    rafQueued = false;
+                                });
                             }
                         }
 
                         window.addEventListener('scroll', onScroll, { passive: true });
-                        window.addEventListener('resize', resizeCanvas);
+                        window.addEventListener('resize', () => {
+                            updateDimensions();
+                            renderActiveFrame();
+                        });
 
                         // Initial setup
-                        resizeCanvas();
+                        updateDimensions();
                         onScroll();
 
                     })();
@@ -1586,7 +1582,7 @@
                     (function () {
                         const c = document.getElementById('watchParticles');
                         if (!c) return;
-                        for (let i = 0; i < 32; i++) {
+                        for (let i = 0; i < 16; i++) {
                             const p = document.createElement('div');
                             p.className = 'particle';
                             const sz = Math.random() * 4 + 1.5;
@@ -1596,7 +1592,8 @@
                                 'left:'   + (Math.random() * 100) + '%',
                                 'animation-duration:' + (Math.random() * 14 + 9) + 's',
                                 'animation-delay:'    + (Math.random() * 14) + 's',
-                                'opacity:' + (Math.random() * 0.5 + 0.15),
+                                'opacity:' + (Math.random() * 0.45 + 0.1),
+                                'will-change:transform',
                                 'background:rgba(' + (100 + Math.round(Math.random()*60)) + ',' +
                                                      (170 + Math.round(Math.random()*50)) + ',255,0.5)'
                             ].join(';');

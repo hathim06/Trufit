@@ -35,6 +35,28 @@ const generateOrderId = () => {
     return 'ORD' + Date.now() + Math.floor(Math.random() * 1000);
 };
 
+const syncOrderPricingAfterItemRemoval = (order, removedItemTotal = 0) => {
+    const currentSubtotal = Math.max(0, Number(order.subtotal || 0));
+    const currentDiscountAmount = Math.max(0, Number(order.discountAmount || 0));
+
+    if (removedItemTotal >= currentSubtotal) {
+        order.subtotal = 0;
+        order.discountAmount = 0;
+        order.totalAmount = 0;
+        return order;
+    }
+
+    const newSubtotal = Math.max(0, currentSubtotal - removedItemTotal);
+    const newDiscountAmount = currentSubtotal > 0 && currentDiscountAmount > 0
+        ? Math.max(0, Math.round((newSubtotal / currentSubtotal) * currentDiscountAmount))
+        : 0;
+
+    order.subtotal = newSubtotal;
+    order.discountAmount = newDiscountAmount;
+    order.totalAmount = Math.max(0, newSubtotal - newDiscountAmount);
+    return order;
+};
+
 const getCouponUserUsageCount = (coupon, userId) => {
     if (!coupon) return 0;
     const userIdText = userId.toString();
@@ -79,7 +101,15 @@ const getCouponAwareItemRefundTotal = (order, item) => {
 };
 
 const calculateCouponDiscount = (coupon, subtotal) => {
-    const percentageDiscount = Math.round(Number(subtotal) * (Number(coupon.discountPercentage) / 100));
+    const normalizedSubtotal = Number(subtotal) || 0;
+    const discountType = String(coupon.discountType || 'percentage').toLowerCase();
+    const discountValue = Number(coupon.discountValue ?? coupon.discountPercentage ?? 0);
+
+    if (discountType === 'flat') {
+        return Math.max(0, Math.min(discountValue, normalizedSubtotal));
+    }
+
+    const percentageDiscount = Math.round(normalizedSubtotal * (discountValue / 100));
     const maxDiscount = Number(coupon.maxDiscountAmount) || percentageDiscount;
     return Math.min(percentageDiscount, maxDiscount);
 };
@@ -133,7 +163,7 @@ const createOrder = async (userId, addressId, paymentMethod, couponCode = null, 
             }
 
             if (variant.quantity < item.quantity) {
-                throw new Error(`Insufficient stock for ${product.name} (${variant.color}/${variant.size})`);
+                throw new Error(`Insufficient stock for ${product.name} (${variant.color})`);
             }
 
             const itemPrice = getEffectivePrice(product, variant);
@@ -354,19 +384,21 @@ const cancelOrder = async (orderId, userId, reason = 'Cancelled by customer') =>
             }
         }
 
+        // Refund = what user actually paid:
+        // walletAmountApplied (debited from wallet at order time) + totalAmount (gateway payment or wallet-only remainder)
+        let refundAmount = 0;
+        if (order.paymentStatus === 'Paid') {
+            const paidViaGateway = Number(order.totalAmount) || 0;
+            const paidViaWallet = Number(order.walletAmountApplied) || 0;
+            refundAmount = paidViaGateway + paidViaWallet;
+            order.paymentStatus = 'Refunded';
+        }
+
         order.orderStatus = 'Cancelled';
         order.returnReason = reason;
-
-        let refundAmount = 0;
-        if (order.paymentStatus === 'Paid' && order.walletAmountApplied && order.walletAmountApplied > 0) {
-            refundAmount += order.walletAmountApplied;
-        }
-        if (order.paymentStatus === 'Paid') {
-            refundAmount += order.totalAmount;
-            order.paymentStatus = 'Refunded';
-        } else if (refundAmount > 0) {
-            order.paymentStatus = 'Refunded';
-        }
+        order.subtotal = 0;
+        order.discountAmount = 0;
+        order.totalAmount = 0;
 
         if (refundAmount > 0) {
             const user = await userModel.findById(userId).session(session);
@@ -423,8 +455,7 @@ const cancelOrderItem = async (orderId, itemId, userId, reason = '') => {
 
         const itemGrossTotal = Number(item.price || 0) * (Number(item.quantity) || 0);
         const refundTotal = getCouponAwareItemRefundTotal(order, item);
-        order.subtotal = Math.max(0, order.subtotal - itemGrossTotal);
-        order.totalAmount = Math.max(0, order.totalAmount - refundTotal);
+        syncOrderPricingAfterItemRemoval(order, itemGrossTotal);
 
         const allCancelled = order.items.every(i => i.status === 'Cancelled');
         if (allCancelled) {

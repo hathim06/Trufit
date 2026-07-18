@@ -118,7 +118,7 @@
                             <tr>
                                 <td class="coupon-code"><%= coupon.couponCode %></td>
                                 <td class="coupon-details">
-                                    <strong><%= coupon.discountPercentage %>% Off</strong><br>
+                                    <strong><%= coupon.discountType === 'flat' ? `₹${Number(coupon.discountValue ?? 0).toLocaleString()} Off` : `${coupon.discountPercentage ?? coupon.discountValue ?? 0}% Off` %></strong><br>
                                     <%= coupon.description %><br>
                                     <small>Min. Purchase: ₹<%= coupon.minPurchase %></small>
                                 </td>

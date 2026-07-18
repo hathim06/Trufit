@@ -198,11 +198,21 @@
         <div class="summary-box">
             <div class="summary-row">
                 <span>Subtotal:</span>
-                <span>₹<%= order.subtotal.toLocaleString() %></span>
+                <%
+                    const activeItems = (order.items || []).filter(item => !['Cancelled', 'Returned'].includes(item.status));
+                    const activeSubtotal = activeItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+                    const safeOriginalSubtotal = Number(order.subtotal) || 0;
+                    const safeOriginalDiscount = Number(order.discountAmount) || 0;
+                    const displayDiscountAmount = safeOriginalSubtotal > 0 && safeOriginalDiscount > 0
+                        ? Math.max(0, Math.round((activeSubtotal / safeOriginalSubtotal) * safeOriginalDiscount))
+                        : 0;
+                    const displayOrderTotal = Math.max(0, activeSubtotal - displayDiscountAmount);
+                %>
+                <span>₹<%= activeSubtotal.toLocaleString() %></span>
             </div>
             <div class="summary-row">
                 <span>Discount:</span>
-                <span>-₹<%= order.discountAmount.toLocaleString() %></span>
+                <span>-₹<%= displayDiscountAmount.toLocaleString() %></span>
             </div>
             <div class="summary-row">
                 <span>Shipping:</span>
@@ -210,11 +220,6 @@
             </div>
             <div class="summary-row total">
                 <span>Total Paid:</span>
-                <%
-                    const computedOrderTotal = order.items ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0) : 0;
-                    const subtotalOrderTotal = order.subtotal != null ? Math.max(0, order.subtotal - (order.discountAmount || 0)) : 0;
-                    const displayOrderTotal = subtotalOrderTotal || order.totalAmount || computedOrderTotal;
-                %>
                 <span>₹<%= displayOrderTotal.toLocaleString() %></span>
             </div>
         </div>

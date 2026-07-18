@@ -1,18 +1,26 @@
 import couponModel from '../../User/models/couponModel.js';
 import { STATUS_CODES } from '../../utils/statusCodes.js';
 
-const buildCouponPayload = (body) => ({
-    couponCode: String(body.couponCode || '').trim().toUpperCase(),
-    description: String(body.description || '').trim(),
-    startDate: body.startDate,
-    expiryDate: body.expiryDate,
-    minPurchase: Number(body.minPurchase),
-    status: body.status || 'Active',
-    discountPercentage: Number(body.discount),
-    maxDiscountAmount: Number(body.maxDiscountAmount),
-    maxUsage: Number.parseInt(body.maxUsage, 10),
-    perUserLimit: Number.parseInt(body.perUserLimit, 10)
-});
+const buildCouponPayload = (body) => {
+    const discountType = String(body.discountType || 'percentage').toLowerCase();
+    const rawDiscountValue = Number(body.discountValue ?? body.discount ?? 0);
+    const discountValue = Number.isFinite(rawDiscountValue) ? rawDiscountValue : 0;
+
+    return {
+        couponCode: String(body.couponCode || '').trim().toUpperCase(),
+        description: String(body.description || '').trim(),
+        startDate: body.startDate,
+        expiryDate: body.expiryDate,
+        minPurchase: Number(body.minPurchase),
+        status: body.status || 'Active',
+        discountType,
+        discountValue,
+        discountPercentage: discountType === 'percentage' ? discountValue : 0,
+        maxDiscountAmount: Number(body.maxDiscountAmount ?? discountValue ?? 0),
+        maxUsage: Number.parseInt(body.maxUsage, 10),
+        perUserLimit: Number.parseInt(body.perUserLimit, 10)
+    };
+};
 
 const validateCouponPayload = (payload) => {
     const errors = [];
@@ -26,9 +34,16 @@ const validateCouponPayload = (payload) => {
     if (!payload.expiryDate || Number.isNaN(end.getTime())) errors.push('Expiry date is required.');
     if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end < start) errors.push('Expiry date must be on or after the start date.');
     if (!Number.isFinite(payload.minPurchase) || payload.minPurchase < 0) errors.push('Minimum purchase must be zero or greater.');
-    if (!Number.isFinite(payload.discountPercentage) || payload.discountPercentage <= 0 || payload.discountPercentage > 90) errors.push('Discount percentage must be between 1 and 90.');
-    if (!Number.isFinite(payload.maxDiscountAmount) || payload.maxDiscountAmount <= 0) errors.push('Maximum discount amount must be greater than zero.');
-    if (payload.minPurchase < payload.maxDiscountAmount) errors.push('Minimum purchase must be greater than or equal to the maximum discount amount.');
+    if (!['percentage', 'flat'].includes(payload.discountType)) errors.push('Invalid coupon type.');
+    if (!Number.isFinite(payload.discountValue) || payload.discountValue <= 0) errors.push('Discount value must be greater than zero.');
+    if (payload.discountType === 'percentage') {
+        if (payload.discountValue > 90) errors.push('Discount percentage must be 90% or less.');
+        if (!Number.isFinite(payload.maxDiscountAmount) || payload.maxDiscountAmount <= 0) errors.push('Maximum discount amount must be greater than zero.');
+        if (payload.minPurchase < payload.maxDiscountAmount) errors.push('Minimum purchase must be greater than or equal to the maximum discount amount.');
+    } else {
+        if (payload.discountValue > payload.minPurchase) errors.push('Flat discount cannot exceed the minimum purchase amount.');
+        if (!Number.isFinite(payload.maxDiscountAmount) || payload.maxDiscountAmount <= 0) errors.push('Maximum discount amount must be greater than zero.');
+    }
     if (!Number.isInteger(payload.maxUsage) || payload.maxUsage < 1) errors.push('Total coupons available must be at least 1.');
     if (!Number.isInteger(payload.perUserLimit) || payload.perUserLimit < 1) errors.push('Per user limit must be at least 1.');
     if (Number.isInteger(payload.maxUsage) && Number.isInteger(payload.perUserLimit) && payload.perUserLimit > payload.maxUsage) errors.push('Per user limit cannot exceed total coupons available.');

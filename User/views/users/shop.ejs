@@ -505,19 +505,6 @@
                             </div>
                         </div>
 
-                        <div class="divider"></div>
-
-                        <div class="filter-section">
-                            <h3>SIZE</h3>
-                            <select name="size" class="filter-dropdown" onchange="document.getElementById('filterForm').submit()">
-                                <option value="">All Sizes</option>
-                                <% ['S', 'M', 'L', 'XL', 'XXL'].forEach(s => { %>
-                                    <option value="<%= s %>" <%= (typeof query !== 'undefined' && query.size === s) ? 'selected' : '' %>>
-                                        <%= s %>
-                                    </option>
-                                <% }) %>
-                            </select>
-                        </div>
 
                         </form>
                     </aside>
@@ -570,9 +557,9 @@
                                                 <%= product.name %>
                                             </h3>
                                             <div class="product-price">
-                                                <% if (product.offerPrice && product.offerPrice < product.price) { %>
+                                                <% if (product.effectiveDiscount && product.effectivePrice < product.price) { %>
                                                     <span class="old-price">₹<%= product.price %></span>
-                                                    <span class="new-price">₹<%= product.offerPrice %></span>
+                                                    <span class="new-price">₹<%= product.effectivePrice %></span>
                                                     <% } else { %>
                                                         <span class="new-price">₹<%= product.price %></span>
                                                         <% } %>

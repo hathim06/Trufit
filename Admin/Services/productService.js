@@ -35,23 +35,20 @@ const getOfferPricing = async (offerId, price) => {
 
 const syncProductWithVariants = async (productId) => {
     const variants = await variantModel.find({ productId, isDeleted: false, quantity: { $gt: 0 } });
-    const uniqueSizes = [...new Set(variants.map(v => v.size))];
     const uniqueColors = [...new Set(variants.map(v => v.color))];
 
     await productModel.findByIdAndUpdate(productId, {
-        size: uniqueSizes,
         color: uniqueColors
     });
 };
 
 
-const validateVariantValues = ({ color, size, quantity, price }) => {
+const validateVariantValues = ({ color, quantity, price }) => {
     const errors = [];
     const stock = Number(quantity);
     const variantPrice = Number(price);
 
     if (!String(color || '').trim()) errors.push('Variant color is required');
-    if (!String(size || '').trim()) errors.push('Variant strap fit is required');
     if (!Number.isInteger(stock) || stock < 0) errors.push('Variant stock must be a whole number greater than or equal to 0');
     if (!Number.isFinite(variantPrice) || variantPrice <= 0) errors.push('Variant price must be greater than 0');
 
@@ -74,6 +71,14 @@ const addProductService = async (req) => {
 
     const offerPricing = await getOfferPricing(req.body.offerId, req.body.price);
 
+    let finalOfferPrice = offerPricing.offerPrice;
+    let finalDiscount = offerPricing.discount;
+
+    if (!req.body.offerId && req.body.offerPrice && Number(req.body.offerPrice) > 0 && Number(req.body.offerPrice) < Number(req.body.price)) {
+        finalOfferPrice = Number(req.body.offerPrice);
+        finalDiscount = (1 - (finalOfferPrice / Number(req.body.price))) * 100;
+    }
+
     const imageUrls = [];
     if (req.files) {
         if (req.files.mainImage) imageUrls.push(req.files.mainImage[0].path);
@@ -89,9 +94,8 @@ const addProductService = async (req) => {
         showOnHomepage: req.body.showOnHomepage === 'Yes',
         status: req.body.status || 'Active',
         price: req.body.price,
-        offerPrice: offerPricing.offerPrice,
-        discount: offerPricing.discount,
-        size: req.body.size || 'M',
+        offerPrice: finalOfferPrice,
+        discount: finalDiscount,
         color: req.body.color,
         image: imageUrls,
         description: req.body.description,
@@ -127,9 +131,8 @@ const addProductService = async (req) => {
 
         for (let i = 0; i < req.body.variantColor.length; i++) {
             const color = req.body.variantColor[i];
-            const size = req.body.variantSize ? req.body.variantSize[i] : 'Standard';
             const quantity = req.body.variantQuantity ? parseInt(req.body.variantQuantity[i], 10) : 0;
-            const validated = validateVariantValues({ color, size, quantity, price: req.body.price });
+            const validated = validateVariantValues({ color, quantity, price: req.body.price });
 
             if (validated.quantity > 0) {
                 const variantImages = colorImagesMap.get(color) || [];
@@ -140,7 +143,6 @@ const addProductService = async (req) => {
 
                 const newVariant = new variantModel({
                     productId: product._id,
-                    size,
                     color,
                     price: validated.price,
                     quantity: validated.quantity,
@@ -260,6 +262,14 @@ const updateProductService = async (req) => {
 
     const offerPricing = await getOfferPricing(req.body.offerId, req.body.price);
 
+    let finalOfferPrice = offerPricing.offerPrice;
+    let finalDiscount = offerPricing.discount;
+
+    if (!req.body.offerId && req.body.offerPrice && Number(req.body.offerPrice) > 0 && Number(req.body.offerPrice) < Number(req.body.price)) {
+        finalOfferPrice = Number(req.body.offerPrice);
+        finalDiscount = (1 - (finalOfferPrice / Number(req.body.price))) * 100;
+    }
+
     const updateData = {
         name: req.body.productName,
         categoryId: req.body.categoryId,
@@ -267,8 +277,8 @@ const updateProductService = async (req) => {
         showOnHomepage: req.body.showOnHomepage === 'Yes',
         status: req.body.status,
         price: req.body.price,
-        offerPrice: offerPricing.offerPrice,
-        discount: offerPricing.discount,
+        offerPrice: finalOfferPrice,
+        discount: finalDiscount,
         description: req.body.description
     };
 
@@ -276,7 +286,6 @@ const updateProductService = async (req) => {
 
     if (req.body.variantColor && Array.isArray(req.body.variantColor)) {
         const submittedColors = req.body.variantColor;
-        const submittedSizes = req.body.variantSize || [];
         const submittedQuantities = req.body.variantQuantity || [];
 
         const existingVariants = await variantModel.find({ productId: id, isDeleted: false });
@@ -302,13 +311,12 @@ const updateProductService = async (req) => {
 
         for (let i = 0; i < submittedColors.length; i++) {
             const color = submittedColors[i];
-            const size = submittedSizes[i] || 'Standard';
             const quantity = parseInt(submittedQuantities[i], 10) || 0;
-            const validated = validateVariantValues({ color, size, quantity, price: req.body.price });
+            const validated = validateVariantValues({ color, quantity, price: req.body.price });
 
             if (validated.quantity <= 0) continue;
 
-            const existing = existingVariants.find(v => v.color === color && v.size === size);
+            const existing = existingVariants.find(v => v.color === color);
             const newImgs = colorImagesMap.get(color) || [];
 
             let finalImages = [];
@@ -341,7 +349,6 @@ const updateProductService = async (req) => {
             } else {
                 const newVariant = new variantModel({
                     productId: id,
-                    size: size,
                     color: color,
                     price: validated.price,
                     quantity: validated.quantity,
@@ -411,7 +418,6 @@ const getVariantsByProductId = async (productId) => {
 const addVariantService = async (productId, variantData, imageFiles) => {
     const validated = validateVariantValues({
         color: variantData.color,
-        size: variantData.size,
         quantity: Number(variantData.quantity),
         price: Number(variantData.price)
     });
@@ -422,7 +428,6 @@ const addVariantService = async (productId, variantData, imageFiles) => {
 
     const variant = new variantModel({
         productId,
-        size: variantData.size,
         color: variantData.color,
         price: validated.price,
         quantity: validated.quantity,
@@ -442,12 +447,10 @@ const updateVariantService = async (variantId, variantData, imageFiles) => {
 
     const validated = validateVariantValues({
         color: variantData.color,
-        size: variantData.size,
         quantity: Number(variantData.quantity),
         price: Number(variantData.price)
     });
 
-    variant.size = variantData.size;
     variant.color = variantData.color;
     variant.price = validated.price;
     variant.quantity = validated.quantity;

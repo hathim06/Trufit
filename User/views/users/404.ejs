@@ -1,0 +1,77 @@
+<%- include('partials/header') %>
+
+<style>
+    .error-container {
+        min-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+    }
+    
+    .error-content {
+        text-align: center;
+        padding: 40px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        max-width: 500px;
+        width: 90%;
+    }
+
+    .error-code {
+        font-size: 120px;
+        font-weight: 800;
+        color: #ff4757;
+        line-height: 1;
+        margin-bottom: 20px;
+        text-shadow: 3px 3px 0px rgba(255, 71, 87, 0.2);
+    }
+
+    .error-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #2f3542;
+        margin-bottom: 15px;
+    }
+
+    .error-message {
+        color: #747d8c;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+
+    .btn-home {
+        display: inline-block;
+        padding: 12px 30px;
+        background-color: #2ed573;
+        color: white;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-home:hover {
+        background-color: #26de81;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(46, 213, 115, 0.3);
+        color: white;
+    }
+</style>
+
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-code">404</div>
+        <h2 class="error-title">Oops! Page Not Found</h2>
+        <p class="error-message">
+            The page you are looking for might have been removed, had its name changed, 
+            or is temporarily unavailable.
+        </p>
+        <a href="/" class="btn-home">
+            <i class="fas fa-home mr-2"></i> Back to Homepage
+        </a>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

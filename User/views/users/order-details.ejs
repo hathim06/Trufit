@@ -452,6 +452,7 @@
                                     <div class="items-box">
                                         <div class="section-title">ORDER DETAILS</div>
                                         <% order.items.forEach(item=> { %>
+                                            <% const itemIsDelivered = item.status === 'Delivered' || order.orderStatus === 'Delivered'; %>
                                             <div class="item-row">
                                                 <div class="item-image">
                                                     <% let itemImage='/public/apple_smart_2.png' ; if (item.variantId &&
@@ -473,7 +474,7 @@
                                                         <%= item.name %>
                                                     </div>
                                                     <div class="item-meta">
-                                                        Size : <%= item.variantId ? item.variantId.size : 'N/A' %> | Qty
+                                                        Color : <%= item.variantId ? item.variantId.color : 'N/A' %> | Qty
                                                             : <%= item.quantity %>
                                                     </div>
                                                     <div
@@ -484,43 +485,75 @@
                                                                 item.quantity).toLocaleString() %></span>
                                                     </div>
                                                 </div>
-                                                <div class="item-actions">
-                                                     <% if (item.status === 'Cancelled') { %>
-                                                         <span style="color: #EF4444; font-size: 11px; font-weight: 700; text-transform: uppercase;">Cancelled</span>
-                                                     <% } else if (item.status === 'Return Pending') { %>
-                                                         <span style="color: #F59E0B; font-size: 11px; font-weight: 700; text-transform: uppercase;">Return Pending</span>
-                                                     <% } else if (item.status === 'Returned') { %>
-                                                         <span style="color: #8B5CF6; font-size: 11px; font-weight: 700; text-transform: uppercase;">Returned</span>
-                                                     <% } else if (order.orderStatus==='Placed' ||
-                                                         order.orderStatus==='Processing' ||
-                                                         order.orderStatus==='Pending' || order.orderStatus==='Confirmed'
-                                                         ) { %>
-                                                         <button class="btn-action btn-cancel"
-                                                             onclick="cancelItem('<%= order._id %>', '<%= item._id %>')">Cancel
-                                                             Product</button>
-                                                         <% } else if (typeof canReturnOrderItem === 'function' && canReturnOrderItem(order, item)) { %>
-                                                             <button class="btn-action btn-return"
-                                                                 onclick="returnOrderItem('<%= order._id %>', '<%= item._id %>')">Return
-                                                                 This Item</button>
-                                                             <% } %>
-                                                 </div>
+                                                <div class="item-actions" style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                                                    <%
+                                                        const isCancelledItem = item.status === 'Cancelled';
+                                                        const isReturnPendingItem = item.status === 'Return Pending';
+                                                        const isReturnedItem = item.status === 'Returned';
+                                                        const isActiveItem = !isCancelledItem && !isReturnPendingItem && !isReturnedItem;
+                                                        const orderCancellable = ['Placed', 'Processing', 'Pending', 'Confirmed'].includes(order.orderStatus);
+                                                        const itemCanReturn = typeof canReturnOrderItem === 'function' && canReturnOrderItem(order, item);
+                                                    %>
+
+                                                    <%# Show terminal status labels %>
+                                                    <% if (isCancelledItem) { %>
+                                                        <span style="color: #EF4444; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; background: #FEE2E2; border-radius: 20px;">✕ Cancelled</span>
+                                                    <% } else if (isReturnPendingItem) { %>
+                                                        <span style="color: #92400E; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; background: #FEF3C7; border-radius: 20px;">⏳ Return Pending</span>
+                                                    <% } else if (isReturnedItem) { %>
+                                                        <span style="color: #8B5CF6; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; background: #EDE9FE; border-radius: 20px;">✓ Returned</span>
+                                                    <% } %>
+
+                                                    <%# Show action buttons for active items %>
+                                                    <% if (isActiveItem) { %>
+
+                                                        <%# Cancel button: only if order is in a cancellable state %>
+                                                        <% if (orderCancellable) { %>
+                                                            <button class="btn-action btn-cancel"
+                                                                onclick="cancelItem('<%= order._id %>', '<%= item._id %>')"
+                                                                style="font-size: 11px; padding: 6px 14px;">
+                                                                Cancel Product
+                                                            </button>
+                                                        <% } %>
+
+                                                        <%# Return button: only if item is returnable %>
+                                                        <% if (itemCanReturn) { %>
+                                                            <button class="btn-action btn-return"
+                                                                onclick="returnOrderItem('<%= order._id %>', '<%= item._id %>')"
+                                                                style="font-size: 11px; padding: 6px 14px;">
+                                                                Return This Item
+                                                            </button>
+                                                        <% } %>
+
+                                                        <%# Rate product: only if delivered and no other action shown %>
+                                                        <% if (itemIsDelivered && !orderCancellable && !itemCanReturn) { %>
+                                                            <a class="btn-action" href="/product/<%= item.productId ? item.productId._id : '' %>#reviews" style="text-decoration:none; font-size: 11px; padding: 6px 14px;">Rate Product</a>
+                                                        <% } %>
+
+                                                    <% } %>
+                                                </div>
                                             </div>
                                             <% }) %>
                                     </div>
 
                                     <div class="summary-box">
                                         <%
-                                            const computedOrderTotal = order.items ? order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0) : 0;
-                                            const subtotalOrderTotal = order.subtotal != null ? Math.max(0, order.subtotal - (order.discountAmount || 0)) : 0;
-                                            const displayOrderTotal = subtotalOrderTotal || order.totalAmount || computedOrderTotal;
+                                            const activeItems = (order.items || []).filter(item => !['Cancelled', 'Returned'].includes(item.status));
+                                            const activeSubtotal = activeItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+                                            const safeOriginalSubtotal = Number(order.subtotal) || 0;
+                                            const safeOriginalDiscount = Number(order.discountAmount) || 0;
+                                            const displayDiscountAmount = safeOriginalSubtotal > 0 && safeOriginalDiscount > 0
+                                                ? Math.max(0, Math.round((activeSubtotal / safeOriginalSubtotal) * safeOriginalDiscount))
+                                                : 0;
+                                            const displayOrderTotal = Math.max(0, activeSubtotal - displayDiscountAmount);
                                         %>
                                         <div class="summary-row">
                                             <span>Subtotal</span>
-                                            <span>₹<%= order.subtotal.toLocaleString() %></span>
+                                            <span>₹<%= activeSubtotal.toLocaleString() %></span>
                                         </div>
                                         <div class="summary-row green">
                                             <span>Discount</span>
-                                            <span>-₹<%= order.discountAmount.toLocaleString() %></span>
+                                            <span>-₹<%= displayDiscountAmount.toLocaleString() %></span>
                                         </div>
                                         <div class="summary-row green">
                                             <span>Shipping Charges</span>
