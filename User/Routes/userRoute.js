@@ -48,7 +48,7 @@ router.get('/address/delete/:id', userAuth.isLoggedIn, userController.deleteAddr
 router.get('/address/set-default/:id', userAuth.isLoggedIn, userController.setDefaultAddress);
 
 // Google Auth routes
-router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account' }));
 router.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), userController.googleAuthCallback);
 
 router.get('/api/user/counts', userController.getUserCounts);
